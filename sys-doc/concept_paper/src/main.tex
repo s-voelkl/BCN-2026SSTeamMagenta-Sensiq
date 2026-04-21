@@ -1,0 +1,89 @@
+\documentclass[conference,a4paper,flushend]{cs-techrep} % (based on IEEEtran.cls)
+
+% The class iaria.cls loads biblatex/biber with correct IARIA settings
+% as well as a set of common packages (times, inputenc[utf8], fontenc[T1],
+% graphicx, xcolor, url, orcidlink, hyperref, extdash[shortcuts])
+
+% Packages (self-added, not included in cs-techrep.cls):
+\usepackage[shortlabels]{enumitem} % Verbesserte Einstellungsmöglichkeiten von Listen. Nicht bei Beamer anwendbar
+% \setlist{itemsep=1ex, topsep=1em}
+% \usepackage{graphicx} % Required for inserting images
+\usepackage{csquotes} % Korrekte Anführungszeichen setzen. Sprachspezifisch möglich. mit \setquotestyle{style} und \enquote{}.
+% \usepackage[american]{babel} % Ändert die Darstellung des Datums in amerikanische Darstellung.
+\usepackage[capitalize, nameinlink, american]{cleveref} % Referenzen besser machen. z.B. mit \cref{}
+\usepackage[backend=biber, style=ieee, alldates=iso]{biblatex} % Zitieren
+\usepackage{array} % Tabellen mit \begin{tabular}
+\usepackage{multirow} % Mehrere Zeilen in eine zusammenfassen. für Spalten einfach \multicolumn benutzen
+\usepackage{booktabs} % Hübschere Tabellen mit \top/mid/cmid/bottomrule
+\usepackage{minted} % Neuere Bibliothek für Code-Blöcke, mit \begin{listing oder minted}
+\usepackage{amsmath} % American Mathematical Society für mathematische Formeln, z.B. mit \begin{equation}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+
+\addbibresource{references.bib}
+% \addbibresource{xampl.bib} % (xampl file provided by the BibTEX base files)
+% ======================================================================
+% EDIT THESE:
+\cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0000-0002-1175-2668}}
+\cstechrepAuthorListBib{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu} %TODO: correct format?
+% Capitalization: https://capitalizemytitle.com/style/Chicago/
+\cstechrepTitleTex{Minimal Working Example of a cs-techrep Paper} %TODO: replace with actual title
+ % IF you need manual linebreaks in the title, then clone the title without linebreaks for BibTeX:
+\cstechrepTitleBib{{\cstechrepTitleTex}}
+\cstechrepDepartment{Department of Electrical Engineering, Media, and Computer Science}
+\cstechrepInstitution{Ostbayerische Technische Hochschule Amberg\-/Weiden}
+\cstechrepAddress{Amberg, Germany}
+\cstechrepSeries{Technical Reports}
+\cstechrepYear{2026}
+\cstechrepMonth{7}
+\cstechrepNumber{CL-\cstechrepYear{}-42}
+\cstechrepLang{english}  % en-US
+% ======================================================================
+% DO NOT DELETE AND DO NOT MODIFY THIS:
+\filecontentsForceExpansion|[] % force command expansion inside a filecontents* environment
+\begin{filecontents*}[overwrite]{selfref.bib}
+    @TECHREPORT{selfref,
+        author = {|cstechrepAuthorListBib},
+        title  = {\cstechrepTitleBib},
+        institution = {\cstechrepInstitution, \cstechrepDepartment},
+        series = {\cstechrepSeries},
+        number = {\cstechrepNumber},
+        year   = {|cstechrepYear},
+        month  = {|cstechrepMonth},
+        langid  = {|cstechrepLang},
+    }
+\end{filecontents*}
+
+\begin{document}
+\selectlanguage{\cstechrepLang}
+\maketitle
+\begin{abstract}
+
+    Modularbeit in Big Data, Cloud and NoSQL. Das ist der englische Abstract (Zusammenfassung). % TODO: replace with actual abstract
+    Nicht benennen: Modularbeit, Personen, Studiengang, ...
+    Sondern als Elevator Pitch
+
+\end{abstract}
+\begin{IEEEkeywords}
+Cloud, Big Data, NoSQL, Modularbeit % TODO: replace with actual keywords
+\end{IEEEkeywords}
+
+\section{Introduction}
+Here we go. %TODO: replace with actual introduction
+\cite{robocuprescue2025}
+
+Motivation, zusammenfassender Überblick des Anwendungskonzeptes, fachliches Alleinstellungsmerkmal (USP), Benennung von technischen Schlüssel-Bausteinen, Fachvokabular einführen.
+
+\section{Related Work}
+andere Arbeiten oder Technologien (die als Inspiration dienten), Screenshots
+\section{Requirements}
+Agile User Stories (+Akzeptanzkriterien als Definition of Done) oder klassische Use-Cases als Anforderungen an die Anwendung.
+Beschreibung von Eingabe und Ausgabe des Systems und dessen Teilfunktionen; benötigte Ressourcen (z.B. Bestandsdaten), 
+\section{Technical Concept}
+knapp technische Schlüsselmerkmale der Anwendung, rein deskriptiv
+
+% ======== References =========
+\sloppy
+\printbibliography[notcategory=selfref]
+
+\end{document}
