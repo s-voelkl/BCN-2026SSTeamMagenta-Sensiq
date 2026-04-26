@@ -1,4 +1,4 @@
-# BCN-2026SSTeamMagenta-Filler
+# BCN-2026SSTeamMagenta-Sensiq
 
 ## License
 
@@ -15,9 +15,7 @@ The [documentation](doc/) is licensed under the Creative Commons Attribution 4.0
 
 ## etc
 
-<!-- TODO: Replace project name filler everywhere with real name -->
-
-<!-- # BCN-2026SSTeamMagenta-Filler
+<!-- # BCN-2026SSTeamMagenta-Sensiq
 
 
 
@@ -34,14 +32,14 @@ Already a pro? Just edit this README.md and make it your own. Want to make it ea
 
 ```
 cd existing_repo
-git remote add origin https://git.oth-aw.de/bcssnmagenta26/bcn-2026ssteammagenta-filler.git
+git remote add origin https://git.oth-aw.de/bcssnmagenta26/bcn-2026ssteammagenta-sensiq.git
 git branch -M main
 git push -uf origin main
 ```
 
 ## Integrate with your tools
 
-* [Set up project integrations](https://git.oth-aw.de/bcssnmagenta26/bcn-2026ssteammagenta-filler/-/settings/integrations)
+* [Set up project integrations](https://git.oth-aw.de/bcssnmagenta26/bcn-2026ssteammagenta-sensiq/-/settings/integrations)
 
 ## Collaborate with your team
 
