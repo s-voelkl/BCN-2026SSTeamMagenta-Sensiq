@@ -341,6 +341,17 @@ Each message contains device metadata (ID, location, uptime) and a nested struct
 Messages are published to AWS IoT Core with the MQTT protocol and secured using TLS~\cite{aws}.
 Certificate-based authentication ensures device integrity and prevents unauthorized publishing to the cloud backend.
 
+\subsection{Technology Stack}\label{sec:technology_stack}
+
+The following programming languages and technologies are utilized across the different components of the system:
+
+\begin{itemize}
+    \item C++: ESP32 firmware for sensor data acquisition and MQTT communication.
+    \item Python: Implementation of AWS Lambda functions for data processing and validation.
+    \item TypeScript: Infrastructure definition and backend logic within AWS services.
+    \item React: Web-based frontend for visualization and interactive data analysis.
+\end{itemize}
+
 \subsection{Cloud Processing Architecture}\label{sec:cloud_processing}
 
 Incoming MQTT messages are processed within AWS using a serverless, event-driven architecture. 
@@ -354,20 +365,19 @@ such as high temperature.
 Future extensions may include the development of a React-based frontend dashboard for visualizing historical trends for specific time periods, 
 enabling time-based filtering and comparison of environmental conditions.
 
-\subsection{Technology Stack}\label{sec:technology_stack}
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{architecture.pdf}
+  \caption{Cloud Processing Architecture}
+  \label{fig:cloud-architecture}
+\end{figure*}
 
-The following programming languages and technologies are utilized across the different components of the system:
+\subsection{Testability}\label{sec:testability}
 
-\begin{itemize}
-    \item C++: ESP32 firmware for sensor data acquisition and MQTT communication.
-    \item Python: Implementation of AWS Lambda functions for data processing and validation.
-    \item TypeScript: Infrastructure definition and backend logic within AWS services.
-    \item React: Web-based frontend for visualization and interactive data analysis.
-\end{itemize}
-
+The system's testability varies across services. Lambda functions are fully unit-testable via SAM CLI and support integration testing using DynamoDB Local or mocked dependencies. DynamoDB and S3 can be tested locally with DynamoDB Local and LocalStack respectively, while API Gateway supports end-to-end testing through SAM's local API emulation. Athena and Glue lack free local equivalents, requiring LocalStack Pro for integration tests. AWS IoT Core cannot be tested locally at all, with Device Advisor being the only available validation tool. SNS supports partial local mocking but can be fully integration-tested via LocalStack.
 \subsection{Cost Estimation}\label{sec:cost_estimation}
 
-The following calculation is made to estimate the average operating cost for one device per month. The assumptions of 3 unique users, 8 hours per day, 22 days per month are made.
+The following calculation is made to estimate the average operating cost per month for one device. The assumptions of 3 unique users, 8 hours per day, 22 days per month are made. The difference between Free Tier and Post Free Tier are marginal.
 
 % Define a custom centered X column type
 % Add this to your preamble
@@ -375,7 +385,7 @@ The following calculation is made to estimate the average operating cost for one
 
 \newcolumntype{Y}{>{\centering\arraybackslash}X}
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{AWS Service Monthly Cost Estimate}
 \label{tab:aws-costs}
@@ -396,6 +406,7 @@ The following calculation is made to estimate the average operating cost for one
     \textbf{Total} & & \textbf{\(\sim\)\$0.46} & \textbf{\(\sim\)\$0.73} \\ \hline
     \end{tabularx}
 \end{table}
+
 
 \section{Conclusion and Future Work}\label{sec:conclusion}
 % Zusammenfassung der wichtigsten Erkenntnisse, Ausblick auf die nächsten Schritte
