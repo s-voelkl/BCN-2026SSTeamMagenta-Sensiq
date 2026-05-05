@@ -15,19 +15,21 @@
 % \usepackage{array} % Tabellen mit \begin{tabular}
 \usepackage{multirow} % Mehrere Zeilen in eine zusammenfassen. für Spalten einfach \multicolumn benutzen
 % \usepackage{booktabs} % Hübschere Tabellen mit \top/mid/cmid/bottomrule
-\usepackage{minted} % Neuere Bibliothek für Code-Blöcke, mit \begin{listing oder minted}
+% \usepackage{minted} % Neuere Bibliothek für Code-Blöcke, mit \begin{listing oder minted}
 \usepackage{amsmath} % American Mathematical Society für mathematische Formeln, z.B. mit \begin{equation}
 \usepackage{amssymb}
 \usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{float}
 
 \addbibresource{references.bib}
 % \addbibresource{xampl.bib} % (xampl file provided by the BibTEX base files)
 % ======================================================================
 % EDIT THESE:
-\cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0000-0002-1175-2668}}
+% \cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0000-0002-1175-2668}}
 \cstechrepAuthorListBib{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu} %TODO: correct format?
 % Capitalization: https://capitalizemytitle.com/style/Chicago/
-\cstechrepTitleTex{Minimal Working Example of a cs-techrep Paper} %TODO: replace with actual title
+\cstechrepTitleTex{Sensiq: A MCU-Based IoT Solution for Real-Time Environmental Monitoring} %TODO: replace with actual title
  % IF you need manual linebreaks in the title, then clone the title without linebreaks for BibTeX:
 \cstechrepTitleBib{{\cstechrepTitleTex}}
 \cstechrepDepartment{Department of Electrical Engineering, Media, and Computer Science}
@@ -79,8 +81,78 @@ andere Arbeiten oder Technologien (die als Inspiration dienten), Screenshots
 \section{Requirements}
 Agile User Stories (+Akzeptanzkriterien als Definition of Done) oder klassische Use-Cases als Anforderungen an die Anwendung.
 Beschreibung von Eingabe und Ausgabe des Systems und dessen Teilfunktionen; benötigte Ressourcen (z.B. Bestandsdaten), 
+
 \section{Technical Concept}
-knapp technische Schlüsselmerkmale der Anwendung, rein deskriptiv
+
+This section describes the overall technical architecture of the proposed system, including the embedded hardware, communication protocols, cloud infrastructure, data model, and planned extensions. 
+The focus lies on the interaction of IoT devices with a scalable, serverless cloud backend for real-time and historical data processing.
+
+\subsection{Data Acquisition and Transmission}
+
+The local ESP32 microcontroller is equipped with multiple sensors for monitoring environmental conditions. 
+
+The DHT11 sensor measures temperature and humidity with a decent accuracy for indoor applications.
+This is complemented by the KY-028 thermistor for high precision temperature readings.
+The KY-026 flame sensor enables the detection of uncontrolled fire sources by measuring the intensity of infrared light emitted by flames~\cite{ky026flame}.
+
+An additional gas sensor (e.g., MQ135) must be determined based on the specific gases of interest, such as volatile organic compounds (VOCs), carbon monoxide, or others relevant to the use case.
+
+The sensor data is read periodically, pre-processed on the ESP32, and encapsulated into a structured data object for transmission, as illustrated in~\cref{lst:data_model_json}.
+Each message contains device metadata (ID, location, uptime) and a nested structure for sensor measurements for further extensibility.
+
+\begin{lstlisting}[language=json, float, caption={Example of the JSON data model for sensor value encapsulation on the ESP32.}, label={lst:data_model_json}]
+{
+  "deviceId": "esp32-lab-01", 
+  "runningSince": "10000",
+  "location": "Lab A",
+  "measurements": {
+    "dht11_temperature": {
+      "value": 20,
+      "unit": "degree C"
+    },
+    "dht11_humidity": {
+      "value": 50,
+      "unit": "%"
+    },
+    "ky026_flame": {
+      "value": 4000,
+      "unit": "analog"
+    },
+    "ky028_termistor": {
+      "value": 22,
+      "unit": "degree C"
+    }
+  }
+}
+\end{lstlisting}
+
+Messages are published to AWS IoT Core with the MQTT protocol and secured using TLS~\cite{aws}.
+Certificate-based authentication ensures device integrity and prevents unauthorized publishing to the cloud backend.
+
+\subsection{Cloud Processing Architecture}
+
+Incoming MQTT messages are processed within AWS using a serverless, event-driven architecture. 
+The cloud backend is logically divided into two branches for data handling:
+
+Live data is made available through a RESTful API endpoint \texttt{GET /live}, optimized for low-latency access to the most recent sensor values~\cite{restful2000}.
+Historical data is persisted for long-term storage and analysis, accessible via \texttt{GET /history} for in-depth time-series evaluation and trend analysis.
+
+Additionally, an alerting mechanism is planned to be implemented using AWS SNS to notify users via email when certain thresholds are exceeded, 
+such as high temperature.
+Future extensions may include the development of a React-based frontend dashboard for visualizing historical trends for specific time periods, 
+enabling time-based filtering and comparison of environmental conditions.
+
+\subsection{Technology Stack}
+
+The following programming languages and technologies are utilized across the different components of the system:
+
+\begin{itemize}%[itemsep=0.5em]
+    \item C++: ESP32 firmware for sensor data acquisition and MQTT communication.
+    \item Python: Implementation of AWS Lambda functions for data processing and validation.
+    \item TypeScript: Infrastructure definition and backend logic within AWS services.
+    \item React: Web-based frontend for visualization and interactive data analysis.
+\end{itemize}
+
 
 % ======== References =========
 \sloppy
