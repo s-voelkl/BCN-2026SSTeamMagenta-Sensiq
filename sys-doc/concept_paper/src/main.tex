@@ -13,77 +13,258 @@
 % \usepackage[capitalize, nameinlink, american]{cleveref} % Referenzen besser machen. z.B. mit \cref{}
 % \usepackage[backend=biber, style=ieee, alldates=iso]{biblatex} % Zitieren
 % \usepackage{array} % Tabellen mit \begin{tabular}
-\usepackage{multirow} % Mehrere Zeilen in eine zusammenfassen. für Spalten einfach \multicolumn benutzen
-% \usepackage{booktabs} % Hübschere Tabellen mit \top/mid/cmid/bottomrule
-\usepackage{minted} % Neuere Bibliothek für Code-Blöcke, mit \begin{listing oder minted}
-\usepackage{amsmath} % American Mathematical Society für mathematische Formeln, z.B. mit \begin{equation}
-\usepackage{amssymb}
-\usepackage{amsfonts}
-
-\addbibresource{references.bib}
-% \addbibresource{xampl.bib} % (xampl file provided by the BibTEX base files)
-% ======================================================================
-% EDIT THESE:
-\cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0000-0002-1175-2668}}
-\cstechrepAuthorListBib{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu} %TODO: correct format?
-% Capitalization: https://capitalizemytitle.com/style/Chicago/
-\cstechrepTitleTex{Minimal Working Example of a cs-techrep Paper} %TODO: replace with actual title
- % IF you need manual linebreaks in the title, then clone the title without linebreaks for BibTeX:
-\cstechrepTitleBib{{\cstechrepTitleTex}}
-\cstechrepDepartment{Department of Electrical Engineering, Media, and Computer Science}
-\cstechrepInstitution{Ostbayerische Technische Hochschule Amberg\-/Weiden}
-\cstechrepAddress{Amberg, Germany}
-\cstechrepSeries{Technical Reports}
-\cstechrepYear{2026}
-\cstechrepMonth{7}
-\cstechrepNumber{CL-\cstechrepYear{}-42}
-\cstechrepLang{english}  % en-US
-% ======================================================================
-% DO NOT DELETE AND DO NOT MODIFY THIS:
-\filecontentsForceExpansion|[] % force command expansion inside a filecontents* environment
-\begin{filecontents*}[overwrite]{selfref.bib}
-    @TECHREPORT{selfref,
-        author = {|cstechrepAuthorListBib},
-        title  = {\cstechrepTitleBib},
-        institution = {\cstechrepInstitution, \cstechrepDepartment},
-        series = {\cstechrepSeries},
-        number = {\cstechrepNumber},
-        year   = {|cstechrepYear},
-        month  = {|cstechrepMonth},
-        langid  = {|cstechrepLang},
-    }
-\end{filecontents*}
-
-\begin{document}
-\selectlanguage{\cstechrepLang}
-\maketitle
-\begin{abstract}
-
-    Modularbeit in Big Data, Cloud and NoSQL. Das ist der englische Abstract (Zusammenfassung). % TODO: replace with actual abstract
-    Nicht benennen: Modularbeit, Personen, Studiengang, ...
-    Sondern als Elevator Pitch
-
-\end{abstract}
-\begin{IEEEkeywords}
-Cloud, Big Data, NoSQL, Modularbeit % TODO: replace with actual keywords
-\end{IEEEkeywords}
-
-\section{Introduction}
-Here we go. %TODO: replace with actual introduction
-\cite{robocuprescue2025}
-
-Motivation, zusammenfassender Überblick des Anwendungskonzeptes, fachliches Alleinstellungsmerkmal (USP), Benennung von technischen Schlüssel-Bausteinen, Fachvokabular einführen.
-
-\section{Related Work}
-andere Arbeiten oder Technologien (die als Inspiration dienten), Screenshots
-\section{Requirements}
-Agile User Stories (+Akzeptanzkriterien als Definition of Done) oder klassische Use-Cases als Anforderungen an die Anwendung.
-Beschreibung von Eingabe und Ausgabe des Systems und dessen Teilfunktionen; benötigte Ressourcen (z.B. Bestandsdaten), 
-\section{Technical Concept}
-knapp technische Schlüsselmerkmale der Anwendung, rein deskriptiv
-
-% ======== References =========
-\sloppy
-\printbibliography[notcategory=selfref]
-
-\end{document}
+	\usepackage{multirow} % Mehrere Zeilen in eine zusammenfassen. für Spalten einfach \multicolumn benutzen
+	% \usepackage{booktabs} % Hübschere Tabellen mit \top/mid/cmid/bottomrule
+	\usepackage{minted} % Neuere Bibliothek für Code-Blöcke, mit \begin{listing oder minted}
+		\usepackage{amsmath} % American Mathematical Society für mathematische Formeln, z.B. mit \begin{equation}
+			\usepackage{amssymb}
+			\usepackage{amsfonts}
+			
+			\addbibresource{references.bib}
+			% \addbibresource{xampl.bib} % (xampl file provided by the BibTEX base files)
+			% ======================================================================
+			% EDIT THESE:
+			\cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0000-0002-1175-2668}}
+			\cstechrepAuthorListBib{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu} %TODO: correct format?
+			% Capitalization: https://capitalizemytitle.com/style/Chicago/
+			\cstechrepTitleTex{Minimal Working Example of a cs-techrep Paper} %TODO: replace with actual title
+			% IF you need manual linebreaks in the title, then clone the title without linebreaks for BibTeX:
+			\cstechrepTitleBib{{\cstechrepTitleTex}}
+			\cstechrepDepartment{Department of Electrical Engineering, Media, and Computer Science}
+			\cstechrepInstitution{Ostbayerische Technische Hochschule Amberg\-/Weiden}
+			\cstechrepAddress{Amberg, Germany}
+			\cstechrepSeries{Technical Reports}
+			\cstechrepYear{2026}
+			\cstechrepMonth{7}
+			\cstechrepNumber{CL-\cstechrepYear{}-42}
+			\cstechrepLang{english}  % en-US
+			% ======================================================================
+			% DO NOT DELETE AND DO NOT MODIFY THIS:
+			\filecontentsForceExpansion|[] % force command expansion inside a filecontents* environment
+			\begin{filecontents*}[overwrite]{selfref.bib}
+				@TECHREPORT{selfref,
+					author = {|cstechrepAuthorListBib},
+					title  = {\cstechrepTitleBib},
+					institution = {\cstechrepInstitution, \cstechrepDepartment},
+					series = {\cstechrepSeries},
+					number = {\cstechrepNumber},
+					year   = {|cstechrepYear},
+					month  = {|cstechrepMonth},
+					langid  = {|cstechrepLang},
+				}
+			\end{filecontents*}
+			
+			\begin{document}
+				\selectlanguage{\cstechrepLang}
+				\maketitle
+				\begin{abstract}
+					
+					Modularbeit in Big Data, Cloud and NoSQL. Das ist der englische Abstract (Zusammenfassung). % TODO: replace with actual abstract
+					Nicht benennen: Modularbeit, Personen, Studiengang, ...
+					Sondern als Elevator Pitch
+					
+				\end{abstract}
+				\begin{IEEEkeywords}
+					Cloud, Big Data, NoSQL, Modularbeit % TODO: replace with actual keywords
+				\end{IEEEkeywords}
+				
+				\section{Introduction}
+				Here we go. %TODO: replace with actual introduction
+				\cite{robocuprescue2025}
+				
+				Motivation, zusammenfassender Überblick des Anwendungskonzeptes, fachliches Alleinstellungsmerkmal (USP), Benennung von technischen Schlüssel-Bausteinen, Fachvokabular einführen.
+				
+				\section{Related Work}
+				andere Arbeiten oder Technologien (die als Inspiration dienten), Screenshots
+				\section{Requirements}
+				
+				% In die Präambel (ganz oben ins Dokument):
+				% \usepackage{enumitem}
+				% \usepackage{siunitx}
+				
+				% -----------------------------------------------------------------------
+				
+				\subsection*{Project Personas}
+				
+				To ensure the system meets the diverse needs of all stakeholders, the requirements are guided by the following personas. Each persona has a specific role, defined goals, and distinct interests in the system:
+				
+				\begin{description}[font=\bfseries, leftmargin=1em]
+					\item[Chemist Christian] 
+					Focuses on exact environmental conditions. His primary goal is to monitor precise laboratory temperatures to accurately plan experiments and evaluate temperature-dependent reaction rates without interference from climate fluctuations.
+					
+					\item[Occupational Safety Officer Olivia] 
+					Prioritizes employee well-being. She requires immediate, clear indicators of air quality safety to proactively enforce protective measures and prevent workplace health hazards.
+					
+					\item[Facility Manager Martin] 
+					Responsible for building operations and rapid incident response. He needs instant, unmissable alerts regarding critical sensor thresholds to take immediate corrective actions before physical risks escalate.
+					
+					\item[Project Manager Pia] 
+					Looks at the big picture and long-term optimization. She aims to analyze historical data trends to identify recurring patterns, correlate them with facility operations, and implement targeted ventilation strategies.
+					
+					
+				\end{description}
+				
+				\subsection[US-01: Real-time Temperature Monitoring]{\bfseries US-01: Real-time Temperature Monitoring}
+				
+				\textit{As Chemist Christian, I want to see the exact current temperature in the laboratory, so that I can accurately plan my experiments and evaluate temperature-dependent reaction rates.}
+				
+				\smallskip
+				\noindent\textbf{Acceptance Criteria:}
+				\begin{description}[font=\bfseries]
+					\item[AC-01] The dashboard displays the current temperature precisely in \textbf{°C}. Input: latest DB temperature readings. Output: exact numerical temperature value.
+					\item[AC-02] The temperature value updates automatically when a new reading arrives — no manual reload required. Test: write new temperature values to DB; display must update within 10\,s.
+					\item[AC-03] Displayed temperature values are at most 30\,s old. Test: compare value timestamps with system time; difference $\le$ 30\,s.
+					\item[AC-04] If no current temperature data is available (gap $>$ 30\,s), a clearly readable notice \emph{``No current temperature data''} is shown instead of an outdated value.
+				\end{description}
+				
+				\subsection[US-02: Workplace Air Quality Status]{\bfseries US-02: Workplace Air Quality Status}
+				
+				\textit{As Occupational Safety Officer Oliva, I want to see at a glance whether the air quality in the workspace is currently safe or critical, so that I can immediately initiate protective measures for the employees if necessary.}
+				
+				\smallskip
+				\noindent\textbf{Acceptance Criteria:}
+				\begin{description}[font=\bfseries]
+					\item[AC-01] The dashboard shows the air quality as a colour-coded indicator based on safety thresholds: \textbf{Green}~(safe), \textbf{Yellow}~(elevated), \textbf{Red}~(critical). Input: latest DB air quality readings. Output: correct status colour.
+					\item[AC-02] The status colour updates automatically when a new reading arrives — no manual reload required. Test: write new air quality values to DB; display must update within 5\,s.
+					\item[AC-03] The displayed status is based on data that is at most 30\,s old. Test: compare value timestamps with system time; difference $\le$ 30\,s.
+					\item[AC-04] If no current air quality data is available (gap $>$ 30\,s), a clearly readable notice \emph{``No current air quality data''} is shown instead of a status colour.
+				\end{description}
+				
+				
+				% -----------------------------------------------------------------------
+				\subsection[US-03: Critical Alert]{\bfseries US-03: Critical Alert}
+				
+				\textit{As a facility manager Martin, I want an immediate, unmissable notification the second a sensor reading hits a critical limit, empowering me to take instant corrective action before the situation escalates into a physical health risk.} 
+				
+				\smallskip
+				\noindent\textbf{Acceptance Criteria:}
+				\begin{description}[font=\bfseries]
+					\item[AC-01] An email notification is sent automatically within 10\,s of a threshold exceedance.
+					\item[AC-02] The notification contains: measured value (incl.\ unit), measurement timestamp, and alert type (e.g.\ \emph{``CO critical''}).
+					\item[AC-03] Consecutive exceedances of the same type within 5\,min do not trigger a further email (debounce).
+					\item[AC-04] The notification is delivered even if the frontend is not open at trigger time.
+				\end{description}
+				
+				
+				% -----------------------------------------------------------------------
+				\subsection[US-04: 24-Hour History Chart]{\bfseries US-03: 24-Hour History Chart}
+				
+				\textit{As Project Manager Pia, I want to analyze the sensor data from the past 24 hours in a clear historical chart, so that I can identify recurring patterns of poor air quality, correlate them with specific facility operations, and implement targeted ventilation strategies.}
+				
+				\smallskip
+				\noindent\textbf{Acceptance Criteria:}
+				\begin{description}[font=\bfseries]
+					\item[AC-01] Dashboard displays a line chart with readings from the last 24\,hours.
+					\item[AC-02] Chart is fully interactive within 3\,s of page load.
+					\item[AC-03] Periods without data are shown as visible line breaks — no silent interpolation.
+					\item[AC-04] Chart updates automatically when new readings arrive, without a page reload.
+				\end{description}
+				
+				
+				% -----------------------------------------------------------------------
+				\subsection[US-05: Custom History View]{\bfseries US-04: Custom History View}
+				
+				\textit{As Data Scientist Daniela, I want to extract historical sensor readings with a customizable time range and sampling resolution, so that I can generate precise, high-granularity datasets to train our predictive air-quality models.}
+				
+				\smallskip
+				\noindent\textbf{Acceptance Criteria:}
+				\begin{description}[font=\bfseries]
+					\item[AC-01] Dashboard provides date pickers for start/end and a resolution selector (hour/day).
+					\item[AC-02] A query for 30\,days at daily resolution returns results in under 5\,s.
+					\item[AC-03] If an end date before the start date is entered, a clear error message is shown and no query is executed.
+					\item[AC-04] Periods without data appear as an explicit \emph{``No data''} row in the table and as a line break in the chart.
+				\end{description}
+				
+				
+				% -----------------------------------------------------------------------
+				\subsection[US-06: Sensor Status]{\bfseries US-05: Sensor Status}
+				
+				\textit{As IT Administrator Ian, I want to instantly verify the connection status and the last heartbeat timestamp of each sensor, so that I can proactively detect offline devices and troubleshoot network dropouts before data gaps occur.}
+				
+				\smallskip
+				\noindent\textbf{Acceptance Criteria:}
+				\begin{description}[font=\bfseries]
+					\item[AC-01] Sensor status (\emph{``Active''}/\emph{``Inactive''}) is prominently visible. Status switches to \emph{``Inactive''} when the last data point is more than 2\,min ago.
+					\item[AC-02] Date and time of the last received reading are displayed next to the status (format: \texttt{DD.MM.YYYY HH:MM:SS}).
+					\item[AC-03] Status indicator updates automatically — no manual reload required.
+					\item[AC-04] If the database connection is temporarily unavailable, the notice \emph{``Connection interrupted''} is shown instead of a false \emph{``Active''} status.
+				\end{description}
+				
+				% -----------------------------------------------------------------------
+				\subsection[Definition of Done]{\bfseries Definition of Done}
+				% -----------------------------------------------------------------------
+				
+				A user story is considered complete only when, in addition to its specific acceptance criteria, \emph{all} of the following quality standards are met:
+				
+				\begin{itemize}[itemsep=2pt, topsep=4pt]
+					\item \textbf{Code Review:} Reviewed and approved by at least one other developer (four-eyes principle).
+					\item \textbf{Tests:} Unit tests written and passing; coverage $\ge$ 40\,\%.
+					\item \textbf{Documentation:} Technical docs and API interfaces updated where applicable.
+					\item \textbf{Deployment:} Feature successfully deployed.
+					\item \textbf{Functional Test:} Feature manually tested in staging without issues.
+				\end{itemize}
+				
+				
+				% -----------------------------------------------------------------------
+				\subsection[Prioritisation (MoSCoW)]{\bfseries Prioritisation (MoSCoW)}
+				% -----------------------------------------------------------------------
+				
+				\begin{center}
+					\begin{tabular}{@{}ll@{}}
+						\toprule
+						\textbf{Category}    & \textbf{User Stories} \\
+						\midrule
+						\textbf{M}ust Have   & US-01 (Current Status Display), US-03 (Critical Alert), US-02 Workplace Air Quality \\[3pt]
+						\textbf{S}hould Have & US-06 (Sensor Status) \\[3pt]
+						\textbf{C}ould Have  & US-04 (24-Hour History Chart) \\[3pt]
+						\textbf{W}on't Have  & US-05 (Custom History View — \textit{deferred to Release~2.0}) \\
+						\bottomrule
+					\end{tabular}
+				\end{center}
+				
+				
+				\section{Minimum Viable Product (MVP): IoT Data Ingestion and Processing via AWS}
+				
+				\subsection{Objective}
+				The MVP implements a server-side IoT pipeline on Amazon Web Services (AWS). It focuses on ingesting simulated sensor data via MQTT, processing and storing it within the AWS ecosystem, and providing access through a Web API. This serves as the technical foundation for the system.
+				
+				\subsection{System Architecture}
+				
+				\textbf{Data Generation \& Transmission} \\
+				Instead of physical hardware, a Python script simulates realistic sensor data. Messages are transmitted via the MQTT protocol to \textbf{AWS IoT Core}, ensuring a lightweight and software-defined testing environment.
+				
+				\textbf{Processing Pipeline} \\
+				Incoming data is handled by an \textbf{AWS IoT Rule} which triggers a \textbf{Lambda function}. The function validates the payload and persists it in:
+				\begin{itemize}
+					\item \textbf{Amazon DynamoDB:} Primary storage for structured time-series data.
+					\item \textbf{Amazon S3:} Long-term archival of raw data for cost-efficiency.
+				\end{itemize}
+				
+				\textbf{Web API Access} \\
+				A REST API, built with \textbf{AWS API Gateway} and \textbf{Lambda}, provides two core endpoints:
+				\begin{itemize}
+					\item \texttt{GET /live} – Returns the most recent measurement.
+					\item \texttt{GET /history} – Retrieves chronological data from DynamoDB.
+				\end{itemize}
+				
+				\subsection{Out of Scope}
+				To focus on core infrastructure, the following elements are excluded from this project phase:
+				\begin{itemize}
+					\item Graphical Frontend/Dashboard for data visualization.
+					\item Physical ESP32 hardware and real sensors.
+					\item Automated user notifications (e.g., Push or Email alerts).
+				\end{itemize}
+				% -----------------------------------------------------------------------
+				\section{Technical Concept}
+				knapp technische Schlüsselmerkmale der Anwendung, rein deskriptiv
+				
+				
+				
+				\section{Technical Concept}
+				knapp technische Schlüsselmerkmale der Anwendung, rein deskriptiv
+				
+				% ======== References =========
+				\sloppy
+				\printbibliography[notcategory=selfref]
+				
+			\end{document}
