@@ -24,6 +24,8 @@
 \usepackage{float}
 \usepackage{enumitem}
 \usepackage{siunitx}
+\usepackage{array}
+\usepackage{tabularx}
 
 \addbibresource{references.bib}
 % \addbibresource{xampl.bib} % (xampl file provided by the BibTEX base files)
@@ -91,6 +93,17 @@
 The core requirements are defined in~\cref{sec:requirements} with a focus on user-centered design, including detailed user stories and acceptance criteria for the minimum viable product (MVP).
 The technical concept and architecture of the system are described in~\cref{sec:technical_concept}.
 ~\cref{sec:conclusion} summarizes the key findings and outlines future work and next steps for the project.
+
+\subsection{Motivation}\label{sec:motivation}
+In modern laboratory and production environments, maintaining stable ambient conditions is vital for experimental validity and product quality. Conventional monitoring systems often lack real-time accessibility, scalability, or automated alerting capabilities.
+This project addresses these gaps by integrating cost-effective ESP32 edge hardware with a robust AWS cloud architecture.
+By transitioning from isolated local measurements to a centralized, serverless IoT platform, we enable seamless data persistence,
+interactive visualization, and immediate incident response. The objective is to provide lab managers and technicians with a scalable,
+high-availability tool that ensures operational safety and data-driven quality assurance.
+
+\subsection{Unique Selling Point}\label{sec:unique_selling_point}
+% Alleinstellungsmerkmal
+% TODO für Tien 
 
 \section{Related Work}\label{sec:related_work}
 % andere Arbeiten oder Technologien (die als Inspiration dienten), Screenshots
@@ -351,6 +364,38 @@ The following programming languages and technologies are utilized across the dif
     \item TypeScript: Infrastructure definition and backend logic within AWS services.
     \item React: Web-based frontend for visualization and interactive data analysis.
 \end{itemize}
+
+\subsection{Cost Estimation}\label{sec:cost_estimation}
+
+The following calculation is made to estimate the average operating cost for one device per month. The assumptions of 3 unique users, 8 hours per day, 22 days per month are made.
+
+% Define a custom centered X column type
+% Add this to your preamble
+% \usepackage[hidelinks]{hyperref} 
+
+\newcolumntype{Y}{>{\centering\arraybackslash}X}
+
+\begin{table}[h]
+\centering
+\caption{AWS Service Monthly Cost Estimate}
+\label{tab:aws-costs}
+\renewcommand{\arraystretch}{1.5} % Adds vertical padding for a cleaner look
+    \begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}m{2.5cm}|>{\centering\arraybackslash}X|>{\centering\arraybackslash}m{1.2cm}|>{\centering\arraybackslash}m{1.2cm}|}
+    \hline
+    \textbf{Service Details} & \textbf{Usage/Quantity} & \textbf{Free Tier} & \textbf{Post Free Tier} \\ \hline
+    IoT Core \cite{awsIotCore} & 518k msgs, 268k billed & \(\sim\)\$0.27 & \(\sim\)\$0.27 \\ \hline
+    Lambda – handleValidation \cite{aws-lambda} & 518k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.06 \\ \hline
+    Lambda – handleLiveData \cite{aws-lambda} & 228k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.04 \\ \hline
+    Lambda – handleHistoryData \cite{aws-lambda} & 660 inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.00 \\ \hline
+    DynamoDB \cite{aws-dynamodb} & 518k WCU, 228k RCU, storage & \(\sim\)\$0.01 & \(\sim\)\$0.08 \\ \hline
+    S3 (Parquet) \cite{aws-s3} & \(\sim\)0.5 GB stored & \(\sim\)\$0.01 & \(\sim\)\$0.02 \\ \hline
+    Athena \cite{aws-athena} & 660 queries \(\times\) 50 MB = 33 GB scanned & \(\sim\)\$0.16 & \(\sim\)\$0.16 \\ \hline
+    API Gateway \cite{aws-api-gateway} & 229k requests & \$0.00 & \(\sim\)\$0.08 \\ \hline
+    SNS \cite{aws-sns} & Minimal alert volume & \$0.00 & \(\sim\)\$0.01 \\ \hline
+    Glue Crawler \cite{aws-glue} & One-time run & \(\sim\)\$0.00 & \(\sim\)\$0.00 \\ \hline
+    \textbf{Total} & & \textbf{\(\sim\)\$0.46} & \textbf{\(\sim\)\$0.73} \\ \hline
+    \end{tabularx}
+\end{table}
 
 \section{Conclusion and Future Work}\label{sec:conclusion}
 % Zusammenfassung der wichtigsten Erkenntnisse, Ausblick auf die nächsten Schritte
