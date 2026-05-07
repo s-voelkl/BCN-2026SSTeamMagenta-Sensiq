@@ -90,12 +90,14 @@
 
 % Section Overview
 ~\cref{sec:related_work} gives an overview of related work and technologies that inspired and influenced the design of our system.
-The core requirements are defined in~\cref{sec:requirements} with a focus on user-centered design, including detailed user stories and acceptance criteria for the minimum viable product (MVP).
+The core requirements are defined in~\cref{sec:requirements} with a focus on user-centered design, including detailed user stories and
+ acceptance criteria for the minimum viable product (MVP).
 The technical concept and architecture of the system are described in~\cref{sec:technical_concept}.
 ~\cref{sec:conclusion} summarizes the key findings and outlines future work and next steps for the project.
 
 \subsection{Motivation}\label{sec:motivation}
-In modern laboratory and production environments, maintaining stable ambient conditions is vital for experimental validity and product quality. Conventional monitoring systems often lack real-time accessibility, scalability, or automated alerting capabilities.
+In modern laboratory and production environments, maintaining stable ambient conditions is vital for experimental validity and product 
+quality. Conventional monitoring systems often lack real-time accessibility, scalability, or automated alerting capabilities.
 This project addresses these gaps by integrating cost-effective ESP32 edge hardware with a robust AWS cloud architecture.
 By transitioning from isolated local measurements to a centralized, serverless IoT platform, we enable seamless data persistence,
 interactive visualization, and immediate incident response. The objective is to provide lab managers and technicians with a scalable,
@@ -110,24 +112,30 @@ high-availability tool that ensures operational safety and data-driven quality a
 
 \section{Requirements}\label{sec:requirements}
 
-The requirements for the proposed system are defined in the form of persona-based user stories including acceptance criteria and prioritization for the minimum viable product (MVP).
+The requirements for the proposed system are defined in the form of persona-based user stories including acceptance criteria and 
+prioritization for the minimum viable product (MVP).
 
 % Agile User Stories (+Akzeptanzkriterien als Definition of Done) oder klassische Use-Cases als Anforderungen an die Anwendung.
 % Beschreibung von Eingabe und Ausgabe des Systems und dessen Teilfunktionen; benötigte Ressourcen (z.B. Bestandsdaten), 
 
 \subsection{Project Personas}\label{sec:project_personas}
 				
-To ensure the system meets the diverse needs of all stakeholders, the requirements are guided by the following personas. Each persona has a specific role, defined goals, and distinct interests in the system:
+To ensure the system meets the diverse needs of all stakeholders, the requirements are guided by the following personas. 
+Each persona has a specific role, defined goals, and distinct interests in the system:
 
 \begin{description}
     \item[Chemist Christian] 
-    Focuses on exact environmental conditions. His primary goal is to monitor precise laboratory temperatures to accurately run experiments and evaluate environment-dependent reactions.
+    Focuses on exact environmental conditions. His primary goal is to monitor precise laboratory temperatures to accurately 
+    run experiments and evaluate environment-dependent reactions.
     \item[Occupational Safety Officer Olivia] 
-    Prioritizes employee well-being. She requires immediate, clear indicators of air quality safety to proactively enforce protective measures and prevent workplace health hazards.
+    Prioritizes employee well-being. She requires immediate, clear indicators of air quality safety to proactively enforce 
+    protective measures and prevent workplace health hazards.
     \item[Facility Manager Martin] 
-    Responsible for building operations and rapid incident response. He needs instant, unmissable alerts regarding critical sensor thresholds to take immediate corrective actions before physical risks escalate.
+    Responsible for building operations and rapid incident response. He needs instant, unmissable alerts regarding critical 
+    sensor thresholds to take immediate corrective actions before physical risks escalate.
     \item[Project Manager Pia] 
-    Looks at the big picture and long-term optimization. She aims to analyze historical data trends to identify recurring patterns, correlate them with facility operations, and implement targeted strategies for improving environmental conditions.
+    Looks at the big picture and long-term optimization. She aims to analyze historical data trends to identify recurring 
+    patterns, correlate them with facility operations, and implement targeted strategies for improving environmental conditions.
 \end{description}
 
 
@@ -374,10 +382,18 @@ enabling time-based filtering and comparison of environmental conditions.
 
 \subsection{Testability}\label{sec:testability}
 
-The system's testability varies across services. Lambda functions are fully unit-testable via SAM CLI and support integration testing using DynamoDB Local or mocked dependencies. DynamoDB and S3 can be tested locally with DynamoDB Local and LocalStack respectively, while API Gateway supports end-to-end testing through SAM's local API emulation. Athena and Glue lack free local equivalents, requiring LocalStack Pro for integration tests. AWS IoT Core cannot be tested locally at all, with Device Advisor being the only available validation tool. SNS supports partial local mocking but can be fully integration-tested via LocalStack.
+The system's testability varies across services. 
+Lambda functions are fully unit-testable via SAM CLI and support integration testing using DynamoDB Local or mocked dependencies. 
+DynamoDB and S3 can be tested locally with DynamoDB Local and LocalStack respectively, while API Gateway supports end-to-end 
+testing through SAM's local API emulation. Athena and Glue lack free local equivalents, requiring LocalStack Pro for integration 
+tests. AWS IoT Core cannot be tested locally at all, with Device Advisor being the only available validation tool. 
+SNS supports partial local mocking but can be fully integration-tested via LocalStack.
+
 \subsection{Cost Estimation}\label{sec:cost_estimation}
 
-The following calculation is made to estimate the average operating cost per month for one device. The assumptions of 3 unique users, 8 hours per day, 22 days per month are made. The difference between Free Tier and Post Free Tier are marginal.
+The following calculation is made to estimate the average operating cost per month for one device. 
+The assumptions of 3 unique users, 8 hours per day, 22 days per month are made. 
+The difference between Free Tier and Post Free Tier are marginal.
 
 % Define a custom centered X column type
 % Add this to your preamble
@@ -393,16 +409,16 @@ The following calculation is made to estimate the average operating cost per mon
     \begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}m{2.5cm}|>{\centering\arraybackslash}X|>{\centering\arraybackslash}m{1.2cm}|>{\centering\arraybackslash}m{1.2cm}|}
     \hline
     \textbf{Service Details} & \textbf{Usage/Quantity} & \textbf{Free Tier} & \textbf{Post Free Tier} \\ \hline
-    IoT Core \cite{awsIotCore} & 518k msgs, 268k billed & \(\sim\)\$0.27 & \(\sim\)\$0.27 \\ \hline
-    Lambda – handleValidation \cite{aws-lambda} & 518k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.06 \\ \hline
-    Lambda – handleLiveData \cite{aws-lambda} & 228k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.04 \\ \hline
-    Lambda – handleHistoryData \cite{aws-lambda} & 660 inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.00 \\ \hline
-    DynamoDB \cite{aws-dynamodb} & 518k WCU, 228k RCU, storage & \(\sim\)\$0.01 & \(\sim\)\$0.08 \\ \hline
-    S3 (Parquet) \cite{aws-s3} & \(\sim\)0.5 GB stored & \(\sim\)\$0.01 & \(\sim\)\$0.02 \\ \hline
-    Athena \cite{aws-athena} & 660 queries \(\times\) 50 MB = 33 GB scanned & \(\sim\)\$0.16 & \(\sim\)\$0.16 \\ \hline
-    API Gateway \cite{aws-api-gateway} & 229k requests & \$0.00 & \(\sim\)\$0.08 \\ \hline
-    SNS \cite{aws-sns} & Minimal alert volume & \$0.00 & \(\sim\)\$0.01 \\ \hline
-    Glue Crawler \cite{aws-glue} & One-time run & \(\sim\)\$0.00 & \(\sim\)\$0.00 \\ \hline
+    IoT Core~\cite{awsIotCore} & 518k msgs, 268k billed & \(\sim\)\$0.27 & \(\sim\)\$0.27 \\ \hline
+    Lambda – handleValidation~\cite{aws-lambda} & 518k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.06 \\ \hline
+    Lambda – handleLiveData~\cite{aws-lambda} & 228k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.04 \\ \hline
+    Lambda – handleHistoryData~\cite{aws-lambda} & 660 inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.00 \\ \hline
+    DynamoDB~\cite{aws-dynamodb} & 518k WCU, 228k RCU, storage & \(\sim\)\$0.01 & \(\sim\)\$0.08 \\ \hline
+    S3 (Parquet)~\cite{aws-s3} & \(\sim\)0.5 GB stored & \(\sim\)\$0.01 & \(\sim\)\$0.02 \\ \hline
+    Athena~\cite{aws-athena} & 660 queries \(\times\) 50 MB = 33 GB scanned & \(\sim\)\$0.16 & \(\sim\)\$0.16 \\ \hline
+    API Gateway~\cite{aws-api-gateway} & 229k requests & \$0.00 & \(\sim\)\$0.08 \\ \hline
+    SNS~\cite{aws-sns} & Minimal alert volume & \$0.00 & \(\sim\)\$0.01 \\ \hline
+    Glue Crawler~\cite{aws-glue} & One-time run & \(\sim\)\$0.00 & \(\sim\)\$0.00 \\ \hline
     \textbf{Total} & & \textbf{\(\sim\)\$0.46} & \textbf{\(\sim\)\$0.73} \\ \hline
     \end{tabularx}
 \end{table}
