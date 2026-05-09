@@ -15,7 +15,7 @@
 % \usepackage[backend=biber, style=ieee, alldates=iso]{biblatex} % Zitieren
 % \usepackage{array} % Tabellen mit \begin{tabular}
 \usepackage{multirow} % Mehrere Zeilen in eine zusammenfassen. für Spalten einfach \multicolumn benutzen
-% \usepackage{booktabs} % Hübschere Tabellen mit \top/mid/cmid/bottomrule
+\usepackage{booktabs} % Hübschere Tabellen mit \top/mid/cmid/bottomrule
 \usepackage{minted} % Neuere Bibliothek für Code-Blöcke, mit \begin{listing oder minted}
 \usepackage{amsmath} % American Mathematical Society für mathematische Formeln, z.B. mit \begin{equation}
 \usepackage{amssymb}
@@ -65,28 +65,44 @@
 \selectlanguage{\cstechrepLang}
 \maketitle
 \begin{abstract}
-    % TODO: rewrite temporary abstract
-    Sensiq presents a lightweight, MCU-based IoT architecture for environmental monitoring that
-    combines low-cost ESP32 sensor nodes with a serverless cloud backend. Sensor measurements
-    (temperature, humidity, gas and flame indicators) are encoded as JSON and transmitted via
-    MQTT to an AWS-based pipeline for validation, storage and real-time access. The backend
-    exposes low-latency REST endpoints for live and historical queries, enabling automated
-    processing and downstream analytics while keeping device provisioning and security simple.
-    For development and evaluation we provide a configurable data simulator that exercises the
-    full ingestion and retrieval path without requiring physical hardware. The presented MVP
-    demonstrates a secure, extensible foundation for building monitoring and alerting solutions
-    in laboratory and facility environments; future work includes a web dashboard and integrated
-    notification services.
+    Background: Reliable environmental monitoring is essential for laboratory and facility safety,
+    yet many systems trade off scalability, security, or real-time access. Objective: This concept
+    paper proposes Sensiq, an MCU-based IoT architecture intended to enable secure, low-latency
+    live monitoring and scalable historical storage for environmental sensor data.
+
+    Methods: We describe a serverless AWS-based pipeline in which ESP32 edge devices publish
+    JSON-encoded measurements (temperature, humidity, gas, flame) over MQTT/TLS. The architecture
+    specifies Lambda-based validation and persistence to DynamoDB and S3, and REST endpoints for
+    `GET /live` and `GET /history`. We propose a configurable simulator to exercise ingestion and
+    retrieval without physical hardware and to guide future implementation and testing.
+
+    Planned evaluation: This paper outlines an
+    evaluation plan using the simulator to validate end-to-end ingestion, API latency, data
+    integrity, and storage correctness once the MVP is implemented.
+
+    Conclusion: Sensiq defines a lightweight, extensible foundation for laboratory environmental
+    monitoring. Future work focuses on implementing the MVP, performing the described
+    evaluations, adding a web dashboard and notification services for visualization and alerts.
 \end{abstract}
 \begin{IEEEkeywords}
-    IoT, Environmental Monitoring, ESP32, MQTT, Serverless Architecture, AWS
+    IoT, Environmental Monitoring, ESP32, MCU, MQTT, Serverless Architecture, AWS
 \end{IEEEkeywords}
 
 \section{Introduction}\label{sec:introduction}
 % Motivation, zusammenfassender Überblick des Anwendungskonzeptes, fachliches Alleinstellungsmerkmal (USP), Benennung von technischen Schlüssel-Bausteinen, Fachvokabular einführen.
-% Section overview.
 
+\subsection{Motivation}\label{sec:motivation}
 % Use Case: Laborüberwachung für stabile Proben und Produktion. -> Temperatur, Luftfeuchtigkeit, Gase.
+In modern laboratory and production environments, maintaining stable ambient conditions is vital for experimental validity and product 
+quality. Conventional monitoring systems often lack real-time accessibility, scalability, or automated alerting capabilities.
+This project addresses these gaps by integrating cost-effective ESP32 edge hardware with a robust AWS cloud architecture.
+By transitioning from isolated local measurements to a centralized, serverless IoT platform, we enable seamless data persistence,
+interactive visualization, and immediate incident response. The objective is to provide lab managers and technicians with a scalable,
+high-availability tool that ensures operational safety and data-driven quality assurance.
+
+% \subsection{Unique Selling Point}\label{sec:unique_selling_point}
+% Alleinstellungsmerkmal
+% TODO für Tien 
 
 % Section Overview
 ~\cref{sec:related_work} gives an overview of related work and technologies that inspired and influenced the design of our system.
@@ -95,19 +111,23 @@ The core requirements are defined in~\cref{sec:requirements} with a focus on use
 The technical concept and architecture of the system are described in~\cref{sec:technical_concept}.
 ~\cref{sec:conclusion} summarizes the key findings and outlines future work and next steps for the project.
 
-\subsection{Motivation}\label{sec:motivation}
-In modern laboratory and production environments, maintaining stable ambient conditions is vital for experimental validity and product 
-quality. Conventional monitoring systems often lack real-time accessibility, scalability, or automated alerting capabilities.
-This project addresses these gaps by integrating cost-effective ESP32 edge hardware with a robust AWS cloud architecture.
-By transitioning from isolated local measurements to a centralized, serverless IoT platform, we enable seamless data persistence,
-interactive visualization, and immediate incident response. The objective is to provide lab managers and technicians with a scalable,
-high-availability tool that ensures operational safety and data-driven quality assurance.
+% Benennung von technischen Schlüssel-Bausteinen
+\subsection{Key Technical Components}\label{sec:key_technical_components}
 
-\subsection{Unique Selling Point}\label{sec:unique_selling_point}
-% Alleinstellungsmerkmal
-% TODO für Tien 
+The proposed system is built around an ESP32 edge device connected to multiple environmental sensors, such as temperature,
+humidity, gas, and flame sensors. Sensor readings are pre-processed locally and transmitted via encrypted MQTT/TLS to protect
+data confidentiality and ensure device authentication during communication.
 
-\section{Related Work}\label{sec:related_work}
+AWS IoT Core serves as the secure entry point between the devices and the cloud backend. It receives incoming measurements and
+makes them available for further processing of other AWS services. Live sensor values are handled by a dedicated processing
+pipeline and exposed through a REST interface for external access, while historical measurements are stored and made available
+through a separate REST endpoint for time-series retrieval and analysis.
+
+Future extensions may include a frontend dashboard that provides user-oriented visualization and analysis tools for
+monitoring trends and comparing sensor values over time. In addition, AWS SNS can be integrated later to send email notifications
+to users when critical thresholds are exceeded.
+
+% \section{Related Work}\label{sec:related_work}
 % andere Arbeiten oder Technologien (die als Inspiration dienten), Screenshots
 
 \section{Requirements}\label{sec:requirements}
@@ -262,25 +282,27 @@ following quality standards are met:
 \subsection{Prioritisation (MoSCoW)}\label{sec:prioritisation}
 
 The user stories are prioritized using the MoSCoW method, which categorizes requirements into Must Have, 
-Should Have, Could Have, and Won't Have.
+Should Have, Could Have, and Won't Have, as shown in~\Cref{tab:moscow_prioritization}. 
 
-\begin{center}
-    \begin{tabular}{@{}l l@{}}
+\begin{table}[!h]
+    \centering
+    \caption{MoSCoW Prioritization of User Stories}
+    \label{tab:moscow_prioritization}
+    \begin{tabularx}{0.9\linewidth}{>{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}X}
         \toprule
         \textbf{Category} & \textbf{User Stories} \\
         \midrule
         Must Have
-        & \hyperref[sec:us_01]{Current Status Display}, \hyperref[sec:us_03]{Critical Alert}, \\
-        & \hyperref[sec:us_02]{Workplace Air Quality} \\
+        & \hyperref[sec:us_01]{Current Status Display}, \hyperref[sec:us_03]{Critical Alert}, \hyperref[sec:us_02]{Workplace Air Quality} \\
         Should Have
         & \hyperref[sec:us_06]{Sensor Status} \\
         Could Have
         & \hyperref[sec:us_04]{24-Hour History Chart} \\
         Won't Have
-        & US-05 (Custom History View) \\
+        & \hyperref[sec:us_05]{Custom History View} \\
         \bottomrule
-    \end{tabular}
-\end{center}
+    \end{tabularx}
+\end{table}
 
 \subsection{Minimum Viable Product (MVP)}\label{sec:mvp}
 
@@ -365,7 +387,8 @@ The following programming languages and technologies are utilized across the dif
 Incoming MQTT messages are processed within AWS using a serverless, event-driven architecture. 
 The cloud backend is logically divided into two branches for data handling:
 
-Live data is made available through a RESTful API endpoint \texttt{GET /live}, optimized for low-latency access to the most recent sensor values~\cite{restful2000}.
+Live data is made available through a RESTful API endpoint \texttt{GET /live}, optimized for low-latency access to the most recent 
+sensor values~\cite{restful2000}.
 Historical data is persisted for long-term storage and analysis, accessible via \texttt{GET /history} for in-depth time-series evaluation and trend analysis.
 
 Additionally, an alerting mechanism is planned to be implemented using AWS SNS to notify users via email when certain thresholds are exceeded, 
@@ -373,7 +396,10 @@ such as high temperature.
 Future extensions may include the development of a React-based frontend dashboard for visualizing historical trends for specific time periods, 
 enabling time-based filtering and comparison of environmental conditions.
 
-\begin{figure*}[t]
+The overall architecture is represented in~\cref{fig:cloud-architecture}, illustrating the flow of data from the ESP32 device 
+through AWS to the API endpoints and potential alerting services.
+
+\begin{figure*}[!tb]
   \centering
   \includegraphics[width=\textwidth]{architecture.pdf}
   \caption{Cloud Processing Architecture}
@@ -391,43 +417,48 @@ SNS supports partial local mocking but can be fully integration-tested via Local
 
 \subsection{Cost Estimation}\label{sec:cost_estimation}
 
-The following calculation is made to estimate the average operating cost per month for one device. 
-The assumptions of 3 unique users, 8 hours per day, 22 days per month are made. 
-The difference between Free Tier and Post Free Tier are marginal.
+The calculation of~\cref{tab:aws-costs} is made to estimate the average operating cost per month for one device. 
+Assumptions of 3 unique users, 8 hours per day and 22 days per month are made. 
+As depicted, the difference between Free Tier and Post Free Tier costs is marginal.
 
-% Define a custom centered X column type
-% Add this to your preamble
-% \usepackage[hidelinks]{hyperref} 
-
-\newcolumntype{Y}{>{\centering\arraybackslash}X}
-
-\begin{table}[H]
-\centering
-\caption{AWS Service Monthly Cost Estimate}
-\label{tab:aws-costs}
-\renewcommand{\arraystretch}{1.5} % Adds vertical padding for a cleaner look
-    \begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}m{2.5cm}|>{\centering\arraybackslash}X|>{\centering\arraybackslash}m{1.2cm}|>{\centering\arraybackslash}m{1.2cm}|}
-    \hline
-    \textbf{Service Details} & \textbf{Usage/Quantity} & \textbf{Free Tier} & \textbf{Post Free Tier} \\ \hline
-    IoT Core~\cite{awsIotCore} & 518k msgs, 268k billed & \(\sim\)\$0.27 & \(\sim\)\$0.27 \\ \hline
-    Lambda – handleValidation~\cite{aws-lambda} & 518k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.06 \\ \hline
-    Lambda – handleLiveData~\cite{aws-lambda} & 228k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.04 \\ \hline
-    Lambda – handleHistoryData~\cite{aws-lambda} & 660 inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.00 \\ \hline
-    DynamoDB~\cite{aws-dynamodb} & 518k WCU, 228k RCU, storage & \(\sim\)\$0.01 & \(\sim\)\$0.08 \\ \hline
-    S3 (Parquet)~\cite{aws-s3} & \(\sim\)0.5 GB stored & \(\sim\)\$0.01 & \(\sim\)\$0.02 \\ \hline
-    Athena~\cite{aws-athena} & 660 queries \(\times\) 50 MB = 33 GB scanned & \(\sim\)\$0.16 & \(\sim\)\$0.16 \\ \hline
-    API Gateway~\cite{aws-api-gateway} & 229k requests & \$0.00 & \(\sim\)\$0.08 \\ \hline
-    SNS~\cite{aws-sns} & Minimal alert volume & \$0.00 & \(\sim\)\$0.01 \\ \hline
-    Glue Crawler~\cite{aws-glue} & One-time run & \(\sim\)\$0.00 & \(\sim\)\$0.00 \\ \hline
-    \textbf{Total} & & \textbf{\(\sim\)\$0.46} & \textbf{\(\sim\)\$0.73} \\ \hline
+\begin{table*}[!htb]
+    \centering
+    \caption{Cost Estimation for AWS Services}
+    \label{tab:aws-costs}
+    \begin{tabularx}{0.8\textwidth}{>{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}r >{\raggedright\arraybackslash}r}
+        \toprule
+        \textbf{Service Details} & \textbf{Usage/Quantity} & \textbf{Free Tier} & \textbf{Post Free Tier} \\
+        \midrule
+        IoT Core~\cite{awsIotCore} & 518k msgs, 268k billed & \(\sim\)\$0.27 & \(\sim\)\$0.27 \\ 
+        Lambda – handleValidation~\cite{aws-lambda} & 518k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.06 \\ 
+        Lambda – handleLiveData~\cite{aws-lambda} & 228k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.04 \\ 
+        Lambda – handleHistoryData~\cite{aws-lambda} & 660 inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.00 \\ 
+        DynamoDB~\cite{aws-dynamodb} & 518k WCU, 228k RCU, storage & \(\sim\)\$0.01 & \(\sim\)\$0.08 \\ 
+        S3 (Parquet)~\cite{aws-s3} & \(\sim\)0.5 GB stored & \(\sim\)\$0.01 & \(\sim\)\$0.02 \\ 
+        Athena~\cite{aws-athena} & 660 queries \(\times\) 50 MB = 33 GB scanned & \(\sim\)\$0.16 & \(\sim\)\$0.16 \\ 
+        API Gateway~\cite{aws-api-gateway} & 229k requests & \$0.00 & \(\sim\)\$0.08 \\ 
+        SNS~\cite{aws-sns} & Minimal alert volume & \$0.00 & \(\sim\)\$0.01 \\ 
+        Glue Crawler~\cite{aws-glue} & One-time run & \(\sim\)\$0.00 & \(\sim\)\$0.00 \\ 
+        \midrule
+        \textbf{Total} & & \textbf{\(\sim\)\$0.46} & \textbf{\(\sim\)\$0.73} \\ 
+        \bottomrule
     \end{tabularx}
-\end{table}
-
+\end{table*}
 
 \section{Conclusion and Future Work}\label{sec:conclusion}
 % Zusammenfassung der wichtigsten Erkenntnisse, Ausblick auf die nächsten Schritte
 
-% TODO: replace with actual conclusion and future work
+Sensiq presents a practical IoT architecture for environmental monitoring in laboratory and facility settings. 
+Its core contribution is a serverless AWS-based pipeline that ingests sensor data from ESP32 devices via MQTT/TLS, 
+validates the measurements, and stores them for both immediate and historical access.
+
+The paper defines the system requirements through persona-based user stories and prioritizes an MVP that centers on 
+live status display, air-quality assessment, sensor alerts, and time-series access through a Web API. 
+This scope establishes a clear path from edge sensing to cloud processing and later visualization.
+
+Future work will implement and evaluate the MVP, including data ingestion, API behavior, and storage correctness. 
+Subsequent extensions may add a graphical dashboard, notification services, and richer historical analysis to 
+support operational monitoring and decision-making.
 
 % ======== References =========
 \sloppy
