@@ -32,7 +32,7 @@
 % ======================================================================
 % EDIT THESE:
 % \cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0000-0002-1175-2668}}
-\cstechrepAuthorListBib{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu} %TODO: correct format?
+\cstechrepAuthorListBib{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu}
 % Capitalization: https://capitalizemytitle.com/style/Chicago/
 \cstechrepTitleTex{Sensiq: An MCU-Based IoT Architecture for Environmental Monitoring} %TODO: replace with actual title
  % IF you need manual linebreaks in the title, then clone the title without linebreaks for BibTeX:
@@ -100,39 +100,88 @@ By transitioning from isolated local measurements to a centralized, serverless I
 interactive visualization, and immediate incident response. The objective is to provide lab managers and technicians with a scalable,
 high-availability tool that ensures operational safety and data-driven quality assurance.
 
-% \subsection{Unique Selling Point}\label{sec:unique_selling_point}
+% Section Overview
+This Section introduces the motivation, the Unique Selling Point (USP), and the key technical components of the proposed system. 
+~\cref{sec:related_work} gives an overview of related work and technologies that inspired and influenced the design of our system.
+The core requirements are defined in~\cref{sec:requirements} with a focus on user-centered design, including detailed user stories and
+ acceptance criteria for the minimum viable product (MVP).
+The technical concept and architecture of the system are described in~\cref{sec:technical_concept}.
+~\cref{sec:conclusion} summarizes the key findings and outlines future work and next steps for the project.
+
+\subsection{Unique Selling Point}\label{sec:unique_selling_point}
 % Alleinstellungsmerkmal
-% TODO für Tien 
 
-\section{Unique Selling Point}
-
-The proposed system is specifically engineered to meet the rigorous demands of high-precision laboratory monitoring, such as maintaining stable environmental conditions for sensitive chemical samples. The architecture differentiates itself through several key strategic factors:
+The proposed system is specifically engineered to meet the rigorous demands of high-precision laboratory monitoring, 
+such as maintaining stable environmental conditions for sensitive chemical samples. The architecture differentiates 
+itself through several key strategic factors:
 
 \begin{itemize}
-    \item \textbf{Cost-Effective Custom Infrastructure:} A significant drawback of many existing solutions is the heavy reliance on third-party dashboarding tools like Grafana, which often incur substantial licensing costs and complex login management in multi-user environments. Our system eliminates these barriers by utilizing a custom \textbf{React-based frontend} hosted on \textbf{AWS Amplify}, providing a tailored, high-performance interface without per-user licensing fees.
-    \item \textbf{Advanced Data Governance:} By implementing a fully serverless data pipeline with \textbf{AWS Kinesis Data Firehose} and \textbf{Amazon S3}, the system ensures long-term data sovereignty and cost-efficiency. Storing data in the \textbf{Parquet} format, combined with \textbf{AWS Glue} and \textbf{Amazon Athena}, enables laboratory managers to perform high-speed safety audits and complex trend analysis over years of data with minimal operational overhead.
-    \item \textbf{High-Performance Architecture:} Moving beyond simple academic prototypes, this project leverages the \textbf{ESP32} for its superior processing power and integrated security features. Combined with the robustness of AWS serverless components (Lambda, DynamoDB), the system ensures sub-second response times for critical events, such as gas leaks or temperature spikes.
+    \item \textbf{Cost-Effective Custom Infrastructure}: A significant drawback of many existing solutions is the heavy 
+    reliance on third-party dashboarding tools like Grafana, which often incur substantial licensing costs and 
+    complex login management in multi-user environments. Our system eliminates these barriers by utilizing a 
+    custom frontend, providing a tailored, high-performance interface without per-user licensing fees.
+    \item \textbf{Advanced Data Governance}: By implementing a fully serverless data pipeline with 
+    the system ensures long-term data sovereignty and cost-efficiency. 
+    Effectively storing data enables laboratory managers to perform high-speed safety audits and complex trend 
+    analysis over years of data with minimal operational overhead.
+    \item \textbf{High-Performance Architecture}: Moving beyond simple academic prototypes, this project leverages 
+    a MCU with good processing power and integrated security features. Combined with the robustness 
+    of serverless components in the cloud, the system ensures sub-second response times for critical events, 
+    such as gas leaks or temperature spikes.
 \end{itemize}
 
-\section{Related Work}
+% Benennung von technischen Schlüssel-Bausteinen
+\subsection{Key Technical Components}\label{sec:key_technical_components}
 
-\subsection{IoT Applications in Laboratory Safety}
+The proposed system is built around an ESP32 edge device connected to multiple environmental sensors, such as temperature,
+humidity, gas, and flame sensors. Sensor readings are pre-processed locally and transmitted via encrypted MQTT/TLS to protect
+data confidentiality and ensure device authentication during communication.
 
-The integration of Internet of Things (IoT) solutions into safety-critical environments has become a focal point of recent research. A highly relevant study by \textbf{Ramadhani et al. (2026)} \cite{Ramadhani2026} explores the development of an air quality monitoring system specifically for hazardous gas detection in chemical laboratories. Their architecture utilizes a NodeMCU ESP8266 microcontroller paired with MQ-135 gas sensors and DHT11 temperature sensors to mitigate risks such as poisoning and explosions.
+AWS IoT Core serves as the secure entry point between the devices and the cloud backend. It receives incoming measurements and
+makes them available for further processing of other AWS services. Live sensor values are handled by a dedicated processing
+pipeline and exposed through a REST interface for external access, while historical measurements are stored and made available
+through a separate REST endpoint for time-series retrieval and analysis.
 
-While their research confirms that low-cost sensor nodes are effective as early warning tools, their implementation relies on the Blynk platform for data visualization. This introduces dependencies on external service providers and limits the ability to integrate custom business logic, such as the multi-persona alerting system (for lab technicians and production managers) implemented in this project. In contrast, our system implements a dedicated AWS-native pipeline to ensure full data sovereignty and professional-grade scalability.
+Future extensions may include a frontend dashboard that provides user-oriented visualization and analysis tools for
+monitoring trends and comparing sensor values over time. In addition, AWS SNS can be integrated later to send email notifications
+to users when critical thresholds are exceeded.
 
-\subsection{Performance and Scalability of Serverless Architectures}
+\section{Related Work}\label{sec:related_work}
+% andere Arbeiten oder Technologien (die als Inspiration dienten), Screenshots
 
-Beyond the hardware implementation, the efficiency of the underlying cloud infrastructure is crucial for real-time safety monitoring. \textbf{Gudduri (2025)} \cite{Gudduri2025} investigated the performance of "lean" serverless architectures for processing IoT data streams. By replaying large-scale datasets through a pipeline consisting of Amazon Kinesis, AWS Lambda, and Amazon S3, the study proved that sub-second response times are achievable in modern cloud environments.
+\subsection{IoT Applications in Laboratory Safety}\label{sec:iot_lab_safety}
 
-Gudduri’s findings show a median end-to-end latency of 163 ms, even at high throughput levels, by utilizing techniques such as provisioned concurrency to mitigate "cold-start" delays. These technical benchmarks provide the empirical justification for the serverless architecture chosen in this project, ensuring that safety-relevant gas alerts are processed within the timeframes required for emergency response.
+The integration of Internet of Things (IoT) solutions into safety-critical environments has become a focal point of 
+recent research. A highly relevant study by \citeauthor{Ramadhani2026} explores the 
+development of an air quality monitoring system specifically for hazardous gas detection in chemical laboratories~\cite{Ramadhani2026}. 
+Their architecture utilizes a NodeMCU ESP8266 microcontroller paired with MQ-135 gas sensors and DHT11 temperature 
+sensors to mitigate risks such as poisoning and explosions.
 
-\subsection{Comparison of Existing Solutions}
+While their research confirms that low-cost sensor nodes are effective as early warning tools, their implementation 
+relies on the Blynk platform for data visualization. This introduces dependencies on external service providers and 
+limits the ability to integrate custom business logic, such as the multi-persona alerting system (for lab technicians 
+and production managers) implemented in this project. In contrast, our system is planned to implement a dedicated AWS-native 
+pipeline to ensure full data sovereignty and professional-grade scalability.
 
-Table \ref{tab:comparison} summarizes the positioning of the proposed system in relation to the discussed academic works and common commercial alternatives.
+\subsection{Performance and Scalability of Serverless Architectures}\label{sec:performance_scalability}
 
-\begin{table}[!ht]
+Beyond the hardware implementation, the efficiency of the underlying cloud infrastructure is crucial for real-time 
+safety monitoring. \citeauthor{Gudduri2025} investigated the performance of "lean" serverless 
+architectures for processing IoT data streams~\cite{Gudduri2025}. By replaying large-scale datasets through a pipeline consisting of 
+Amazon Kinesis, AWS Lambda, and Amazon S3, the study proved that sub-second response times are achievable in modern 
+cloud environments.
+
+The findings of \citeauthor{Gudduri2025} show a median end-to-end latency of 163 ms, even at high throughput levels, by utilizing techniques 
+such as provisioned concurrency to mitigate "cold-start" delays. These technical benchmarks provide the empirical 
+justification for the serverless architecture chosen in this project, ensuring that safety-relevant gas alerts are 
+processed within the timeframes required for emergency response.
+
+\subsection{Comparison of Existing Solutions}\label{sec:comparison_solutions}
+
+\Cref{tab:comparison} summarizes the positioning of the proposed system in relation to the discussed academic 
+works and common commercial alternatives.
+
+\begin{table}[htb]
     \centering
     \caption{Comparative Analysis of Monitoring Architectures}
     \label{tab:comparison}
@@ -152,32 +201,6 @@ Table \ref{tab:comparison} summarizes the positioning of the proposed system in 
         \bottomrule
     \end{tabularx}
 \end{table}
-
-% Section Overview
-~\cref{sec:related_work} gives an overview of related work and technologies that inspired and influenced the design of our system.
-The core requirements are defined in~\cref{sec:requirements} with a focus on user-centered design, including detailed user stories and
- acceptance criteria for the minimum viable product (MVP).
-The technical concept and architecture of the system are described in~\cref{sec:technical_concept}.
-~\cref{sec:conclusion} summarizes the key findings and outlines future work and next steps for the project.
-
-% Benennung von technischen Schlüssel-Bausteinen
-\subsection{Key Technical Components}\label{sec:key_technical_components}
-
-The proposed system is built around an ESP32 edge device connected to multiple environmental sensors, such as temperature,
-humidity, gas, and flame sensors. Sensor readings are pre-processed locally and transmitted via encrypted MQTT/TLS to protect
-data confidentiality and ensure device authentication during communication.
-
-AWS IoT Core serves as the secure entry point between the devices and the cloud backend. It receives incoming measurements and
-makes them available for further processing of other AWS services. Live sensor values are handled by a dedicated processing
-pipeline and exposed through a REST interface for external access, while historical measurements are stored and made available
-through a separate REST endpoint for time-series retrieval and analysis.
-
-Future extensions may include a frontend dashboard that provides user-oriented visualization and analysis tools for
-monitoring trends and comparing sensor values over time. In addition, AWS SNS can be integrated later to send email notifications
-to users when critical thresholds are exceeded.
-
-% \section{Related Work}\label{sec:related_work}
-% andere Arbeiten oder Technologien (die als Inspiration dienten), Screenshots
 
 \section{Requirements}\label{sec:requirements}
 
@@ -511,6 +534,8 @@ support operational monitoring and decision-making.
 
 % ======== References =========
 \sloppy
-\printbibliography[notcategory=selfref]
+% \printbibliography[notcategory=selfref]
+\printbibliography[notkeyword=selfref]
+% \printbibliography[]
 
 \end{document}
