@@ -104,6 +104,55 @@ high-availability tool that ensures operational safety and data-driven quality a
 % Alleinstellungsmerkmal
 % TODO für Tien 
 
+\section{Unique Selling Point}
+
+The proposed system is specifically engineered to meet the rigorous demands of high-precision laboratory monitoring, such as maintaining stable environmental conditions for sensitive chemical samples. The architecture differentiates itself through several key strategic factors:
+
+\begin{itemize}
+    \item \textbf{Cost-Effective Custom Infrastructure:} A significant drawback of many existing solutions is the heavy reliance on third-party dashboarding tools like Grafana, which often incur substantial licensing costs and complex login management in multi-user environments. Our system eliminates these barriers by utilizing a custom \textbf{React-based frontend} hosted on \textbf{AWS Amplify}, providing a tailored, high-performance interface without per-user licensing fees.
+    \item \textbf{Advanced Data Governance:} By implementing a fully serverless data pipeline with \textbf{AWS Kinesis Data Firehose} and \textbf{Amazon S3}, the system ensures long-term data sovereignty and cost-efficiency. Storing data in the \textbf{Parquet} format, combined with \textbf{AWS Glue} and \textbf{Amazon Athena}, enables laboratory managers to perform high-speed safety audits and complex trend analysis over years of data with minimal operational overhead.
+    \item \textbf{High-Performance Architecture:} Moving beyond simple academic prototypes, this project leverages the \textbf{ESP32} for its superior processing power and integrated security features. Combined with the robustness of AWS serverless components (Lambda, DynamoDB), the system ensures sub-second response times for critical events, such as gas leaks or temperature spikes.
+\end{itemize}
+
+\section{Related Work}
+
+\subsection{IoT Applications in Laboratory Safety}
+
+The integration of Internet of Things (IoT) solutions into safety-critical environments has become a focal point of recent research. A highly relevant study by \textbf{Ramadhani et al. (2026)} \cite{Ramadhani2026} explores the development of an air quality monitoring system specifically for hazardous gas detection in chemical laboratories. Their architecture utilizes a NodeMCU ESP8266 microcontroller paired with MQ-135 gas sensors and DHT11 temperature sensors to mitigate risks such as poisoning and explosions.
+
+While their research confirms that low-cost sensor nodes are effective as early warning tools, their implementation relies on the Blynk platform for data visualization. This introduces dependencies on external service providers and limits the ability to integrate custom business logic, such as the multi-persona alerting system (for lab technicians and production managers) implemented in this project. In contrast, our system implements a dedicated AWS-native pipeline to ensure full data sovereignty and professional-grade scalability.
+
+\subsection{Performance and Scalability of Serverless Architectures}
+
+Beyond the hardware implementation, the efficiency of the underlying cloud infrastructure is crucial for real-time safety monitoring. \textbf{Gudduri (2025)} \cite{Gudduri2025} investigated the performance of "lean" serverless architectures for processing IoT data streams. By replaying large-scale datasets through a pipeline consisting of Amazon Kinesis, AWS Lambda, and Amazon S3, the study proved that sub-second response times are achievable in modern cloud environments.
+
+Gudduri’s findings show a median end-to-end latency of 163 ms, even at high throughput levels, by utilizing techniques such as provisioned concurrency to mitigate "cold-start" delays. These technical benchmarks provide the empirical justification for the serverless architecture chosen in this project, ensuring that safety-relevant gas alerts are processed within the timeframes required for emergency response.
+
+\subsection{Comparison of Existing Solutions}
+
+Table \ref{tab:comparison} summarizes the positioning of the proposed system in relation to the discussed academic works and common commercial alternatives.
+
+\begin{table}[!ht]
+    \centering
+    \caption{Comparative Analysis of Monitoring Architectures}
+    \label{tab:comparison}
+    \small % Verkleinert die Schrift etwas, damit sie in die Spalte passt
+    \begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}X c c c}
+        \toprule
+        \textbf{Feature} & \textbf{Ramadhani} & \textbf{Gudduri} & \textbf{Sensiq} \\
+        & \textbf{(2026)}    & \textbf{(2025)}  & \textbf{(Ours)} \\
+        \midrule
+        Real-Time Alerts & Yes & Yes & Yes \\
+        Long-Term Audits & Limited & High & High \\
+        Custom API/UI    & No & No & Yes \\
+        Cost Efficiency  & High & High & High \\
+        Lab Focus        & Yes & No & Yes \\
+        \midrule
+        \textbf{Suitability} & \textbf{Medium} & \textbf{Medium} & \textbf{High} \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
 % Section Overview
 ~\cref{sec:related_work} gives an overview of related work and technologies that inspired and influenced the design of our system.
 The core requirements are defined in~\cref{sec:requirements} with a focus on user-centered design, including detailed user stories and
