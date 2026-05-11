@@ -34,7 +34,7 @@
 % \cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0000-0002-1175-2668}}
 \cstechrepAuthorListBib{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu}
 % Capitalization: https://capitalizemytitle.com/style/Chicago/
-\cstechrepTitleTex{Sensiq: An MCU-Based IoT Architecture for Environmental Monitoring} %TODO: replace with actual title
+\cstechrepTitleTex{Sensiq: An MCU-Based IoT Architecture for Environmental Monitoring}
  % IF you need manual linebreaks in the title, then clone the title without linebreaks for BibTeX:
 \cstechrepTitleBib{{\cstechrepTitleTex}}
 \cstechrepDepartment{Department of Electrical Engineering, Media, and Computer Science}
@@ -76,13 +76,9 @@
     `GET /live` and `GET /history`. We propose a configurable simulator to exercise ingestion and
     retrieval without physical hardware and to guide future implementation and testing.
 
-    Planned evaluation: This paper outlines an
-    evaluation plan using the simulator to validate end-to-end ingestion, API latency, data
-    integrity, and storage correctness once the MVP is implemented.
-
     Conclusion: Sensiq defines a lightweight, extensible foundation for laboratory environmental
-    monitoring. Future work focuses on implementing the MVP, performing the described
-    evaluations, adding a web dashboard and notification services for visualization and alerts.
+    monitoring. Future work focuses on implementing the MVP, adding a web dashboard 
+    and notification services for visualization and alerts.
 \end{abstract}
 \begin{IEEEkeywords}
     IoT, Environmental Monitoring, ESP32, MCU, MQTT, Serverless Architecture, AWS
@@ -146,6 +142,9 @@ Future extensions may include a frontend dashboard that provides user-oriented v
 monitoring trends and comparing sensor values over time. In addition, AWS SNS can be integrated later to send email notifications
 to users when critical thresholds are exceeded.
 
+Challenges could include handling large volumes of data, ensuring low-latency processing and communication, and
+securing user data from unauthorized access.
+
 \section{Related Work}\label{sec:related_work}
 % andere Arbeiten oder Technologien (die als Inspiration dienten), Screenshots
 
@@ -204,14 +203,20 @@ works and common commercial alternatives.
 
 \section{Requirements}\label{sec:requirements}
 
-The requirements for the proposed system are defined in the form of persona-based user stories including acceptance criteria and 
-prioritization for the minimum viable product (MVP).
+The requirements for the final system vision are defined in the form of persona-based user stories including 
+acceptance criteria, prioritization using the MoSCoW method and the definition of the minimum viable product (MVP).
 
 % Agile User Stories (+Akzeptanzkriterien als Definition of Done) oder klassische Use-Cases als Anforderungen an die Anwendung.
 % Beschreibung von Eingabe und Ausgabe des Systems und dessen Teilfunktionen; benötigte Ressourcen (z.B. Bestandsdaten), 
 
 \subsection{Project Personas}\label{sec:project_personas}
-				
+
+% TODO: Personas
+% In Section 3.1, you define four Personas: Christian, Olivia, Martin, and Pia. 
+% However, in Section 3.2.5 (US_05), you introduce "Data Scientist Daniela", and in Section 3.2.6 (US_06), 
+% you introduce "IT Administrator Ian". These personas are missing from Section 3.1. 
+% Please add them to Section 3.1 to maintain consistency.
+
 To ensure the system meets the diverse needs of all stakeholders, the requirements are guided by the following personas. 
 Each persona has a specific role, defined goals, and distinct interests in the system:
 
@@ -232,8 +237,6 @@ Each persona has a specific role, defined goals, and distinct interests in the s
 
 
 \subsection{User Stories}\label{sec:user_stories}
-
-% TODO: fix user stories
 
 \subsubsection{Real-time Temperature Monitoring}\label{sec:us_01}
 
@@ -262,9 +265,9 @@ Acceptance Criteria:
 
 Acceptance Criteria:
 \begin{itemize}
-    \item The dashboard shows the air quality as a colour-coded indicator based on safety thresholds: Green~(safe) and Red~(critical). 
-    Input: latest DB air quality readings. Output: correct status colour.
-    \item The status colour updates automatically when a new reading arrives — no manual reload required.
+    \item The dashboard shows the air quality as a color-coded indicator based on safety thresholds: Green~(safe) and Red~(critical). 
+    Input: latest DB air quality readings. Output: correct status color.
+    \item The status color updates automatically when a new reading arrives — no manual reload required.
      Test: write new air quality values to DB; display must update within 5\,s.
     \item The displayed status is based on data that is at most 30\,s old. Test: 
     compare value timestamps with system time; difference $\le$ 30\,s.
@@ -407,14 +410,18 @@ The local ESP32 microcontroller is equipped with multiple sensors for monitoring
 
 The DHT11 sensor measures temperature and humidity with a decent accuracy for indoor applications.
 This is complemented by the KY-028 thermistor for high precision temperature readings.
-The KY-026 flame sensor enables the detection of uncontrolled fire sources by measuring the intensity of infrared light emitted by flames~\cite{ky026flame}.
+The KY-026 flame sensor enables the detection of uncontrolled fire sources by measuring the intensity of infrared light 
+emitted by flames~\cite{ky026flame}.
+Additional gas sensors (e.g., BME680 for volatile organic compounds, TSL2561 for light intensity) must be determined 
+based on the specific measurements of interest.
 
-An additional gas sensor (e.g., MQ135) must be determined based on the specific gases of interest, such as volatile organic compounds (VOCs), carbon monoxide, or others relevant to the use case.
+The sensor data is read periodically, pre-processed on the ESP32, and encapsulated into a structured data object 
+for transmission, as illustrated in~\cref{lst:data_model_json}.
+Each message contains device metadata (ID, location, uptime) and a nested structure for sensor measurements 
+for further extensibility.
 
-The sensor data is read periodically, pre-processed on the ESP32, and encapsulated into a structured data object for transmission, as illustrated in~\cref{lst:data_model_json}.
-Each message contains device metadata (ID, location, uptime) and a nested structure for sensor measurements for further extensibility.
-
-\begin{lstlisting}[language=json, float, caption={Example of the JSON data model for sensor value encapsulation on the ESP32.}, label={lst:data_model_json}]
+\begin{lstlisting}[language=json, float, caption={Example of the JSON data model for sensor value encapsulation 
+    on the ESP32.}, label={lst:data_model_json}]
 {
   "deviceId": "esp32-lab-01", 
   "runningSince": "10000",
@@ -443,7 +450,7 @@ Each message contains device metadata (ID, location, uptime) and a nested struct
 Messages are published to AWS IoT Core with the MQTT protocol and secured using TLS~\cite{aws}.
 Certificate-based authentication ensures device integrity and prevents unauthorized publishing to the cloud backend.
 
-\subsection{Technology Stack}\label{sec:technology_stack}
+\subsection{PlannedTechnology Stack}\label{sec:technology_stack}
 
 The following programming languages and technologies are utilized across the different components of the system:
 
@@ -466,7 +473,9 @@ Historical data is persisted for long-term storage and analysis, accessible via 
 Additionally, an alerting mechanism is planned to be implemented using AWS SNS to notify users via email when certain thresholds are exceeded, 
 such as high temperature.
 Future extensions may include the development of a React-based frontend dashboard for visualizing historical trends for specific time periods, 
-enabling time-based filtering and comparison of environmental conditions.
+enabling time-based filtering and comparison of environmental conditions, being hosted on AWS Amplify for seamless AWS service integration.
+Data security could be guaranteed with AWS Cognito for user authentication and authorization, ensuring secure access to the 
+system and mitigating unauthorized access risks.
 
 The overall architecture is represented in~\cref{fig:cloud-architecture}, illustrating the flow of data from the ESP32 device 
 through AWS to the API endpoints and potential alerting services.
@@ -520,17 +529,25 @@ As depicted, the difference between Free Tier and Post Free Tier costs is margin
 \section{Conclusion and Future Work}\label{sec:conclusion}
 % Zusammenfassung der wichtigsten Erkenntnisse, Ausblick auf die nächsten Schritte
 
-Sensiq presents a practical IoT architecture for environmental monitoring in laboratory and facility settings. 
-Its core contribution is a serverless AWS-based pipeline that ingests sensor data from ESP32 devices via MQTT/TLS, 
-validates the measurements, and stores them for both immediate and historical access.
+Maintaining precise and reliable environmental conditions is a critical requirement for safety and quality assurance 
+in modern laboratory facilities. This concept paper introduced Sensiq, a highly scalable, MCU-based IoT monitoring 
+architecture designed to eliminate the limitations of isolated, local sensor networks. By leveraging a serverless 
+AWS infrastructure—anchored by AWS IoT Core, Lambda, and DynamoDB—Sensiq ensures low-latency incident alerting, 
+secure end-to-end data transmission, and cost-effective historical data persistence without the overhead of managing 
+dedicated servers.
 
-The paper defines the system requirements through persona-based user stories and prioritizes an MVP that centers on 
-live status display, air-quality assessment, sensor alerts, and time-series access through a Web API. 
-This scope establishes a clear path from edge sensing to cloud processing and later visualization.
+The requirements established through persona-based user stories provide a clear development roadmap, prioritizing 
+data sovereignty and real-time accessibility. For the Minimum Viable Product (MVP), the focus is placed on 
+establishing a robust backend pipeline, replacing physical hardware with simulated telemetry to rigorously test 
+data ingestion and REST API retrieval performance.
 
-Future work will implement and evaluate the MVP, including data ingestion, API behavior, and storage correctness. 
-Subsequent extensions may add a graphical dashboard, notification services, and richer historical analysis to 
-support operational monitoring and decision-making.
+Future work will focus on the development and deployment of the requirements for the MVP.
+Subsequently, development will transition to integrating a physical ESP32 device equipped with the designated 
+environmental sensors. 
+Finally, the system will be extended with an interactive React-based frontend dashboard for comprehensive 
+user-facing data visualization, 
+alongside automated AWS SNS email notifications for instant incident response, thereby fulfilling the complete 
+architectural vision of the Sensiq platform.
 
 % ======== References =========
 \sloppy
@@ -539,3 +556,7 @@ support operational monitoring and decision-making.
 % \printbibliography[]
 
 \end{document}
+
+
+% Kritik: Functional requirements
+% Underdeveloped: Requirements (user stories nicht tief genug oder fertig), conclusion (nicht weit genug)
