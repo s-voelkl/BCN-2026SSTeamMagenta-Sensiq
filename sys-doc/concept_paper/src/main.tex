@@ -31,8 +31,8 @@
 % \addbibresource{xampl.bib} % (xampl file provided by the BibTEX base files)
 % ======================================================================
 % EDIT THESE:
-% \cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0000-0002-1175-2668}}
-\cstechrepAuthorListBib{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu}
+\cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0000-0002-1175-2668}}
+\cstechrepAuthorListBib{Simon Völkl and Johannes Schieder and Sebastian Rosner and Andre Tien Vu}
 % Capitalization: https://capitalizemytitle.com/style/Chicago/
 \cstechrepTitleTex{Sensiq: An MCU-Based IoT Architecture for Environmental Monitoring}
  % IF you need manual linebreaks in the title, then clone the title without linebreaks for BibTeX:
@@ -224,7 +224,7 @@ Each persona has a specific role, defined goals, and distinct interests in the s
     \item[Chemist Christian] 
     Focuses on exact environmental conditions. His primary goal is to monitor precise laboratory temperatures to accurately 
     run experiments and evaluate environment-dependent reactions.
-    \item[Occupational Safety Officer Olivia] 
+    \item[Occupational Safety Officer Olivia] % TODO: not existing.
     Prioritizes employee well-being. She requires immediate, clear indicators of air quality safety to proactively enforce 
     protective measures and prevent workplace health hazards.
     \item[Facility Manager Martin] 
@@ -233,6 +233,7 @@ Each persona has a specific role, defined goals, and distinct interests in the s
     \item[Project Manager Pia] 
     Looks at the big picture and long-term optimization. She aims to analyze historical data trends to identify recurring 
     patterns, correlate them with facility operations, and implement targeted strategies for improving environmental conditions.
+    % TODO: Missing personas: Ian, Daniela
 \end{description}
 
 
@@ -519,7 +520,7 @@ As depicted, the difference between Free Tier and Post Free Tier costs is margin
         Athena~\cite{aws-athena} & 660 queries \(\times\) 50 MB = 33 GB scanned & \(\sim\)\$0.16 & \(\sim\)\$0.16 \\ 
         API Gateway~\cite{aws-api-gateway} & 229k requests & \$0.00 & \(\sim\)\$0.08 \\ 
         SNS~\cite{aws-sns} & Minimal alert volume & \$0.00 & \(\sim\)\$0.01 \\ 
-        Glue Crawler~\cite{aws-glue} & One-time run & \(\sim\)\$0.00 & \(\sim\)\$0.00 \\ 
+        % Glue Crawler~\cite{aws-glue} & One-time run & \(\sim\)\$0.00 & \(\sim\)\$0.00 \\ 
         \midrule
         \textbf{Total} & & \textbf{\(\sim\)\$0.46} & \textbf{\(\sim\)\$0.73} \\ 
         \bottomrule
@@ -551,12 +552,12 @@ architectural vision of the Sensiq platform.
 
 % ======== References =========
 \sloppy
-% \printbibliography[notcategory=selfref]
-\printbibliography[notkeyword=selfref]
-% \printbibliography[]
+\printbibliography[notcategory=selfref]
+% \printbibliography
 
 \end{document}
 
+% aux löschen, pdflatex, pdflatex, biber, pdflatex
 
 % Kritik: Functional requirements
 % Underdeveloped: Requirements (user stories nicht tief genug oder fertig), conclusion (nicht weit genug)
