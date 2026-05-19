@@ -1,0 +1,82 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+/**
+ * WiFi SSID.
+ * This is the name of the WiFi network that the ESP32 will connect to.
+ */
+constexpr const char *wifi_ssid = "";
+/**
+ * WiFi password.
+ * This is the password for the WiFi network. Ensure that this is kept secure and not shared publicly.
+ */
+constexpr const char *wifi_password = "";
+/**
+ * Globally unique device ID for the JSON transmission.
+ */
+constexpr const char *device_id = "esp32-lab-001";
+/**
+ * Location information for the JSON transmission.
+ * Useful to identify the real sensor location.
+ */
+constexpr const char *device_location = "Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany";
+
+/**
+ * MQTT server hostname.
+ * This is the hostname of the MQTT broker that the ESP32 will connect to for publishing sensor data.
+ */
+constexpr const char *mqtt_server_hostname = "";
+/**
+ * MQTT server port.
+ * This is the port number on which the MQTT broker is listening for incoming connections.
+ */
+constexpr int mqtt_server_port = 8883;
+/**
+ * MQTT main topic for publishing sensor data.
+ */
+constexpr const char *mqtt_topic = "de-othaw/bcn/sose2026/sensiq";
+/**
+ * MQTT subtopic for publishing sensor data.
+ * The resulting full topic will be a combination of mqtt_topic, device_id, and mqtt_subtopic_data,
+ * e.g., "de-othaw/bcn/sose2026/sensiq/esp32-lab-001/data".
+ */
+constexpr const char *mqtt_subtopic_data = "data";
+
+/**
+ * MQTT subtopic for testing purposes.
+ * This can be used for publishing test messages or for subscribing to test topics
+ * during development and debugging.
+ * The resulting full topic will be a combination of mqtt_topic, device_id, and mqtt_subtopic_test,
+ * e.g., "de-othaw/bcn/sose2026/sensiq/esp32-lab-001/test".
+ */
+constexpr const char *mqtt_subtopic_test = "test";
+/**
+ * MQTT username for authentication with the MQTT broker.
+ * @note Ensure that this is kept secure and not shared publicly.
+ */
+constexpr const char *mqtt_username = "";
+/**
+ * MQTT password for authentication with the MQTT broker.
+ * @note Ensure that this is kept secure and not shared publicly.
+ */
+constexpr const char *mqtt_password = "";
+/**
+ * MQTT Quality of Service level for published messages.
+ * This defines the guarantee of delivery for MQTT messages:
+ * - 0: At most once (fire and forget)
+ * - 1: At least once (acknowledged delivery)
+ * - 2: Exactly once (assured delivery)
+ *
+ * In this project, QoS level 1 is used to ensure that messages are delivered at
+ * least once, providing a balance between reliability and performance.
+ */
+constexpr int mqtt_qos = 1;
+
+/**
+ * MQTT root CA certificate for secure TLS connection.
+ *
+ * Lets Encrypt: https://letsencrypt.org/certs/isrgrootx1.pem.txt
+ */
+constexpr const char *mqtt_root_ca_cert = "";
+
+#endif
