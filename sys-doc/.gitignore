@@ -25,3 +25,6 @@
 *.bcf-SAVE-ERROR
 _minted/*
 .devcontainer/*
+*.upa
+*.upb
+*.bib
