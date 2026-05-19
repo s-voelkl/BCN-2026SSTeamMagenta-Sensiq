@@ -1,3 +1,8 @@
+/**
+ * This is a template configuration header file for the ESP32-based sensor device. 
+ * The real file should be named "config.h" and should be placed in the same directory as the main source code.
+ */
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
