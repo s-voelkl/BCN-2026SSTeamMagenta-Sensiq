@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib/core';
-import { SensiqIotStack } from '../lib/sensiq-iot-stack';
+import { SensiqIotDeviceStack } from '../lib/sensiq-iot-device-stack';
 
 const app = new cdk.App();
-new SensiqIotStack(app, 'SensiqIotStack');
+new SensiqIotDeviceStack(app, 'SensiqIotDeviceStack');

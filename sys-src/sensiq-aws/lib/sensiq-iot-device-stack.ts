@@ -3,7 +3,7 @@ import * as iot from 'aws-cdk-lib/aws-iot';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 
-export class SensiqIotStack extends cdk.Stack {
+export class SensiqIotDeviceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
