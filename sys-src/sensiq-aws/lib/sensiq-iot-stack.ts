@@ -2,10 +2,10 @@ import * as cdk from 'aws-cdk-lib';
 import * as iot from '@aws-cdk/aws-iot-alpha';
 import * as actions from '@aws-cdk/aws-iot-actions-alpha';
 import * as logs from 'aws-cdk-lib/aws-logs';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as firehose from 'aws-cdk-lib/aws-kinesisfirehose';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as iam from 'aws-cdk-lib/aws-iam';
+// import * as lambda from 'aws-cdk-lib/aws-lambda';
+// import * as firehose from 'aws-cdk-lib/aws-kinesisfirehose';
+// import * as s3 from 'aws-cdk-lib/aws-s3';
+// import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 export class IotCoreStack extends cdk.Stack {
