@@ -22,6 +22,7 @@ export class SensiqIotDeviceStack extends cdk.Stack {
         physicalResourceId: cr.PhysicalResourceId.fromResponse('certificateId'),
         outputPaths: ['certificateArn', 'certificatePem', 'keyPair.PrivateKey', 'certificateId'],
       },
+      // important for cleanup when stack is destroyed -> otherwise certs would pile up in the AWS account
       onDelete: {
         service: 'Iot',
         action: 'deleteCertificate',
@@ -38,15 +39,36 @@ export class SensiqIotDeviceStack extends cdk.Stack {
     const certPem = createCert.getResponseField('certificatePem');
     const privKey = createCert.getResponseField('keyPair.PrivateKey');
 
+    const region = cdk.Stack.of(this).region;
+    const account = cdk.Stack.of(this).account;
+
     const policy = new iot.CfnPolicy(this, 'SensiqESP32Policy', {
       policyName: 'Sensiq_ESP32_Mqtt_Policy',
       policyDocument: {
         Version: '2012-10-17',
-        Statement: [{
-          Effect: 'Allow',
-          Action: ['iot:Connect', 'iot:Publish', 'iot:Subscribe', 'iot:Receive'],
-          Resource: ['*'], // more granular for deployment !!!
-        }],
+        Statement: [
+      // granular permissions for every iot action (could be more granular)
+      {
+        Effect: 'Allow',
+        Action: 'iot:Connect',
+        Resource: `arn:aws:iot:${region}:${account}:client/ESP-*` // could be further restricted, but it is ok for now
+      },
+      {
+        Effect: 'Allow',
+        Action: 'iot:Publish',
+        Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/ESP-*/data` // same here
+      },
+      {
+        Effect: 'Allow',
+        Action: 'iot:Subscribe',
+        Resource: `arn:aws:iot:${region}:${account}:topicfilter/sensiq/ESP-*/commands` // same here
+      },
+      {
+        Effect: 'Allow',
+        Action: 'iot:Receive',
+        Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/ESP-*/commands` // same here
+      }
+    ],
       },
     });
 
