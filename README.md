@@ -13,6 +13,27 @@ The [documentation](doc/) is licensed under the Creative Commons Attribution 4.0
 
 ## Test Coverage
 
+## Hardware
+
+## Example JSON Payload
+
+```json
+{
+    "running_time":9881892,
+    "timestamp":"2026-05-25T22:56:12Z",
+    "device_id":"esp32-lab-001",
+    "location":"Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany",
+    "dht_humidity":61,
+    "dht_temperature":23.8,
+    "dht_heat_index":23.82809,
+    "flame_analog":0,
+    "flame_digital":false,
+    "thermistor_analog":2005,
+    "thermistor_digital":false,
+    "thermistor_temp":24.05634
+}
+```
+
 ## etc
 
 <!-- # BCN-2026SSTeamMagenta-Sensiq
