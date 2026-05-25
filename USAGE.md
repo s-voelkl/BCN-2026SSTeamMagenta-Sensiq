@@ -65,6 +65,8 @@ Manual run of the workflow dispatch with github actions.
 
 ``npm run build``: build manually when you want to catch syntax and type errors > "sensq.aws@..., tsc"
 
+``npm run test``: runs tests with code coverage using Jest.
+
 ``cdk synth``: build cloudformation template
 
 ``cdk deploy``: deploy to AWS on personal account 
