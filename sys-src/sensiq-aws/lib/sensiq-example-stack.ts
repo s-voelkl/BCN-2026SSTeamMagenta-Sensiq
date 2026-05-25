@@ -7,7 +7,7 @@ import * as sqs from 'aws-cdk-lib/aws-sqs';
 // Import the Lambda module
 // import * as lambda from 'aws-cdk-lib/aws-lambda';
 
-export class SensiqCdkStack extends cdk.Stack {
+export class SensiqExampleStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 

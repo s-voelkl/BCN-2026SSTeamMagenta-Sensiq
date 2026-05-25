@@ -1,21 +1,15 @@
-#!/usr/bin / env node
-import 'source-map-support/register';
-import * as cdk from 'aws-cdk-lib';
-import { SensiqCdkStack } from '../lib/sensiq-cdk-stack';
+#!/usr/bin/env node
+import * as cdk from 'aws-cdk-lib/core';
+import { SensiqIotDeviceStack } from '../lib/sensiq-iot-device-stack';
+import { IotCoreStack } from '../lib/sensiq-iot-stack';
+import { SensiqExampleStack } from '../lib/sensiq-example-stack';
 
 const app = new cdk.App();
-new SensiqCdkStack(app, 'SensiqCdkStack', {
-    /* If you don't specify 'env', this stack will be environment-agnostic.
-    * Account/Region-dependent features and context lookups will not work,
-    * but a single synthesized template can be deployed anywhere. */
 
-    /* Uncomment the next line to specialize this stack for the AWS Account
-     * and Region that are implied by the current CLI configuration. */
-    // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+const deviceStack = new SensiqIotDeviceStack(app, 'SensiqIotDeviceStack');
 
-    /* Uncomment the next line if you know exactly what Account and Region you
-     * want to deploy the stack to. */
-    env: { account: '157975549395', region: 'eu-central-1' },
+const iotCoreStack = new IotCoreStack(app, 'SensiqIotCoreStack');
 
-    /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
-});
+const exampleStack = new SensiqExampleStack(app, 'SensiqExampleStack');
+
+iotCoreStack.addDependency(deviceStack);
