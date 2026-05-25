@@ -20,6 +20,26 @@ npm update if needed
 aws-install -g aws-cdk
 cdk --version
 
+## AWS dependency installation
+
+yarn -v (1.22.22)
+yarn install (in sensiq-aws folder)
+
+## AWS Account Bootsrap
+
+If you are using a new aws account, you first need to bootstrap
+
+cdk bootstrap aws://<"account-id">/<"region">
+
+## AWS deployment
+
+cdk synth (builds the cloudformation template -> viewable in cdk.out)
+cdk diff (compares stacks with deployed stacks)
+cdk deploy (deploys application using your local aws cli config)
+    DO NOT DEPLOY TO THE DEVELOPMENT ACCOUNT!
+
+Automatic Deployment on Pull Request using GitHub Actions
+
 ### Local Development
 
 Local development on personal account.
