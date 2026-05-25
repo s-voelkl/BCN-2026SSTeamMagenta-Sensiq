@@ -10,8 +10,8 @@ defaults:
     working-directory: sys-src/sensiq-aws
 
 jobs:
-  ci:
-    name: CI
+  ci-aws:
+    name: CI AWS
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
