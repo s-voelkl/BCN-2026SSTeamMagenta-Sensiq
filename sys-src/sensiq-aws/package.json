@@ -12,6 +12,7 @@
     "@types/jest": "^30",
     "@types/node": "^24.10.1",
     "aws-cdk": "2.1122.0",
+    "esbuild": "^0.28.0",
     "eslint": "^10.4.0",
     "jest": "^30",
     "ts-jest": "^29",

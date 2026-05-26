@@ -4,8 +4,7 @@
 node_modules
 yarn.lock
 coverage/*
-
-
+package-lock.json
 
 # CDK asset staging directory
 .cdk.staging

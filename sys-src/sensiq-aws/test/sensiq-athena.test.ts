@@ -2,7 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import { SensiqAthenaStack } from '../lib/sensiq-athena-stack';
 
-test('Athena Stack Created Successfully', () => {
+test('Athena Stack Created', () => {
     const app = new cdk.App();
 
     const stack = new SensiqAthenaStack(app, 'TestAthenaStack');
