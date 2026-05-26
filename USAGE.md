@@ -48,7 +48,23 @@ Manual run of the workflow dispatch with github actions.
 ## Hardware
 
 The MCU with sensors is needed for the local development.
-The config file needs to be adjusted in order to run the hardware unit and connect via MQTT to the AWS cloud.
+
+When deploying the CDK stack (including the ``SensiqIotDeviceStack``) via ``cdk deploy`` the CLI output will show the generated certificate and private key for the thing. 
+The config file ``sys-src/sensiq-hardware/src/config.h`` (see template in the folder above)
+needs to be adjusted in order to run the hardware unit and connect via MQTT to the AWS cloud by inserting the generated certificate and private key like the following:
+
+```cpp
+constexpr const char *mqtt_aws_device_cert =
+    "-----BEGIN CERTIFICATE-----\n"
+    "line 1\n"
+    "...\n"
+    "line n\n"
+    "-----END CERTIFICATE-----\n";
+```
+
+The AWS Root CA certificate can be found [online at Amazon](https://www.amazontrust.com/repository/AmazonRootCA1.pem).
+
+Run ``aws iot describe-endpoint --endpoint-type iot:Data-ATS`` to get the AWS IoT endpoint for the MQTT connection and insert it into the config file as well. It should look like ``...-ats.iot.eu-central-1.amazonaws.com``.
 
 ## Frontend
 
