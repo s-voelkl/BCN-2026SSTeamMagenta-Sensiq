@@ -4,7 +4,6 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as glue from 'aws-cdk-lib/aws-glue';
 import * as athena from 'aws-cdk-lib/aws-athena';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 export class SensiqAthenaStack extends cdk.Stack {
@@ -104,10 +103,10 @@ export class SensiqAthenaStack extends cdk.Stack {
         });
 
         // Lambda Function for API Gateway
-        const handleHistoryData = new nodejs.NodejsFunction(this, 'HandleHistoryData', {
-            entry: 'lambda/history/index.ts',
-            handler: 'handler',
-            runtime: lambda.Runtime.NODEJS_22_X,
+        const handleHistoryData = new lambda.Function(this, 'HandleHistoryData', {
+            code: lambda.Code.fromAsset('lambda/history'),
+            handler: 'index.handler',
+            runtime: lambda.Runtime.PYTHON_3_14, // using latest Python runtime
             timeout: cdk.Duration.seconds(29), // API Gateway max timeout limit
             environment: {
                 ATHENA_WORKGROUP: workgroup.name,
