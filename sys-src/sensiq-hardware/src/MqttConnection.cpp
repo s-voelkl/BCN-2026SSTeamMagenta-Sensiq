@@ -38,8 +38,8 @@ void setupMQTT()
     secureClient.setCertificate(mqtt_aws_device_cert);
     secureClient.setPrivateKey(mqtt_aws_private_key);
 
-    // Larger timeout needed for 
-    secureClient.setTimeout(10);
+    // Larger timeout needed for TLS handshake and connection to AWS IoT Core, in milliseconds.
+    secureClient.setTimeout(10000); // 10 seconds
 
     // server settings
     mqttClient.begin(mqtt_server_hostname, mqtt_server_port, secureClient);
@@ -59,22 +59,25 @@ void connectToMQTT()
         Serial.println("...");
 
         // Attempt to connect
-        if (mqttClient.connect(device_id, mqtt_username, mqtt_password)) {
+        if (mqttClient.connect(device_id))
+        {
             Serial.println("MQTT connected successfully!");
 
             // Set subscription for real usage.
             mqttClient.subscribe(fullTopic, mqtt_qos);
-            Serial.println("Subscribed at QoS " + String(mqtt_qos) + ", topic: " + fullTopic);
+            Serial.println("Data: Subscribed at QoS " + String(mqtt_qos) + ", topic: " + fullTopic);
 
             // Test subscription to verify connection with test topic.
             mqttClient.subscribe(testTopic, mqtt_qos);
-            Serial.println("Subscribed at QoS " + String(mqtt_qos) + ", topic: " + testTopic);
+            Serial.println("Test: Subscribed at QoS " + String(mqtt_qos) + ", topic: " + testTopic);
 
             // Test publish to verify connection with test topic.
             String testPayload = "Test message from " + String(device_id);
             mqttClient.publish(testTopic, testPayload, false, mqtt_qos);
-            Serial.println("Published to topic: " + testTopic);
-        } else {
+            Serial.println("Test: Published to topic: " + testTopic);
+        }
+        else
+        {
             Serial.println("MQTT connection failed. Retrying later.");
         }
     }

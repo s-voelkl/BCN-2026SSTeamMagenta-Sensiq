@@ -15,7 +15,7 @@ void setup() {
   Serial.begin(115200, SERIAL_8N1);
   
 #if RUN_TESTS
-  delay(1000); // serial initialization delay for test output
+  delay(3000); // serial initialization delay for test output
   Serial.println("Starting AUnit tests...");
 #else
   // Connect to WiFi
@@ -54,7 +54,7 @@ void loop() {
   SensorData sensorData = readSensorsAveraged(n_readings, t_delay_ms);
 
   String json_output = buildJsonString(sensorData);
-  Serial.println(json_output);
+  // Serial.println(json_output);
 
   // Publish to MQTT Broker
   publishMQTTData(json_output);
