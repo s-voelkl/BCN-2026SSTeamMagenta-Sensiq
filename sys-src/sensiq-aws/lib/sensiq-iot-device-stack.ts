@@ -55,7 +55,7 @@ export class SensiqIotDeviceStack extends cdk.Stack {
           // {
           //   Effect: 'Allow',
           //   Action: 'iot:*',
-          //   Resource: '*'
+          //   Resource: 'arn:aws:iot:*:*:*'
           // },
           // granular permissions for every iot action (could be more granular)
           {
@@ -72,7 +72,7 @@ export class SensiqIotDeviceStack extends cdk.Stack {
           {
             Effect: 'Allow',
             Action: 'iot:Subscribe',
-            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/data` // same here
+            Resource: `arn:aws:iot:${region}:${account}:topicfilter/sensiq/${thingNameGeneral}*/data` // same here
           },
           {
             Effect: 'Allow',
@@ -88,7 +88,7 @@ export class SensiqIotDeviceStack extends cdk.Stack {
           {
             Effect: 'Allow',
             Action: 'iot:Subscribe',
-            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/test` // same here
+            Resource: `arn:aws:iot:${region}:${account}:topicfilter/sensiq/${thingNameGeneral}*/test` // same here
           },
           {
             Effect: 'Allow',
