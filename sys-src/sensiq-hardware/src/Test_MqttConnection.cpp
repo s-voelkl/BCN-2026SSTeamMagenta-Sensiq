@@ -1,9 +1,12 @@
 #include <AUnit.h>
 #include "config.h"
 #include <ArduinoJson.h>
+#include "MqttConnection.h"
+#include <MQTT.h>
 
 extern String fullTopic;
 extern String testTopic;
+extern MQTTClient mqttClient;
 
 test(MqttConnection_TopicsConstructedCorrectly)
 {
@@ -14,4 +17,14 @@ test(MqttConnection_TopicsConstructedCorrectly)
     // Assert:
     assertEqual(fullTopic, expectedFullTopic);
     assertEqual(testTopic, expectedTestTopic);
+}
+
+test(MqttConnection_PublishFailsWhenDisconnected)
+{
+    // Arrange: ensure client is disconnected
+    // Act
+    bool result = publishMQTTData("test_payload");
+
+    // Assert
+    assertFalse(result);
 }
