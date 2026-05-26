@@ -63,7 +63,9 @@ Manual run of the workflow dispatch with github actions.
 
 ``cdk list``: list all stacks > "SensiqCdkStack"
 
-``npm run build``: build manually when you want to catch syntax and type errors > "sensq.aws@..., tsc"
+``yarn run build``: build manually when you want to catch syntax and type errors > "sensq.aws@..., tsc"
+
+``yarn run test``: runs tests with code coverage using Jest.
 
 ``cdk synth``: build cloudformation template
 
