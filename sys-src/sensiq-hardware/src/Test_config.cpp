@@ -1,5 +1,5 @@
-#include <AUnit.h>
 #include "config.h"
+#include <AUnit.h>
 
 test(Config_valuesExistAndAreCorrect)
 {

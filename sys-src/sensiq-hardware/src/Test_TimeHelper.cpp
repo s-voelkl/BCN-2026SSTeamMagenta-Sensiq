@@ -1,8 +1,8 @@
-#include <AUnit.h>
 #include "TimeHelper.h"
 #include <time.h>
 #include <WiFi.h>
 #include "WifiConnection.h"
+#include <AUnit.h>
 
 test(TimeHelper_TimeIsSynchronized)
 {
