@@ -34,6 +34,45 @@ The [documentation](doc/) is licensed under the Creative Commons Attribution 4.0
 }
 ```
 
+## User Interface
+
+### API Gateway
+API Gateway Timeout: Denkt daran, dass AWS API Gateway ein unumstößliches Timeout von 29 Sekunden besitzt. Athena Queries sind asynchron. Ist die abgerufene Datenmenge beim handleHistoryData-Lambda zu groß und Athena braucht länger als 29 Sekunden für den Response, wirft das API Gateway einen 504 Timeout Error. Ist das der Fall, müsst ihr von synchron (Warten auf Athena) zu asynchron wechseln (Client schickt Request 
+→
+→ bekommt Query-ID 
+→
+→ Pollt später auf das Ergebnis).
+
+The API Gateway is configured with a timeout of 29 seconds, which is the maximum allowed by AWS. 
+If queries on the Athena database take longer than 29 seconds to execute, the API Gateway will return a 504 Timeout Error.
+If this problem consistently occurs, a switch from synchronous to asynchronous processing may be necessary.
+
+## AWS History Branch
+
+### S3 Bucket
+
+Partitioning: A too high granularity (e.g. by seconds) leads to a small file problem and 
+leads to a very bad performance. So the buffering in Kinesis Firehose should be set to 5 to 15 minutes or 
+until a file size of n MB is reached. The Partitioning with year/month/day would be enough.
+
+File Format: Apache Parquet is being used as file format, guaranteeing minimal storage and good performance.
+
+### Athena
+
+[AWS Athena Docs](https://docs.aws.amazon.com/athena/latest/ug/getting-started.html)
+
+### Glue Data Catalog
+
+Using the Glue Feature Partition Projection, Athena can automatically calculate the time 
+paths without needing to load new metadata.
+
+[AWS Glue Docs](https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html)
+[AWS Glue Data Catalog Docs](https://docs.aws.amazon.com/athena/latest/ug/data-sources-glue.html)
+
+### Data Firehose
+
+[AWS Firehose Docs](https://docs.aws.amazon.com/firehose/latest/dev/basic-create.html)
+
 ## etc
 
 <!-- # BCN-2026SSTeamMagenta-Sensiq
