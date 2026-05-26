@@ -84,7 +84,7 @@ Die gemittelten Werte werden in ein JSON-Format umgewandelt und per WiFi und MQT
 
 ## MQTT
 
-Verwendung von Async MQTT für asynchrone Kommunikation, um die Hauptschleife nicht zu blockieren.
+Optimal wäre eine Verwendung von Async MQTT für asynchrone Kommunikation, um die Hauptschleife nicht zu blockieren.
 
 Vorteile: (https://github.com/khoih-prog/AsyncMQTT_Generic#why-async-is-better)
 
@@ -93,7 +93,9 @@ Vorteile: (https://github.com/khoih-prog/AsyncMQTT_Generic#why-async-is-better)
 - Hintergrundausführung während Warten auf die Serverantwort möglich
 - bessere Performance bei instabilen Verbindungen
 
-Zertifikate: Sicherung der Verbingung mit TLS-Zertifikaten, um die Datenübertragung zu schützen. Zusätzlich Authentifizierung mit Benutzername und Passwort, um unbefugten Zugriff zu verhindern.
+Probleme: Keine Unterstützung der AWS IoT Core TLS-Zertifikate, die für die sichere Verbindung zum MQTT-Broker notwendig sind. Deshalb wird stattdessen die empfohlene MQTT-Bibliothek von Joel Gaehwiler verwendet, die TLS-Zertifikate unterstützt. Für diese muss im main loop jedoch regelmäßig die MQTT-Verbindung als Keep-Alive aufrechterhalten werden, was durch die Funktion `loopMQTT()` gewährleistet wird.
+
+Zertifikate: Sicherung der Verbingung mit TLS-Zertifikaten, um die Datenübertragung zu schützen. Die Zertifikate werden in der `credentials.h` gespeichert, um sie von der Hauptlogik zu trennen und die Sicherheit zu erhöhen.
 
 ## Sensoren
 
