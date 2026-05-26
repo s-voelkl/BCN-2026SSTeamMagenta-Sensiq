@@ -72,6 +72,9 @@ void loop() {
   // Ensure the MQTT connection is active
   connectToMQTT();
 
+  // Handle MQTT communication and keep alive
+  loopMQTT();
+
   // Read smoothed sensor values. 
   // Take n samples with t milliseconds delay between samples and average to reduce noise.
   SensorData sensorData = readSensorsAveraged(n_readings, t_delay_ms);

@@ -13,8 +13,14 @@
 void setupMQTT();
 
 /**
+ * @brief Handles background MQTT tasks.
+ * Should be called in the main loop to process incoming messages and keep the connection alive.
+ */
+void loopMQTT();
+
+/**
  * @brief Connects or reconnects to the MQTT broker.
- * This function handles connecting to the server asynchronously using the configured credentials.
+ * This function handles connecting to the server using the configured credentials.
  */
 void connectToMQTT();
 

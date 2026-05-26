@@ -78,10 +78,39 @@ constexpr const char *mqtt_password = "";
 constexpr int mqtt_qos = 1;
 
 /**
- * MQTT root CA certificate for secure TLS connection.
- *
- * Lets Encrypt: https://letsencrypt.org/certs/isrgrootx1.pem.txt
+ * Three required certificates for a thing in AWS IoT Core:
+
+ * 1. Root CA Certificate: : Authenticates the AWS IoT Core server (Amazon Trust Services). 
+ * It verifies that your device is actually connecting to AWS and not a malicious server
+ * 2. Device Certificate: Authenticates the device to AWS IoT Core. 
+ * It proves that the device is registered and authorized to connect to AWS.
+ * 3. Private Key: A cryptographic key paired with the device certificate. 
+ * It stays on the device to sign the connection requests.
  */
-constexpr const char *mqtt_root_ca_cert = "";
+/**
+ * AWS IoT Core Root CA Certificate (Amazon Trust Services).
+ * This certificate is used to authenticate the AWS IoT Core server during the TLS handshake.
+ * It ensures that the device is connecting to a legitimate AWS server.
+ * The certificate is in PEM format and should be kept secure.
+ */
+constexpr const char *mqtt_aws_root_ca_cert = "";
+
+/**
+ * AWS IoT Core Device Certificate.
+ * This certificate is used to authenticate the device to AWS IoT Core during the TLS handshake.
+ * It proves that the device is registered and authorized to connect to AWS.
+ * The certificate is in PEM format and should be kept secure.
+ */
+constexpr const char *mqtt_aws_device_cert = "";
+
+/**
+ * AWS IoT Core Device Private Key.
+ * This private key is used to sign messages and authenticate the device to AWS IoT Core during the TLS handshake.
+ * The certificate is in PEM format and should be kept secure.
+ */
+constexpr const char *mqtt_aws_private_key = "";
+
+#endif
+
 
 #endif
