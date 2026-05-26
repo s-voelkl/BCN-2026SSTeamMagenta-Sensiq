@@ -13,9 +13,12 @@ export class SensiqAthenaStack extends cdk.Stack {
         // S3 bucket for incoming IoT data.
         // It is expected that AWS Firehose will write Parquet files to this bucket.
         const dataBucket = new s3.Bucket(this, 'SensiqHistoryIoTDataBucket', {
+            bucketName: 'sensiq-history-iot-data-bucket', // globally unique
+            versioned: false, // higher costs, but also prevents accidental data loss
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, // blocking all public access
             removalPolicy: cdk.RemovalPolicy.RETAIN_ON_UPDATE_OR_DELETE,
             // autoDeleteObjects: true, // required if RemovalPolicy.DESTROY
-            lifecycleRules: [{ expiration: cdk.Duration.days(10 * 365) }] // auto-delete after 10 years
+            lifecycleRules: [{ expiration: cdk.Duration.days(10 * 365) }], // auto-delete after 10 years
         });
 
         // S3 Bucket for Athena query results, with lifecycle policy to clean up old results.
@@ -44,6 +47,7 @@ export class SensiqAthenaStack extends cdk.Stack {
             tableInput: {
                 name: tableName,
                 tableType: 'EXTERNAL_TABLE',
+                // Athena Partition Projection settings for automatic detection of new partitions
                 parameters: {
                     'classification': 'parquet',
                     'has_encrypted_data': 'false',
@@ -60,25 +64,27 @@ export class SensiqAthenaStack extends cdk.Stack {
                     'projection.day.digits': '2',
                     'storage.location.template': `s3://${dataBucket.bucketName}/data/year=\${year}/month=\${month}/day=\${day}/`,
                 },
+                // efficient partitioning and querying by year/month/day
                 partitionKeys: [
                     { name: 'year', type: 'string' },
                     { name: 'month', type: 'string' },
                     { name: 'day', type: 'string' }
                 ],
+                // defines data schema and Parquet reader/writer settings
                 storageDescriptor: {
                     location: `s3://${dataBucket.bucketName}/data/`,
-                    inputFormat: 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat',
-                    outputFormat: 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat',
+                    inputFormat: 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat', // Parquet input format
+                    outputFormat: 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat', // Parquet output format
                     serdeInfo: {
-                        serializationLibrary: 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe',
+                        serializationLibrary: 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe', // Parquet SerDe
                     },
                     // columns are expected to change over time!
                     columns: [
                         { name: 'running_time', type: 'bigint' },
-                        { name: 'timestamp', type: 'timestamp' },
+                        { name: 'timestamp', type: 'timestamp' }, // better for time-based queries than string
                         { name: 'device_id', type: 'string' },
                         { name: 'location', type: 'string' },
-                        { name: 'dht_humidity', type: 'int' },
+                        { name: 'dht_humidity', type: 'double' },
                         { name: 'dht_temperature', type: 'double' },
                         { name: 'dht_heat_index', type: 'double' },
                         { name: 'flame_analog', type: 'int' },
@@ -103,10 +109,11 @@ export class SensiqAthenaStack extends cdk.Stack {
         });
 
         // Lambda Function for API Gateway
-        const handleHistoryData = new lambda.Function(this, 'HandleHistoryData', {
+        // Python lambda function in lambda/history/handle_history_data.py with handle_history_data.handler()
+        const lambdaHandleHistoryData = new lambda.Function(this, 'HandleHistoryData', {
             code: lambda.Code.fromAsset('lambda/history'),
-            handler: 'index.handler',
-            runtime: lambda.Runtime.PYTHON_3_14, // using latest Python runtime
+            handler: 'handle_history_data.handler',
+            runtime: lambda.Runtime.PYTHON_3_12,
             timeout: cdk.Duration.seconds(29), // API Gateway max timeout limit
             environment: {
                 ATHENA_WORKGROUP: workgroup.name,
@@ -115,19 +122,36 @@ export class SensiqAthenaStack extends cdk.Stack {
         });
 
         // IAM Permissions for Lambda to query Athena and read from S3
-        handleHistoryData.addToRolePolicy(new iam.PolicyStatement({
+        // ARN: Amazon Resource Name for referencing AWS resources.
+        // cdk.Arn.format builds an ARN string in a strict format: arn:aws:glue:<region>:<account>:<resourceType>/<resourceName>
+        const glueCatalogArn = cdk.Arn.format({ service: 'glue', resource: 'catalog' }, this);
+        const glueDatabaseArn = cdk.Arn.format({ service: 'glue', resource: 'database', resourceName: glueDatabaseName }, this);
+        const glueTableArn = cdk.Arn.format({ service: 'glue', resource: 'table', resourceName: `${glueDatabaseName}/${tableName}` }, this);
+        const athenaWorkgroupArn = cdk.Arn.format({ service: 'athena', resource: 'workgroup', resourceName: workgroup.name }, this);
+
+        lambdaHandleHistoryData.addToRolePolicy(new iam.PolicyStatement({
             actions: [
                 'athena:StartQueryExecution',
                 'athena:GetQueryExecution',
                 'athena:GetQueryResults',
+            ],
+            resources: [athenaWorkgroupArn]
+        }));
+
+        // Gives lambda read-access for the Glue Catalog, Database, and Table.
+        // Lambda starts an Athena query that references the Glue Table, so permissions are needed.
+        lambdaHandleHistoryData.addToRolePolicy(new iam.PolicyStatement({
+            actions: [
                 'glue:GetTable',
                 'glue:GetDatabase'
             ],
-            // TODO: Scope down permissions to specific resources if possible, currently using wildcard for simplicity
-            resources: ['*']
+            resources: [glueCatalogArn, glueDatabaseArn, glueTableArn]
         }));
 
-        dataBucket.grantRead(handleHistoryData);
-        queryResultsBucket.grantReadWrite(handleHistoryData);
+        // L3-Construct-Comfort-Function: 
+        // Enables the lambda to read parquet files from the dataBucket and write temporary Athena 
+        // query outputs and metadata to the queryResultsBucket and returns the results
+        dataBucket.grantRead(lambdaHandleHistoryData);
+        queryResultsBucket.grantReadWrite(lambdaHandleHistoryData);
     }
 }

@@ -15,7 +15,7 @@ The [documentation](doc/) is licensed under the Creative Commons Attribution 4.0
 
 ## Hardware
 
-## Example JSON Payload
+### Example JSON Payload
 
 ```json
 {
@@ -47,6 +47,10 @@ The API Gateway is configured with a timeout of 29 seconds, which is the maximum
 If queries on the Athena database take longer than 29 seconds to execute, the API Gateway will return a 504 Timeout Error.
 If this problem consistently occurs, a switch from synchronous to asynchronous processing may be necessary.
 
+## AWS IoT Core
+
+Additional Information on topic declaration found in the [docs](https://docs.aws.amazon.com/iot/latest/developerguide/iot-action-resources.html).
+
 ## AWS History Branch
 
 ### S3 Bucket
@@ -57,9 +61,22 @@ until a file size of n MB is reached. The Partitioning with year/month/day would
 
 File Format: Apache Parquet is being used as file format, guaranteeing minimal storage and good performance.
 
+As the type of S3 bucket, the standard storage class is used, as the data is accessed and changed frequently,
+the access must have low latency and high throughput, and the cost should be kept low (see [Docs](https://aws.amazon.com/de/s3/storage-classes/)).
+
 ### Athena
 
 [AWS Athena Docs](https://docs.aws.amazon.com/athena/latest/ug/getting-started.html)
+
+### Lambda Handle History Data
+
+For a safe usage of Athena, the Lambda function uses [prepared statements](https://docs.aws.amazon.com/athena/latest/ug/querying-with-prepared-statements-querying.html) to prevent SQL injection and ensure that user input is properly sanitized before being included in the query execution. The query is built with parameters as limit, startDate and endDate for flexible filtering from the client side.
+
+During the wait for a response from Athena, the Lambda function implements a polling mechanism that periodically checks the status of the query execution. The query execution status can be one of the following: QUEUED, RUNNING, SUCCEEDED, FAILED, or CANCELLED (see [Athena Query Execution States](https://docs.aws.amazon.com/athena/latest/APIReference/API_QueryExecutionStatus.html)). After a given timeout threshold (e.g., 25 seconds to stay within the API Gateway limit), if the query has not reached a terminal state (SUCCEEDED, FAILED, or CANCELLED), the Lambda function will return a timeout response to the client, indicating that the query is still processing and advising them to check back later for results.
+
+After receiving a successful response from Athena, the Lambda function retrieves the query results and transforms them into a JSON structure that can be easily consumed by the client application. Dependent on the success or failure of the query execution, the Lambda function returns an appropriate HTTP response code (e.g., 200 for success, 500 for server error) along with a JSON body containing either the query results or error details.
+
+The methods were fully tested with unit tests using the unittest framework and mocks.
 
 ### Glue Data Catalog
 

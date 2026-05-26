@@ -56,6 +56,16 @@ More information as a CDK Guide: [AWS CDK Hello World](https://docs.aws.amazon.c
 
 Automatic Deployment *on Pull Request* using GitHub Actions.
 
+### Python Setup 
+
+- Recommended Python Version: 3.14
+- Install Venv: ``sudo apt install python3.14-venv``
+- Environment Creation: ``cd ./sys-src/sensiq-aws/`` and then ``python3 -m venv .venv``
+- Activate Environment: ``source .venv/bin/activate`` in a new terminal
+- Install dependencies: ``pip install -r requirements.txt`` in the activated environment
+- Recommended VS Code Extensions: Python, Python Environments, Python Test Explorer
+- Python Test Framework: Pytest, runnable via VS Code Test Explorer or CLI: ``pytest lambda/ --cov=lambda``. Or for exporting the coverage report: ``pytest lambda/ --cov=lambda --cov-report=markdown:coverage/lambda-coverage.md``
+
 ### Local Development
 
 Local development on personal account.
@@ -71,7 +81,6 @@ Manual run of the workflow dispatch with github actions.
 
 ``cdk deploy``: deploy to AWS on personal account 
 --> visible on [AWS CloudFormation](https://eu-central-1.console.aws.amazon.com/cloudformation/home?region=eu-central-1)
-
 
 ## Hardware
 
