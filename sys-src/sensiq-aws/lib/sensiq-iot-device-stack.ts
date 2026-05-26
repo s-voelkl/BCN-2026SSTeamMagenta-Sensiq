@@ -7,13 +7,16 @@ export class SensiqIotDeviceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const thingName = 'ESP32_Lab_001';
+    const thingNameGeneral = 'esp32-';
+    const thingNameSpecific = thingNameGeneral + 'lab-001';
 
     const thing = new iot.CfnThing(this, 'SensiqESP32Thing', {
-      thingName: thingName,
+      thingName: thingNameSpecific,
     });
 
-    // Cert creation -> SAFE the console output!; has to be put into ESP manually
+    // Cert creation -> SAFE the console output! It has to be put into the ESP manually.
+    // Note: Since only onCreate and onDelete are defined (no onUpdate), the certificates
+    // are only generated once during initial stack creation and remain unchanged during stack updates.
     const createCert = new cr.AwsCustomResource(this, 'CreateCert', {
       onCreate: {
         service: 'Iot',
@@ -25,10 +28,11 @@ export class SensiqIotDeviceStack extends cdk.Stack {
       // important for cleanup when stack is destroyed -> otherwise certs would pile up in the AWS account
       onDelete: {
         service: 'Iot',
-        action: 'deleteCertificate',
-        parameters: { certificateId: new cr.PhysicalResourceIdReference(),
-            forceDelete: true
-         },
+        action: 'updateCertificate',
+        parameters: {
+          certificateId: new cr.PhysicalResourceIdReference(),
+          newStatus: 'INACTIVE',
+        },
       },
       policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
         resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
@@ -47,28 +51,62 @@ export class SensiqIotDeviceStack extends cdk.Stack {
       policyDocument: {
         Version: '2012-10-17',
         Statement: [
-      // granular permissions for every iot action (could be more granular)
-      {
-        Effect: 'Allow',
-        Action: 'iot:Connect',
-        Resource: `arn:aws:iot:${region}:${account}:client/ESP-*` // could be further restricted, but it is ok for now
-      },
-      {
-        Effect: 'Allow',
-        Action: 'iot:Publish',
-        Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/ESP-*/data` // same here
-      },
-      {
-        Effect: 'Allow',
-        Action: 'iot:Subscribe',
-        Resource: `arn:aws:iot:${region}:${account}:topicfilter/sensiq/ESP-*/commands` // same here
-      },
-      {
-        Effect: 'Allow',
-        Action: 'iot:Receive',
-        Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/ESP-*/commands` // same here
-      }
-    ],
+          // Testing only: universal permissions for all iot actions and resources.
+          // {
+          //   Effect: 'Allow',
+          //   Action: 'iot:*',
+          //   Resource: '*'
+          // },
+          // granular permissions for every iot action (could be more granular)
+          {
+            Effect: 'Allow',
+            Action: 'iot:Connect',
+            Resource: `arn:aws:iot:${region}:${account}:client/${thingNameGeneral}*` // could be further restricted, but it is ok for now
+          },
+          // data topic for sensor data sending
+          {
+            Effect: 'Allow',
+            Action: 'iot:Publish',
+            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/data` // same here
+          },
+          {
+            Effect: 'Allow',
+            Action: 'iot:Subscribe',
+            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/data` // same here
+          },
+          {
+            Effect: 'Allow',
+            Action: 'iot:Receive',
+            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/data` // same here
+          },
+          // test topic for automatic and manual testing
+          {
+            Effect: 'Allow',
+            Action: 'iot:Publish',
+            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/test` // same here
+          },
+          {
+            Effect: 'Allow',
+            Action: 'iot:Subscribe',
+            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/test` // same here
+          },
+          {
+            Effect: 'Allow',
+            Action: 'iot:Receive',
+            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/test` // same here
+          },
+          // command topic for receiving commands from the backend
+          {
+            Effect: 'Allow',
+            Action: 'iot:Subscribe',
+            Resource: `arn:aws:iot:${region}:${account}:topicfilter/sensiq/${thingNameGeneral}*/commands` // same here
+          },
+          {
+            Effect: 'Allow',
+            Action: 'iot:Receive',
+            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/commands` // same here
+          },
+        ],
       },
     });
 
@@ -77,10 +115,14 @@ export class SensiqIotDeviceStack extends cdk.Stack {
       principal: certArn,
     });
 
-    new iot.CfnThingPrincipalAttachment(this, 'ThingAttach', {
-      thingName: thing.thingName!,
+    // Use thing.ref and an explicit dependency to ensure CloudFormation creates
+    // the IoT Thing BEFORE attempting to attach the certificate. Using a hardcoded
+    // string causes a ResourceNotFoundException due to premature attachment.
+    const thingAttach = new iot.CfnThingPrincipalAttachment(this, 'ThingAttach', {
+      thingName: thing.ref,
       principal: certArn,
     });
+    thingAttach.addDependency(thing);
 
     new cdk.CfnOutput(this, 'DeviceCertificatePem', { value: certPem });
     new cdk.CfnOutput(this, 'DevicePrivateKey', { value: privKey });
