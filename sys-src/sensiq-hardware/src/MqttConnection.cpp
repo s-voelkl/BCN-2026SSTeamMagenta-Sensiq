@@ -63,9 +63,14 @@ void connectToMQTT()
         {
             Serial.println("MQTT connected successfully!");
 
-            // Set subscription for real usage.
-            mqttClient.subscribe(fullTopic, mqtt_qos);
-            Serial.println("Data: Subscribed at QoS " + String(mqtt_qos) + ", topic: " + fullTopic);
+            // Set subscription for data
+            // NOTE: Comment these lines out, or else the controller is registered as a subscriber
+            // to AWS IoT Core, receiving all data messages.
+            // This doubles (!) the sent messages in IoT Core, resulting in doubled costs!
+            // The success-code of the publishing must be enough (see publishMQTTData() method).
+            // Also, the test topic can be used for each connection establishment.
+            // mqttClient.subscribe(fullTopic, mqtt_qos);
+            // Serial.println("Data: Subscribed at QoS " + String(mqtt_qos) + ", topic: " + fullTopic);
 
             // Test subscription to verify connection with test topic.
             mqttClient.subscribe(testTopic, mqtt_qos);
