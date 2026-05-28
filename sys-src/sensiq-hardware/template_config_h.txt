@@ -2,7 +2,6 @@
  * This is a template configuration header file for the ESP32-based sensor device. 
  * The real file should be named "config.h" and should be placed in the same directory as the main source code.
  */
-
 #ifndef CONFIG_H
 #define CONFIG_H
 
@@ -19,7 +18,7 @@ constexpr const char *wifi_password = "";
 /**
  * Globally unique device ID for the JSON transmission.
  */
-constexpr const char *device_id = "esp32-lab-001";
+constexpr const char *device_id = "esp32_lab_001";
 /**
  * Location information for the JSON transmission.
  * Useful to identify the real sensor location.
@@ -30,7 +29,7 @@ constexpr const char *device_location = "Lab A, OTH Amberg-Weiden, 92224 Amberg,
  * MQTT server hostname.
  * This is the hostname of the MQTT broker that the ESP32 will connect to for publishing sensor data.
  */
-constexpr const char *mqtt_server_hostname = "";
+constexpr const char *mqtt_server_hostname = "......iot.eu-central-1.amazonaws.com";
 /**
  * MQTT server port.
  * This is the port number on which the MQTT broker is listening for incoming connections.
@@ -39,11 +38,11 @@ constexpr int mqtt_server_port = 8883;
 /**
  * MQTT main topic for publishing sensor data.
  */
-constexpr const char *mqtt_topic = "de-othaw/bcn/sose2026/sensiq";
+constexpr const char *mqtt_topic = "sensiq";
 /**
  * MQTT subtopic for publishing sensor data.
  * The resulting full topic will be a combination of mqtt_topic, device_id, and mqtt_subtopic_data,
- * e.g., "de-othaw/bcn/sose2026/sensiq/esp32-lab-001/data".
+ * e.g., "esp32_lab_001/data".
  */
 constexpr const char *mqtt_subtopic_data = "data";
 
@@ -52,19 +51,9 @@ constexpr const char *mqtt_subtopic_data = "data";
  * This can be used for publishing test messages or for subscribing to test topics
  * during development and debugging.
  * The resulting full topic will be a combination of mqtt_topic, device_id, and mqtt_subtopic_test,
- * e.g., "de-othaw/bcn/sose2026/sensiq/esp32-lab-001/test".
+ * e.g., "esp32_lab_001/test".
  */
 constexpr const char *mqtt_subtopic_test = "test";
-/**
- * MQTT username for authentication with the MQTT broker.
- * @note Ensure that this is kept secure and not shared publicly.
- */
-constexpr const char *mqtt_username = "";
-/**
- * MQTT password for authentication with the MQTT broker.
- * @note Ensure that this is kept secure and not shared publicly.
- */
-constexpr const char *mqtt_password = "";
 /**
  * MQTT Quality of Service level for published messages.
  * This defines the guarantee of delivery for MQTT messages:
@@ -78,10 +67,56 @@ constexpr const char *mqtt_password = "";
 constexpr int mqtt_qos = 1;
 
 /**
- * MQTT root CA certificate for secure TLS connection.
- *
- * Lets Encrypt: https://letsencrypt.org/certs/isrgrootx1.pem.txt
+ * Three required certificates for a thing in AWS IoT Core:
+
+ * 1. Root CA Certificate: : Authenticates the AWS IoT Core server (Amazon Trust Services).
+ * It verifies that your device is actually connecting to AWS and not a malicious server
+ * 2. Device Certificate: Authenticates the device to AWS IoT Core.
+ * It proves that the device is registered and authorized to connect to AWS.
+ * 3. Private Key: A cryptographic key paired with the device certificate.
+ * It stays on the device to sign the connection requests.
  */
-constexpr const char *mqtt_root_ca_cert = "";
+/**
+ * AWS IoT Core Root CA Certificate (Amazon Trust Services).
+ * This certificate is used to authenticate the AWS IoT Core server during the TLS handshake.
+ * It ensures that the device is connecting to a legitimate AWS server.
+ * The certificate is in PEM format and should be kept secure.
+ *
+ * @note This is a public certificate that is openly available from Amazon Trust Services.
+ */
+constexpr const char *mqtt_aws_root_ca_cert =
+    "-----BEGIN CERTIFICATE-----\n"
+    "line 1\n"
+    "line 2\n"
+    "line n\n"
+    "-----END CERTIFICATE-----\n";
+
+/**
+ * AWS IoT Core Device Certificate.
+ * This certificate is used to authenticate the device to AWS IoT Core during the TLS handshake.
+ * It proves that the device is registered and authorized to connect to AWS.
+ * The certificate is in PEM format and should be kept secure.
+ *
+ * @note This certificate will be created and displayed in the CLI on deployment of the AWS IoT Core Stack.
+ */
+constexpr const char *mqtt_aws_device_cert =
+    "-----BEGIN CERTIFICATE-----\n"
+    "line 1\n"
+    "line 2\n"
+    "line n\n"
+    "-----END CERTIFICATE-----\n";
+
+/**
+ * AWS IoT Core Device Private Key.
+ * This private key is used to sign messages and authenticate the device to AWS IoT Core during the TLS handshake.
+ * The certificate is in PEM format and should be kept secure.
+ * @note This certificate will be created and displayed in the CLI on deployment of the AWS IoT Core Stack.
+ */
+constexpr const char *mqtt_aws_private_key =
+    "-----BEGIN RSA PRIVATE KEY-----\n"
+    "line 1\n"
+    "line 2\n"
+    "line n\n"
+    "-----END RSA PRIVATE KEY-----\n";
 
 #endif

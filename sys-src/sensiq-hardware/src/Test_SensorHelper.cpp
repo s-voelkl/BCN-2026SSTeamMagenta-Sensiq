@@ -1,7 +1,7 @@
-#include <AUnit.h>
 #include "SensorHelper.h"
 #include "config.h"
 #include <ArduinoJson.h>
+#include <AUnit.h>
 
 test(SensorHelper_buildJsonString_exportsCorrectJsonData)
 {

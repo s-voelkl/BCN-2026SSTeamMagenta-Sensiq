@@ -1,5 +1,5 @@
-#include <AUnit.h>
 #include "config.h"
+#include <AUnit.h>
 
 test(Config_valuesExistAndAreCorrect)
 {
@@ -17,10 +17,10 @@ test(Config_valuesExistAndAreCorrect)
     assertNotEqual(static_cast<int>(String(mqtt_topic).length()), 0);
     assertNotEqual(static_cast<int>(String(mqtt_subtopic_data).length()), 0);
     assertNotEqual(static_cast<int>(String(mqtt_subtopic_test).length()), 0);
-    assertNotEqual(static_cast<int>(String(mqtt_username).length()), 0);
-    assertNotEqual(static_cast<int>(String(mqtt_password).length()), 0);
     assertTrue(mqtt_qos >= 0 && mqtt_qos <= 2);
 
     // mqtt certificates
-    assertNotEqual(static_cast<int>(String(mqtt_root_ca_cert).length()), 0);
+    assertNotEqual(static_cast<int>(String(mqtt_aws_root_ca_cert).length()), 0);
+    assertNotEqual(static_cast<int>(String(mqtt_aws_device_cert).length()), 0);
+    assertNotEqual(static_cast<int>(String(mqtt_aws_private_key).length()), 0);
 }
