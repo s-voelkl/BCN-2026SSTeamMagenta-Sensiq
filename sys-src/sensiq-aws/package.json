@@ -4,9 +4,10 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "jest",
+    "test": "jest && pytest",
     "cdk": "cdk",
-    "lint": "eslint . --ext .ts,.tsx"
+    "lint": "eslint . --ext .ts,.tsx && echo running ruff lint for python... && ruff check .",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix && echo running ruff lint for python... && ruff check . --fix"
   },
   "devDependencies": {
     "@types/jest": "^30",

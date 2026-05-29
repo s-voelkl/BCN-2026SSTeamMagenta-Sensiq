@@ -1,6 +1,0 @@
-# requirements, i.e. for python lambda handlers
-boto3
-botocore[crt]
-pytest
-pytest-cov
-pytest-mock

@@ -56,48 +56,58 @@ More information as a CDK Guide: [AWS CDK Hello World](https://docs.aws.amazon.c
 
 Automatic Deployment *on Pull Request* using GitHub Actions.
 
-### Python Setup 
+### Python Setup
 
 - Recommended Python Version: 3.14
 - Install Venv: ``sudo apt install python3.14-venv``
 - Environment Creation: ``cd ./sys-src/sensiq-aws/`` and then ``python3 -m venv .venv``
 - Activate Environment: ``source .venv/bin/activate`` in a new terminal
-- Install dependencies: ``pip install -r requirements.txt`` in the activated environment
-- Recommended VS Code Extensions: Python, Python Environments, Python Test Explorer
-- Python Test Framework: Pytest, runnable via VS Code Test Explorer or CLI: ``pytest lambda/ --cov=lambda``. Or for exporting the coverage report: ``pytest lambda/ --cov=lambda --cov-report=markdown:coverage/lambda-coverage.md``
+- Dependencies: see ``pyproject.toml`` > ``[project].dependencies`` and ``[project.optional-dependencies]`` for dev dependencies
+- Install dependencies: ``pip install .`` in the activated environment
+
+> Recommended VS Code Extensions: Python, Python Environments.
 
 ### Local Development
 
 Local development on personal account.
 Manual run of the workflow dispatch with github actions.
 
-``cdk list``: list all stacks > "SensiqCdkStack"
+``yarn lint``: linting with eslint for javascript and ruff for python for ensuring code quality > should throw errors if there are syntax or type errors
+
+> Recommended VS Code Extension: ESLint by Microsoft, Ruff by Astral.
+> use ``yarn lint --fix`` to automatically fix linting errors when possible
 
 ``yarn run build``: build manually when you want to catch syntax and type errors > "sensq.aws@..., tsc"
 
-``yarn run test``: runs tests with code coverage using Jest.
+``yarn run test``: runs tests with code coverage using Jest for JavaScript and Pytest for Python. Exports results to coverage folder.
+
+> Recommended VS Code Extension: Jest by Orta, Python Test Explorer by Little Fox Team.
+
+### CDK
+
+``cdk list``: list all stacks > "SensiqCdkStack"
 
 ``cdk synth``: build cloudformation template
 
-``cdk deploy``: deploy to AWS on personal account 
+``cdk deploy``: deploy to AWS on personal account
 --> visible on [AWS CloudFormation](https://eu-central-1.console.aws.amazon.com/cloudformation/home?region=eu-central-1)
 
 ## Hardware
 
 The MCU with sensors is needed for the local development.
 
-When deploying the CDK stack (including the ``SensiqIotDeviceStack``) via ``cdk deploy`` the CLI output will show the generated certificate and private key for the thing. 
+When deploying the CDK stack (including the ``SensiqIotDeviceStack``) via ``cdk deploy`` the CLI output will show the generated certificate and private key for the thing.
 The config file ``sys-src/sensiq-hardware/src/config.h`` (see template in the folder above)
 needs to be adjusted in order to run the hardware unit and connect via MQTT to the AWS cloud by inserting the generated certificate and private key like the following:
 
-```cpp
-constexpr const char *mqtt_aws_device_cert =
-    "-----BEGIN CERTIFICATE-----\n"
-    "line 1\n"
-    "...\n"
-    "line n\n"
-    "-----END CERTIFICATE-----\n";
-```
+    ``` cpp
+    constexpr const char *mqtt_aws_device_cert =
+        "-----BEGIN CERTIFICATE-----\n"
+        "line 1\n"
+        "...\n"
+        "line n\n"
+        "-----END CERTIFICATE-----\n";
+    ```
 
 The AWS Root CA certificate can be found [online at Amazon](https://www.amazontrust.com/repository/AmazonRootCA1.pem).
 
