@@ -67,6 +67,21 @@ Automatic Deployment *on Pull Request* using GitHub Actions.
 
 > Recommended VS Code Extensions: Python, Python Environments.
 
+### VS Code Config
+
+Recommended .vscode/settings.json configuration for Python testing and linting, in project root folder!
+
+    ``` json
+    {
+        "python.testing.pytestArgs": [
+            "sys-src/sensiq-aws"
+        ],
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestEnabled": true,
+        "python.analysis.autoImportCompletions": true
+    }
+    ```
+
 ### Local Development
 
 Local development on personal account.
