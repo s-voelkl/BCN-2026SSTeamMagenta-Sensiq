@@ -139,4 +139,4 @@ testpaths = ["lambda_tests", "lambda"]
 pythonpath = ["lambda"]
 
 # coverage report as markdown file for better readability in the codebase, stored in coverage folder
-addopts = "--cov=lambda --cov-report=term-missing --cov-report=markdown:coverage/lambda-coverage.md"
+addopts = "--cov=lambda --cov-report=term-missing --cov-report=markdown:coverage/pytest-lambda-coverage.md"

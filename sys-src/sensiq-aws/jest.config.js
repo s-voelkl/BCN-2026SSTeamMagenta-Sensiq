@@ -11,4 +11,5 @@ module.exports = {
     'lib/**/*.ts',
     'bin/**/*.ts'
   ],
+  coverageDirectory: 'coverage/jest-aws-coverage',
 };

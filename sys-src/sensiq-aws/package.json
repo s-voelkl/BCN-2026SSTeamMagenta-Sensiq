@@ -4,7 +4,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "jest && pytest",
+    "test": "jest --coverage && pytest",
     "cdk": "cdk",
     "lint": "eslint . --ext .ts,.tsx && echo running ruff lint for python... && ruff check .",
     "lint:fix": "eslint . --ext .ts,.tsx --fix && echo running ruff lint for python... && ruff check . --fix"
