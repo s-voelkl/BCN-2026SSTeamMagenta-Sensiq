@@ -40,7 +40,6 @@ The Python code coverage results can be obtained from ``sys-src/sensiq-aws/cover
     "thermistor_temp":24.05634,
     "is_outlier":false, // tbd, not implemented yet!
     "collect_training":false // tbd, not implemented yet!
-
 }
 ```
 
