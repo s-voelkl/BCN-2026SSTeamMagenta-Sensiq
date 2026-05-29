@@ -10,24 +10,31 @@
 % \usepackage{graphicx} % Required for inserting images
 \usepackage{csquotes} % Korrekte Anführungszeichen setzen. Sprachspezifisch möglich. mit \setquotestyle{style} und \enquote{}.
 % \usepackage[american]{babel} % Ändert die Darstellung des Datums in amerikanische Darstellung.
-% \usepackage[capitalize, nameinlink, american]{cleveref} % Referenzen besser machen. z.B. mit \cref{}
+\usepackage{hyperref}
+\usepackage[capitalise,nameinlink,noabbrev]{cleveref} % Referenzen besser machen. z.B. mit \cref{}. needs hyperref defined before it.
 % \usepackage[backend=biber, style=ieee, alldates=iso]{biblatex} % Zitieren
 % \usepackage{array} % Tabellen mit \begin{tabular}
 \usepackage{multirow} % Mehrere Zeilen in eine zusammenfassen. für Spalten einfach \multicolumn benutzen
-% \usepackage{booktabs} % Hübschere Tabellen mit \top/mid/cmid/bottomrule
+\usepackage{booktabs} % Hübschere Tabellen mit \top/mid/cmid/bottomrule
 \usepackage{minted} % Neuere Bibliothek für Code-Blöcke, mit \begin{listing oder minted}
 \usepackage{amsmath} % American Mathematical Society für mathematische Formeln, z.B. mit \begin{equation}
 \usepackage{amssymb}
 \usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{siunitx}
+\usepackage{array}
+\usepackage{tabularx}
 
 \addbibresource{references.bib}
 % \addbibresource{xampl.bib} % (xampl file provided by the BibTEX base files)
 % ======================================================================
 % EDIT THESE:
 \cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0000-0002-1175-2668}}
-\cstechrepAuthorListBib{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu} %TODO: correct format?
+\cstechrepAuthorListBib{Simon Völkl and Johannes Schieder and Sebastian Rosner and Andre Tien Vu}
 % Capitalization: https://capitalizemytitle.com/style/Chicago/
-\cstechrepTitleTex{Minimal Working Example of a cs-techrep Paper} %TODO: replace with actual title
+\cstechrepTitleTex{Sensiq: An MCU-Based IoT Architecture for Environmental Monitoring}
  % IF you need manual linebreaks in the title, then clone the title without linebreaks for BibTeX:
 \cstechrepTitleBib{{\cstechrepTitleTex}}
 \cstechrepDepartment{Department of Electrical Engineering, Media, and Computer Science}
@@ -58,32 +65,507 @@
 \selectlanguage{\cstechrepLang}
 \maketitle
 \begin{abstract}
+    Background: Reliable environmental monitoring is essential for laboratory and facility safety,
+    yet many systems trade off scalability, security, or real-time access. Objective: This concept
+    paper proposes Sensiq, an MCU-based IoT architecture intended to enable secure, low-latency
+    live monitoring and scalable historical storage for environmental sensor data.
 
-    Modularbeit in Big Data, Cloud and NoSQL. Das ist der englische Abstract (Zusammenfassung). % TODO: replace with actual abstract
-    Nicht benennen: Modularbeit, Personen, Studiengang, ...
-    Sondern als Elevator Pitch
+    Methods: We describe a serverless AWS-based pipeline in which ESP32 edge devices publish
+    JSON-encoded measurements (temperature, humidity, gas, flame) over MQTT/TLS. The architecture
+    specifies Lambda-based validation and persistence to DynamoDB and S3, and REST endpoints for
+    `GET /live` and `GET /history`. We propose a configurable simulator to exercise ingestion and
+    retrieval without physical hardware and to guide future implementation and testing.
 
+    Conclusion: Sensiq defines a lightweight, extensible foundation for laboratory environmental
+    monitoring. Future work focuses on implementing the MVP, adding a web dashboard 
+    and notification services for visualization and alerts.
 \end{abstract}
 \begin{IEEEkeywords}
-Cloud, Big Data, NoSQL, Modularbeit % TODO: replace with actual keywords
+    IoT, Environmental Monitoring, ESP32, MCU, MQTT, Serverless Architecture, AWS
 \end{IEEEkeywords}
 
-\section{Introduction}
-Here we go. %TODO: replace with actual introduction
-\cite{robocuprescue2025}
+\section{Introduction}\label{sec:introduction}
+% Motivation, zusammenfassender Überblick des Anwendungskonzeptes, fachliches Alleinstellungsmerkmal (USP), Benennung von technischen Schlüssel-Bausteinen, Fachvokabular einführen.
 
-Motivation, zusammenfassender Überblick des Anwendungskonzeptes, fachliches Alleinstellungsmerkmal (USP), Benennung von technischen Schlüssel-Bausteinen, Fachvokabular einführen.
+\subsection{Motivation}\label{sec:motivation}
+% Use Case: Laborüberwachung für stabile Proben und Produktion. -> Temperatur, Luftfeuchtigkeit, Gase.
+In modern laboratory and production environments, maintaining stable ambient conditions is vital for experimental validity and product 
+quality. Conventional monitoring systems often lack real-time accessibility, scalability, or automated alerting capabilities.
+This project addresses these gaps by integrating cost-effective ESP32 edge hardware with a robust AWS cloud architecture.
+By transitioning from isolated local measurements to a centralized, serverless IoT platform, we enable seamless data persistence,
+interactive visualization, and immediate incident response. The objective is to provide lab managers and technicians with a scalable,
+high-availability tool that ensures operational safety and data-driven quality assurance.
 
-\section{Related Work}
-andere Arbeiten oder Technologien (die als Inspiration dienten), Screenshots
-\section{Requirements}
-Agile User Stories (+Akzeptanzkriterien als Definition of Done) oder klassische Use-Cases als Anforderungen an die Anwendung.
-Beschreibung von Eingabe und Ausgabe des Systems und dessen Teilfunktionen; benötigte Ressourcen (z.B. Bestandsdaten), 
-\section{Technical Concept}
-knapp technische Schlüsselmerkmale der Anwendung, rein deskriptiv
+% Section Overview
+This Section introduces the motivation, the Unique Selling Point (USP), and the key technical components of the proposed system. 
+~\cref{sec:related_work} gives an overview of related work and technologies that inspired and influenced the design of our system.
+The core requirements are defined in~\cref{sec:requirements} with a focus on user-centered design, including detailed user stories and
+ acceptance criteria for the minimum viable product (MVP).
+The technical concept and architecture of the system are described in~\cref{sec:technical_concept}.
+~\cref{sec:conclusion} summarizes the key findings and outlines future work and next steps for the project.
+
+\subsection{Unique Selling Point}\label{sec:unique_selling_point}
+% Alleinstellungsmerkmal
+
+The proposed system is specifically engineered to meet the rigorous demands of high-precision laboratory monitoring, 
+such as maintaining stable environmental conditions for sensitive chemical samples. The architecture differentiates 
+itself through several key strategic factors:
+
+\begin{itemize}
+    \item \textbf{Cost-Effective Custom Infrastructure}: A significant drawback of many existing solutions is the heavy 
+    reliance on third-party dashboarding tools like Grafana, which often incur substantial licensing costs and 
+    complex login management in multi-user environments. Our system eliminates these barriers by utilizing a 
+    custom frontend, providing a tailored, high-performance interface without per-user licensing fees.
+    \item \textbf{Advanced Data Governance}: By implementing a fully serverless data pipeline with 
+    the system ensures long-term data sovereignty and cost-efficiency. 
+    Effectively storing data enables laboratory managers to perform high-speed safety audits and complex trend 
+    analysis over years of data with minimal operational overhead.
+    \item \textbf{High-Performance Architecture}: Moving beyond simple academic prototypes, this project leverages 
+    a MCU with good processing power and integrated security features. Combined with the robustness 
+    of serverless components in the cloud, the system ensures sub-second response times for critical events, 
+    such as gas leaks or temperature spikes.
+\end{itemize}
+
+% Benennung von technischen Schlüssel-Bausteinen
+\subsection{Key Technical Components}\label{sec:key_technical_components}
+
+The proposed system is built around an ESP32 edge device connected to multiple environmental sensors, such as temperature,
+humidity, gas, and flame sensors. Sensor readings are pre-processed locally and transmitted via encrypted MQTT/TLS to protect
+data confidentiality and ensure device authentication during communication.
+
+AWS IoT Core serves as the secure entry point between the devices and the cloud backend. It receives incoming measurements and
+makes them available for further processing of other AWS services. Live sensor values are handled by a dedicated processing
+pipeline and exposed through a REST interface for external access, while historical measurements are stored and made available
+through a separate REST endpoint for time-series retrieval and analysis.
+
+Future extensions may include a frontend dashboard that provides user-oriented visualization and analysis tools for
+monitoring trends and comparing sensor values over time. In addition, AWS SNS can be integrated later to send email notifications
+to users when critical thresholds are exceeded.
+
+Challenges could include handling large volumes of data, ensuring low-latency processing and communication, and
+securing user data from unauthorized access.
+
+\section{Related Work}\label{sec:related_work}
+% andere Arbeiten oder Technologien (die als Inspiration dienten), Screenshots
+
+\subsection{IoT Applications in Laboratory Safety}\label{sec:iot_lab_safety}
+
+The integration of Internet of Things (IoT) solutions into safety-critical environments has become a focal point of 
+recent research. A highly relevant study by \citeauthor{Ramadhani2026} explores the 
+development of an air quality monitoring system specifically for hazardous gas detection in chemical laboratories~\cite{Ramadhani2026}. 
+Their architecture utilizes a NodeMCU ESP8266 microcontroller paired with MQ-135 gas sensors and DHT11 temperature 
+sensors to mitigate risks such as poisoning and explosions.
+
+While their research confirms that low-cost sensor nodes are effective as early warning tools, their implementation 
+relies on the Blynk platform for data visualization. This introduces dependencies on external service providers and 
+limits the ability to integrate custom business logic, such as the multi-persona alerting system (for lab technicians 
+and production managers) implemented in this project. In contrast, our system is planned to implement a dedicated AWS-native 
+pipeline to ensure full data sovereignty and professional-grade scalability.
+
+\subsection{Performance and Scalability of Serverless Architectures}\label{sec:performance_scalability}
+
+Beyond the hardware implementation, the efficiency of the underlying cloud infrastructure is crucial for real-time 
+safety monitoring. \citeauthor{Gudduri2025} investigated the performance of "lean" serverless 
+architectures for processing IoT data streams~\cite{Gudduri2025}. By replaying large-scale datasets through a pipeline consisting of 
+Amazon Kinesis, AWS Lambda, and Amazon S3, the study proved that sub-second response times are achievable in modern 
+cloud environments.
+
+The findings of \citeauthor{Gudduri2025} show a median end-to-end latency of 163 ms, even at high throughput levels, by utilizing techniques 
+such as provisioned concurrency to mitigate "cold-start" delays. These technical benchmarks provide the empirical 
+justification for the serverless architecture chosen in this project, ensuring that safety-relevant gas alerts are 
+processed within the timeframes required for emergency response.
+
+\subsection{Comparison of Existing Solutions}\label{sec:comparison_solutions}
+
+\Cref{tab:comparison} summarizes the positioning of the proposed system in relation to the discussed academic 
+works and common commercial alternatives.
+
+\begin{table}[htb]
+    \centering
+    \caption{Comparative Analysis of Monitoring Architectures}
+    \label{tab:comparison}
+    \small % Verkleinert die Schrift etwas, damit sie in die Spalte passt
+    \begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}X c c c}
+        \toprule
+        \textbf{Feature} & \textbf{Ramadhani} & \textbf{Gudduri} & \textbf{Sensiq} \\
+        & \textbf{(2026)}    & \textbf{(2025)}  & \textbf{(Ours)} \\
+        \midrule
+        Real-Time Alerts & Yes & Yes & Yes \\
+        Long-Term Audits & Limited & High & High \\
+        Custom API/UI    & No & No & Yes \\
+        Cost Efficiency  & High & High & High \\
+        Lab Focus        & Yes & No & Yes \\
+        \midrule
+        \textbf{Suitability} & \textbf{Medium} & \textbf{Medium} & \textbf{High} \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\section{Requirements}\label{sec:requirements}
+
+The requirements for the final system vision are defined in the form of persona-based user stories including 
+acceptance criteria, prioritization using the MoSCoW method and the definition of the minimum viable product (MVP).
+
+% Agile User Stories (+Akzeptanzkriterien als Definition of Done) oder klassische Use-Cases als Anforderungen an die Anwendung.
+% Beschreibung von Eingabe und Ausgabe des Systems und dessen Teilfunktionen; benötigte Ressourcen (z.B. Bestandsdaten), 
+
+\subsection{Project Personas}\label{sec:project_personas}
+
+% TODO: Personas
+% In Section 3.1, you define four Personas: Christian, Olivia, Martin, and Pia. 
+% However, in Section 3.2.5 (US_05), you introduce "Data Scientist Daniela", and in Section 3.2.6 (US_06), 
+% you introduce "IT Administrator Ian". These personas are missing from Section 3.1. 
+% Please add them to Section 3.1 to maintain consistency.
+
+To ensure the system meets the diverse needs of all stakeholders, the requirements are guided by the following personas. 
+Each persona has a specific role, defined goals, and distinct interests in the system:
+
+\begin{description}
+    \item[Chemist Christian] 
+    Focuses on exact environmental conditions. His primary goal is to monitor precise laboratory temperatures to accurately 
+    run experiments and evaluate environment-dependent reactions.
+    \item[Occupational Safety Officer Olivia] % TODO: not existing.
+    Prioritizes employee well-being. She requires immediate, clear indicators of air quality safety to proactively enforce 
+    protective measures and prevent workplace health hazards.
+    \item[Facility Manager Martin] 
+    Responsible for building operations and rapid incident response. He needs instant, unmissable alerts regarding critical 
+    sensor thresholds to take immediate corrective actions before physical risks escalate.
+    \item[Project Manager Pia] 
+    Looks at the big picture and long-term optimization. She aims to analyze historical data trends to identify recurring 
+    patterns, correlate them with facility operations, and implement targeted strategies for improving environmental conditions.
+    \item[IT Administrator Ian]
+    Is responsible for the technical infrastructure and stability of the sensor network. 
+    He needs to check the connection status and last heartbeat of each sensor at any time 
+    to detect offline devices early and resolve network issues before data gaps arise.
+    \item[Data Scientist Daniela]
+    Works with historical sensor data to develop predictive models for air quality. 
+    She requires flexible access to raw data with adjustable time ranges and resolutions 
+    to build reliable training datasets.
+    
+\end{description}
+
+
+\subsection{User Stories}\label{sec:user_stories}
+
+\subsubsection{Real-time Temperature Monitoring}\label{sec:us_01}
+
+\begin{quote}
+    \textit{As Chemist Christian, I want to see the exact current temperature in the laboratory, so that I can accurately plan 
+    my experiments and evaluate temperature-dependent reaction rates.}
+\end{quote}
+
+Acceptance Criteria:
+\begin{itemize}
+    \item The dashboard displays the current temperature precisely in degrees Celsius. Input: latest DB temperature readings. 
+    Output: exact numerical temperature value.
+    \item The temperature value updates automatically when a new reading arrives — no manual reload required. Test: write 
+    new temperature values to DB; display must update within 10\,s.
+    \item Displayed temperature values are at most 30\,s old. Test: compare value timestamps with system time; difference $\le$ 30\,s.
+    \item If no current temperature data is available (gap $>$ 30\,s), a notice about missing data is shown instead.
+\end{itemize}
+
+\medskip
+\subsubsection{Workplace Air Quality Status}\label{sec:us_02}
+
+\begin{quote}
+    \textit{As Occupational Safety Officer Olivia, I want to see at a glance whether the air quality in the workspace is currently 
+    safe or critical, so that I can immediately initiate protective measures for the employees if necessary.}
+\end{quote}
+
+Acceptance Criteria:
+\begin{itemize}
+    \item The dashboard shows the air quality as a color-coded indicator based on safety thresholds: Green~(safe) and Red~(critical). 
+    Input: latest DB air quality readings. Output: correct status color.
+    \item The status color updates automatically when a new reading arrives — no manual reload required.
+     Test: write new air quality values to DB; display must update within 5\,s.
+    \item The displayed status is based on data that is at most 30\,s old. Test: 
+    compare value timestamps with system time; difference $\le$ 30\,s.
+\end{itemize}
+
+\medskip
+\subsubsection{Critical Alert}\label{sec:us_03}
+
+\begin{quote}
+    \textit{As a facility manager Martin, I want an immediate, unmissable notification the second a sensor reading hits a 
+    critical limit, empowering me to take instant corrective action before the situation escalates into a physical health risk.} 
+\end{quote}
+
+Acceptance Criteria:
+\begin{itemize}
+    \item An email notification is sent automatically within 10\,s of a threshold exceedance.
+    \item The notification contains: measured value (incl.\ unit), measurement timestamp, and alert message type.
+    \item Consecutive exceedances of the same type within 5\,min do not trigger a further email (debounce).
+    \item The notification is delivered even if the frontend is not open at trigger time.
+\end{itemize}
+
+\medskip
+\subsubsection{24-Hour History Chart}\label{sec:us_04}
+
+\begin{quote}
+    \textit{As Project Manager Pia, I want to analyze the sensor data from the past 24 hours in a clear historical chart, 
+    so that I can identify recurring patterns of poor air quality, correlate them with specific facility operations, 
+    and implement targeted ventilation strategies.}
+\end{quote}
+
+Acceptance Criteria:
+\begin{itemize}
+    \item Dashboard displays a line chart with readings from the last 24\,hours.
+    \item Chart is fully interactive within 3\,s of page load.
+    \item Periods without data are shown as visible line breaks — no silent interpolation.
+    \item Chart updates automatically when new readings arrive, without a page reload.
+\end{itemize}
+
+
+\medskip
+\subsubsection{Custom History View}\label{sec:us_05}
+
+\begin{quote}
+    \textit{As Data Scientist Daniela, I want to extract historical sensor readings with a customizable time range and 
+    sampling resolution, so that I can generate precise, high-granularity datasets to train our predictive air-quality models.}
+\end{quote}
+
+Acceptance Criteria:
+\begin{itemize}
+    \item Dashboard provides date pickers for start/end and a resolution selector (hour/day).
+    \item A query for 30\,days at daily resolution returns results in under 5\,s.
+    \item If an end date before the start date is entered, a clear error message is shown and no query is executed.
+    \item Periods without data appear as an explicit empty row in the table and as a line break in the chart.
+\end{itemize}
+
+\medskip
+\subsubsection{Sensor Status}\label{sec:us_06}
+
+\begin{quote}
+    \textit{As IT Administrator Ian, I want to instantly verify the connection status and the last heartbeat timestamp of 
+    each sensor, so that I can proactively detect offline devices and troubleshoot network dropouts before data gaps occur.}
+\end{quote}
+
+Acceptance Criteria:
+\begin{itemize}
+    \item Sensor status Active/Inactive is prominently visible. Status switches to Inactive when the 
+    last data point is more than 2\,min ago.
+    \item Date and time of the last received reading are displayed next to the status (format: \texttt{DD.MM.YYYY HH:MM:SS}).
+    \item Status indicator updates automatically — no manual reload required.
+    \item If the database connection is temporarily unavailable, a notice is shown instead of the status.
+\end{itemize}
+
+\subsection{Definition of Done}\label{sec:definition_of_done}
+
+A user story is considered complete only when, in addition to its specific acceptance criteria, all of the 
+following quality standards are met:
+
+\begin{itemize}
+    \item Code Review: Reviewed and approved by at least one other developer (four-eyes principle).
+    \item Tests: Unit tests written and passing; coverage $\ge$ 40\,\%.
+    \item Documentation: Technical docs and API interfaces updated where applicable.
+    \item Deployment: Feature successfully deployed.
+    \item Functional Test: Feature manually tested in staging without issues.
+\end{itemize}
+
+
+\subsection{Prioritisation (MoSCoW)}\label{sec:prioritisation}
+
+The user stories are prioritized using the MoSCoW method, which categorizes requirements into Must Have, 
+Should Have, Could Have, and Won't Have, as shown in~\Cref{tab:moscow_prioritization}. 
+
+\begin{table}[!h]
+    \centering
+    \caption{MoSCoW Prioritization of User Stories}
+    \label{tab:moscow_prioritization}
+    \begin{tabularx}{0.9\linewidth}{>{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}X}
+        \toprule
+        \textbf{Category} & \textbf{User Stories} \\
+        \midrule
+        Must Have
+        & \hyperref[sec:us_01]{Current Status Display}, \hyperref[sec:us_03]{Critical Alert}, \hyperref[sec:us_02]{Workplace Air Quality} \\
+        Should Have
+        & \hyperref[sec:us_06]{Sensor Status} \\
+        Could Have
+        & \hyperref[sec:us_04]{24-Hour History Chart} \\
+        Won't Have
+        & \hyperref[sec:us_05]{Custom History View} \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Minimum Viable Product (MVP)}\label{sec:mvp}
+
+The MVP implements a server-side IoT pipeline on Amazon Web Services (AWS). 
+It focuses on ingesting simulated sensor data via MQTT, processing and storing it within the AWS ecosystem, 
+and providing access through a Web API. This serves as the technical foundation for the system.
+
+Instead of physical hardware, a simple script simulates realistic sensor data. 
+Messages are transmitted via the MQTT protocol to AWS IoT Core, ensuring a lightweight and software-defined testing environment.
+
+A REST API provides two core endpoints: \texttt{GET /live} returns the most recent measurement, while 
+\texttt{GET /history} retrieves chronological data from a selected time range.
+
+To focus on core infrastructure, the following elements are excluded from this MVP but are planned for future iterations:
+\begin{itemize}
+    \item Graphical frontend dashboard for data visualization.
+    \item Physical ESP32 hardware and real sensors.
+    \item Automated user notifications (e.g., Push or Email alerts).
+\end{itemize}
+
+\section{Technical Concept}\label{sec:technical_concept}
+% knapp technische Schlüsselmerkmale der Anwendung, rein deskriptiv
+
+This Section describes the overall technical architecture of the proposed system, including the embedded hardware, communication protocols, cloud infrastructure, data model, and planned extensions. 
+The focus lies on the interaction of IoT devices with a scalable, serverless cloud backend for real-time and historical data processing.
+
+\subsection{Data Acquisition and Transmission}\label{sec:data_acquisition}
+
+The local ESP32 microcontroller is equipped with multiple sensors for monitoring environmental conditions. 
+
+The DHT11 sensor measures temperature and humidity with a decent accuracy for indoor applications.
+This is complemented by the KY-028 thermistor for high precision temperature readings.
+The KY-026 flame sensor enables the detection of uncontrolled fire sources by measuring the intensity of infrared light 
+emitted by flames~\cite{ky026flame}.
+Additional gas sensors (e.g., BME680 for volatile organic compounds, TSL2561 for light intensity) must be determined 
+based on the specific measurements of interest.
+
+The sensor data is read periodically, pre-processed on the ESP32, and encapsulated into a structured data object 
+for transmission, as illustrated in~\cref{lst:data_model_json}.
+Each message contains device metadata (ID, location, uptime) and a nested structure for sensor measurements 
+for further extensibility.
+
+\begin{lstlisting}[language=json, float, caption={Example of the JSON data model for sensor value encapsulation 
+    on the ESP32.}, label={lst:data_model_json}]
+{
+  "deviceId": "esp32-lab-01", 
+  "runningSince": "10000",
+  "location": "Lab A",
+  "measurements": {
+    "dht11_temperature": {
+      "value": 20,
+      "unit": "degree C"
+    },
+    "dht11_humidity": {
+      "value": 50,
+      "unit": "%"
+    },
+    "ky026_flame": {
+      "value": 4000,
+      "unit": "analog"
+    },
+    "ky028_termistor": {
+      "value": 22,
+      "unit": "degree C"
+    }
+  }
+}
+\end{lstlisting}
+
+Messages are published to AWS IoT Core with the MQTT protocol and secured using TLS~\cite{aws}.
+Certificate-based authentication ensures device integrity and prevents unauthorized publishing to the cloud backend.
+
+\subsection{PlannedTechnology Stack}\label{sec:technology_stack}
+
+The following programming languages and technologies are utilized across the different components of the system:
+
+\begin{itemize}
+    \item C++: ESP32 firmware for sensor data acquisition and MQTT communication.
+    \item Python: Implementation of AWS Lambda functions for data processing and validation.
+    \item TypeScript: Infrastructure definition and backend logic within AWS services.
+    \item React: Web-based frontend for visualization and interactive data analysis.
+\end{itemize}
+
+\subsection{Cloud Processing Architecture}\label{sec:cloud_processing}
+
+Incoming MQTT messages are processed within AWS using a serverless, event-driven architecture. 
+The cloud backend is logically divided into two branches for data handling:
+
+Live data is made available through a RESTful API endpoint \texttt{GET /live}, optimized for low-latency access to the most recent 
+sensor values~\cite{restful2000}.
+Historical data is persisted for long-term storage and analysis, accessible via \texttt{GET /history} for in-depth time-series evaluation and trend analysis.
+
+Additionally, an alerting mechanism is planned to be implemented using AWS SNS to notify users via email when certain thresholds are exceeded, 
+such as high temperature.
+Future extensions may include the development of a React-based frontend dashboard for visualizing historical trends for specific time periods, 
+enabling time-based filtering and comparison of environmental conditions, being hosted on AWS Amplify for seamless AWS service integration.
+Data security could be guaranteed with AWS Cognito for user authentication and authorization, ensuring secure access to the 
+system and mitigating unauthorized access risks.
+
+The overall architecture is represented in~\cref{fig:cloud-architecture}, illustrating the flow of data from the ESP32 device 
+through AWS to the API endpoints and potential alerting services.
+
+\begin{figure*}[!tb]
+  \centering
+  \includegraphics[width=\textwidth]{architecture.pdf}
+  \caption{Cloud Processing Architecture}
+  \label{fig:cloud-architecture}
+\end{figure*}
+
+\subsection{Testability}\label{sec:testability}
+
+The system's testability varies across services. 
+Lambda functions are fully unit-testable via SAM CLI and support integration testing using DynamoDB Local or mocked dependencies. 
+DynamoDB and S3 can be tested locally with DynamoDB Local and LocalStack respectively, while API Gateway supports end-to-end 
+testing through SAM's local API emulation. Athena and Glue lack free local equivalents, requiring LocalStack Pro for integration 
+tests. AWS IoT Core cannot be tested locally at all, with Device Advisor being the only available validation tool. 
+SNS supports partial local mocking but can be fully integration-tested via LocalStack.
+
+\subsection{Cost Estimation}\label{sec:cost_estimation}
+
+The calculation of~\cref{tab:aws-costs} is made to estimate the average operating cost per month for one device. 
+Assumptions of 3 unique users, 8 hours per day and 22 days per month are made. 
+As depicted, the difference between Free Tier and Post Free Tier costs is marginal.
+
+\begin{table*}[!htb]
+    \centering
+    \caption{Cost Estimation for AWS Services}
+    \label{tab:aws-costs}
+    \begin{tabularx}{0.8\textwidth}{>{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}r >{\raggedright\arraybackslash}r}
+        \toprule
+        \textbf{Service Details} & \textbf{Usage/Quantity} & \textbf{Free Tier} & \textbf{Post Free Tier} \\
+        \midrule
+        IoT Core~\cite{awsIotCore} & 518k msgs, 268k billed & \(\sim\)\$0.27 & \(\sim\)\$0.27 \\ 
+        Lambda – handleValidation~\cite{aws-lambda} & 518k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.06 \\ 
+        Lambda – handleLiveData~\cite{aws-lambda} & 228k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.04 \\ 
+        Lambda – handleHistoryData~\cite{aws-lambda} & 660 inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.00 \\ 
+        DynamoDB~\cite{aws-dynamodb} & 518k WCU, 228k RCU, storage & \(\sim\)\$0.01 & \(\sim\)\$0.08 \\ 
+        S3 (Parquet)~\cite{aws-s3} & \(\sim\)0.5 GB stored & \(\sim\)\$0.01 & \(\sim\)\$0.02 \\ 
+        Athena~\cite{aws-athena} & 660 queries \(\times\) 50 MB = 33 GB scanned & \(\sim\)\$0.16 & \(\sim\)\$0.16 \\ 
+        API Gateway~\cite{aws-api-gateway} & 229k requests & \$0.00 & \(\sim\)\$0.08 \\ 
+        SNS~\cite{aws-sns} & Minimal alert volume & \$0.00 & \(\sim\)\$0.01 \\ 
+        % Glue Crawler~\cite{aws-glue} & One-time run & \(\sim\)\$0.00 & \(\sim\)\$0.00 \\ 
+        \midrule
+        \textbf{Total} & & \textbf{\(\sim\)\$0.46} & \textbf{\(\sim\)\$0.73} \\ 
+        \bottomrule
+    \end{tabularx}
+\end{table*}
+
+\section{Conclusion and Future Work}\label{sec:conclusion}
+% Zusammenfassung der wichtigsten Erkenntnisse, Ausblick auf die nächsten Schritte
+
+Maintaining precise and reliable environmental conditions is a critical requirement for safety and quality assurance 
+in modern laboratory facilities. This concept paper introduced Sensiq, a highly scalable, MCU-based IoT monitoring 
+architecture designed to eliminate the limitations of isolated, local sensor networks. By leveraging a serverless 
+AWS infrastructure—anchored by AWS IoT Core, Lambda, and DynamoDB—Sensiq ensures low-latency incident alerting, 
+secure end-to-end data transmission, and cost-effective historical data persistence without the overhead of managing 
+dedicated servers.
+
+The requirements established through persona-based user stories provide a clear development roadmap, prioritizing 
+data sovereignty and real-time accessibility. For the Minimum Viable Product (MVP), the focus is placed on 
+establishing a robust backend pipeline, replacing physical hardware with simulated telemetry to rigorously test 
+data ingestion and REST API retrieval performance.
+
+Future work will focus on the development and deployment of the requirements for the MVP.
+Subsequently, development will transition to integrating a physical ESP32 device equipped with the designated 
+environmental sensors. 
+Finally, the system will be extended with an interactive React-based frontend dashboard for comprehensive 
+user-facing data visualization, 
+alongside automated AWS SNS email notifications for instant incident response, thereby fulfilling the complete 
+architectural vision of the Sensiq platform.
 
 % ======== References =========
 \sloppy
 \printbibliography[notcategory=selfref]
+% \printbibliography
 
 \end{document}
+
+% aux löschen, pdflatex, pdflatex, biber, pdflatex
+
+% Kritik: Functional requirements
+% Underdeveloped: Requirements (user stories nicht tief genug oder fertig), conclusion (nicht weit genug)

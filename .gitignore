@@ -853,3 +853,8 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/c,c++,java,perl,ruby,cmake,linux,macos,perl6,csharp,python,windows,powershell
+
+
+# Allow aws cdk folders
+!sys-src/sensiq-aws/bin
+!sys-src/sensiq-aws/lib
