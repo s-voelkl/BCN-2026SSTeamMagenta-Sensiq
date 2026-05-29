@@ -13,8 +13,9 @@ export class SensiqAthenaStack extends cdk.Stack {
         // S3 bucket for incoming IoT data.
         // It is expected that AWS Firehose will write Parquet files to this bucket.
         const dataBucket = new s3.Bucket(this, 'SensiqHistoryIoTDataBucket', {
-            bucketName: 'sensiq-history-iot-data-bucket', // globally unique
-            versioned: false, // higher costs, but also prevents accidental data loss
+            // bucketName: "" // removed, for multi-enviromnent readiness
+            encryption: s3.BucketEncryption.S3_MANAGED, // server-side encryption with S3-managed keys
+            versioned: true, // higher costs, but also prevents accidental data loss
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, // blocking all public access
             removalPolicy: cdk.RemovalPolicy.RETAIN_ON_UPDATE_OR_DELETE,
             // autoDeleteObjects: true, // required if RemovalPolicy.DESTROY
@@ -24,9 +25,10 @@ export class SensiqAthenaStack extends cdk.Stack {
         // S3 Bucket for Athena query results, with lifecycle policy to clean up old results.
         // The data is handled much more temporarily, so deletion is more aggressive.
         const queryResultsBucket = new s3.Bucket(this, 'SensiqHistoryAthenaQueryResults', {
+            encryption: s3.BucketEncryption.S3_MANAGED,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
             autoDeleteObjects: true,
-            lifecycleRules: [{ expiration: cdk.Duration.days(1) }] // more aggressive cleanup
+            lifecycleRules: [{ expiration: cdk.Duration.days(1) }], // more aggressive cleanup
         });
 
         // Glue Database
@@ -55,6 +57,7 @@ export class SensiqAthenaStack extends cdk.Stack {
                     'projection.enabled': 'true',
                     'projection.year.type': 'integer',
                     'projection.year.min': '2020',
+                    'projection.year.max': '9999', // safe upper bound limit for safe projection boundary
                     'projection.year.digits': '4',
                     'projection.month.type': 'integer',
                     'projection.month.range': '1,12',
@@ -114,7 +117,7 @@ export class SensiqAthenaStack extends cdk.Stack {
             code: lambda.Code.fromAsset('lambda/history'),
             handler: 'handle_history_data.handler',
             runtime: lambda.Runtime.PYTHON_3_12,
-            timeout: cdk.Duration.seconds(29), // API Gateway max timeout limit
+            timeout: cdk.Duration.seconds(15), // timeout reduced, to support cost-efficient asynchronous trigger pattern
             environment: {
                 ATHENA_WORKGROUP: workgroup.name,
                 DATABASE_NAME: glueDatabaseName,

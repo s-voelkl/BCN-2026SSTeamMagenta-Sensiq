@@ -7,12 +7,20 @@ test('Athena Stack creates necessary resources', () => {
     const stack = new SensiqAthenaStack(app, 'TestAthenaStack');
     const template = Template.fromStack(stack);
 
-    // Data Bucket
-    // template.hasResourceProperties('AWS::S3::Bucket', {
-    //     BucketName: 'sensiq-history-iot-data-bucket',
-    // });
+    // S3 data bucket with correct properties
     template.hasResourceProperties('AWS::S3::Bucket', {
-        BucketName: 'sensiq-history-iot-data-bucket',
+        VersioningConfiguration: {
+            Status: 'Enabled'
+        },
+        BucketEncryption: {
+            ServerSideEncryptionConfiguration: [
+                {
+                    ServerSideEncryptionByDefault: {
+                        SSEAlgorithm: 'AES256'
+                    }
+                }
+            ]
+        },
         PublicAccessBlockConfiguration: {
             BlockPublicAcls: true,
             BlockPublicPolicy: true,
@@ -23,6 +31,15 @@ test('Athena Stack creates necessary resources', () => {
 
     // Query Results Bucket
     template.hasResourceProperties('AWS::S3::Bucket', {
+        BucketEncryption: {
+            ServerSideEncryptionConfiguration: [
+                {
+                    ServerSideEncryptionByDefault: {
+                        SSEAlgorithm: 'AES256'
+                    }
+                }
+            ]
+        },
         LifecycleConfiguration: {
             Rules: Match.arrayWith([
                 Match.objectLike({
@@ -54,6 +71,7 @@ test('Athena Stack creates necessary resources', () => {
                 'projection.enabled': 'true',
                 'projection.year.type': 'integer',
                 'projection.year.min': '2020',
+                'projection.year.max': '9999',
                 'projection.year.digits': '4',
                 'projection.month.type': 'integer',
                 'projection.month.range': '1,12',
@@ -99,7 +117,7 @@ test('Athena Stack creates necessary resources', () => {
     template.hasResourceProperties('AWS::Lambda::Function', {
         Handler: 'handle_history_data.handler',
         Runtime: 'python3.12',
-        Timeout: 29,
+        Timeout: 15,
         Environment: {
             Variables: Match.objectLike({
                 ATHENA_WORKGROUP: Match.anyValue(),
