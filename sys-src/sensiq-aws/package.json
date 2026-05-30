@@ -4,13 +4,15 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "setup:python": "python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt",
-    "test": "jest --coverage && pytest",
-    "test:python": "pytest",
+    "setup:python": "python3 -m venv src/lambda/.venv && ./src/lambda/.venv/bin/pip install -r src/lambda/requirements-dev.txt",
+    "test:lambda": "./src/lambda/.venv/bin/python -m pytest src/lambda/",
     "test:ts": "jest --coverage",
+    "test": "jest --coverage && ./src/lambda/.venv/bin/python -m pytest src/lambda/",
     "cdk": "cdk",
-    "lint": "eslint . --ext .ts,.tsx && echo running ruff lint for python... && ruff check .",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix && echo running ruff lint for python... && ruff check . --fix"
+    "lint:ts": "eslint . --ext .ts,.tsx",
+    "lint:lambda": "./src/lambda/.venv/bin/python -m ruff check src/lambda/",
+    "lint": "eslint . --ext .ts,.tsx && echo running ruff lint for python... && ./src/lambda/.venv/bin/python -m ruff check src/lambda/",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix && echo running ruff lint for python... && ./src/lambda/.venv/bin/python -m ruff check src/lambda/ --fix"
   },
   "devDependencies": {
     "@types/jest": "^30",

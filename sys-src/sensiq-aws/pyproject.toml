@@ -55,14 +55,15 @@ indent-width = 4
 # folders and files to be completely ignored (similar to ESLint)
 exclude = [
     ".git",
-    ".venv",
-    "__pycache__",
+    "**/.venv",
+    "**/__pycache__",
     "coverage",
     "bin",
     "infra",
     "cdk.out",
     "node_modules",
     "test",
+    "**/submodules"
 ]
 
 [tool.ruff.lint]
@@ -110,7 +111,7 @@ docstring-code-line-length = "dynamic"
 testpaths = ["src/lambda"]
 
 # if running from lambda_tests, also look in lambda for test dependencies
-pythonpath = ["lambda"]
+pythonpath = ["src/lambda"]
 
 # coverage report as markdown file for better readability in the codebase, stored in coverage folder
-addopts = "--cov=lambda --cov-report=term-missing --cov-report=markdown:coverage/pytest-lambda-coverage.md"
+addopts = "--cov=src/lambda --cov-config=.coveragerc --cov-report=term-missing --cov-report=markdown:coverage/pytest-lambda-coverage.md"
