@@ -26,8 +26,16 @@ jobs:
           node-version: '20'
           cache: 'yarn'
 
-      - name: Install dependencies
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Node dependencies
         run: yarn install --frozen-lockfile
+
+      - name: Install Python dependencies
+        run: yarn setup:python
 
       - name: Lint
         run: yarn lint
