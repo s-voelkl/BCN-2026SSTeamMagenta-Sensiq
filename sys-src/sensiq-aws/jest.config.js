@@ -8,7 +8,7 @@ module.exports = {
   setupFilesAfterEnv: [],
   collectCoverage: true,
   collectCoverageFrom: [
-    'lib/**/*.ts',
+    'infra/**/*.ts',
     'bin/**/*.ts'
   ],
   coverageDirectory: 'coverage/jest-aws-coverage',

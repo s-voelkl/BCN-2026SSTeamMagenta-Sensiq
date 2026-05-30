@@ -4,7 +4,10 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
+    "setup:python": "python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt",
     "test": "jest --coverage && pytest",
+    "test:python": "pytest",
+    "test:ts": "jest --coverage",
     "cdk": "cdk",
     "lint": "eslint . --ext .ts,.tsx && echo running ruff lint for python... && ruff check .",
     "lint:fix": "eslint . --ext .ts,.tsx --fix && echo running ruff lint for python... && ruff check . --fix"
