@@ -9,6 +9,9 @@ defaults:
   run:
     working-directory: sys-src/sensiq-aws
 
+env:
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+
 jobs:
   ci-aws:
     name: CI AWS
