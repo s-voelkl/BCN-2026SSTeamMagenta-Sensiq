@@ -34,17 +34,23 @@ jobs:
       - name: Install Node dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Install Python dependencies
-        run: yarn setup:python
+      - name: Lint TS
+        run: yarn lint:ts
 
-      - name: Lint
-        run: yarn lint
+      - name: Test TS
+        run: yarn test:ts --ci --forceExit --passWithNoTests
 
       - name: Typecheck
         run: yarn tsc --noEmit
 
-      - name: Test
-        run: yarn test --ci --forceExit --passWithNoTests
+      - name: Install Python dependencies
+        run: yarn setup:python
+
+      - name: Lint Lambda
+        run: yarn lint:lambda
+
+      - name: Test Lambda
+        run: yarn test:lambda
 
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v6
