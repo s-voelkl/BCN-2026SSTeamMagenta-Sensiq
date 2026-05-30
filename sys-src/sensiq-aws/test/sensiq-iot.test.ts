@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
-import { IotCoreStack } from '../lib/sensiq-iot-stack'; 
+import { IotCoreStack } from '../infra/sensiq-iot-stack'; 
 
 test('IoT Core Rules and Log Groups Created Successfully', () => {
   const app = new cdk.App();

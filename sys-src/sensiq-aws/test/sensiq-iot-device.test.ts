@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Template, Match } from 'aws-cdk-lib/assertions';
-import { SensiqIotDeviceStack } from '../lib/sensiq-iot-device-stack';
+import { SensiqIotDeviceStack } from '../infra/sensiq-iot-device-stack';
 
 let app: cdk.App;
 let stack: SensiqIotDeviceStack;
