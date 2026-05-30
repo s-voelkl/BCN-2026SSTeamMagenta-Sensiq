@@ -5,6 +5,8 @@ import * as glue from 'aws-cdk-lib/aws-glue';
 import * as athena from 'aws-cdk-lib/aws-athena';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
+import path from 'path';
 
 export class SensiqAthenaStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -113,9 +115,10 @@ export class SensiqAthenaStack extends cdk.Stack {
 
         // Lambda Function for API Gateway
         // Python lambda function in lambda/history/handle_history_data.py with handle_history_data.handler()
-        const lambdaHandleHistoryData = new lambda.Function(this, 'HandleHistoryData', {
-            code: lambda.Code.fromAsset('lambda/history'),
-            handler: 'handle_history_data.handler',
+        const lambdaHandleHistoryData = new PythonFunction(this, 'HandleHistoryData', {
+            entry: path.join(__dirname, '..', 'src', 'lambda', 'history'), // points to the directory containing the lambda function code
+            index: 'handle_history_data.py', // the file containing the lambda handler
+            handler: 'handler',
             runtime: lambda.Runtime.PYTHON_3_12,
             timeout: cdk.Duration.seconds(15), // timeout reduced, to support cost-efficient asynchronous trigger pattern
             environment: {
