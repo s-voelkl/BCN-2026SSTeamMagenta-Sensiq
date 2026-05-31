@@ -8,8 +8,8 @@ const app = new cdk.App();
 
 const deviceStack = new SensiqIotDeviceStack(app, 'SensiqIotDeviceStack');
 
-const iotCoreStack = new IotCoreStack(app, 'SensiqIotCoreStack');
+const athenaStack = new SensiqAthenaStack(app, 'SensiqAthenaStack');
 
-const athenaStack = new SensiqAthenaStack(app, 'SensiqAthenaStack'); // eslint-disable-line
+const iotCoreStack = new IotCoreStack(app, 'SensiqIotCoreStack', { athenaStack });
 
 iotCoreStack.addDependency(deviceStack);
