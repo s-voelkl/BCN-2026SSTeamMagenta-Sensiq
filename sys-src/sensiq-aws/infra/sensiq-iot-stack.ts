@@ -1,44 +1,39 @@
 import * as cdk from 'aws-cdk-lib';
 import * as iot from '@aws-cdk/aws-iot-alpha';
 import * as actions from '@aws-cdk/aws-iot-actions-alpha';
-import * as logs from 'aws-cdk-lib/aws-logs';
-// import * as lambda from 'aws-cdk-lib/aws-lambda';
-// import * as firehose from 'aws-cdk-lib/aws-kinesisfirehose';
-// import * as s3 from 'aws-cdk-lib/aws-s3';
-// import * as iam from 'aws-cdk-lib/aws-iam';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import { Construct } from 'constructs';
+import path from 'path';
+import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 
 export class IotCoreStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // for test purposes only -> will be removed later (replaced by an actual service like lambda or kinesis firehose)
-    const debugLogGroup = new logs.LogGroup(this, 'IotDebugLogs', {
-      logGroupName: '/iot/esp32/all_messages',
-      retention: logs.RetentionDays.ONE_DAY,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
+    // lambda function for validation of incoming data an dynamo imputation
+    const lambdaHandleValidation = new PythonFunction(this, 'HandleValidation', {
+        entry: path.join(__dirname, '..', 'src', 'lambda', 'validation'), // points to the directory containing the lambda function code
+        index: 'handle_validation.py', // the file containing the lambda handler
+        handler: 'handler',
+        runtime: lambda.Runtime.PYTHON_3_12,
+        timeout: cdk.Duration.seconds(15),
+        environment: {}}
+    );
 
-    // for testing only -> will be removed later
-    const alertLogGroup = new logs.LogGroup(this, 'IotAlertLogs', {
-      logGroupName: '/iot/esp32/alerts',
-      retention: logs.RetentionDays.ONE_DAY,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
-
-
-    // replace cloudwatch logs with actual processing service
+    // for validation lambda trigger
     new iot.TopicRule(this, 'LiveRule', {
       sql: iot.IotSql.fromStringAsVer20160323("SELECT * FROM 'sensiq/+/data'"),
-      actions: [new actions.CloudWatchLogsAction(debugLogGroup)],
+      actions: [ new actions.LambdaFunctionAction(lambdaHandleValidation) ],
     });
 
-    // for test purposes only -> will be removed later
-    new iot.TopicRule(this, 'TestTempRule', {
+    // for firehose
+    new iot.TopicRule(this, 'HistoryRule', {
       sql: iot.IotSql.fromStringAsVer20160323(
-        "SELECT temperature FROM 'sensiq/+/data'"
+        "SELECT * FROM 'sensiq/+/data'"
       ),
-      actions: [new actions.CloudWatchLogsAction(alertLogGroup)],
+      actions: [],
     });
   }
 }
