@@ -12,10 +12,10 @@
   resolved "https://registry.yarnpkg.com/@aws-cdk/asset-node-proxy-agent-v6/-/asset-node-proxy-agent-v6-2.1.2.tgz#71733894b092032309523cfcba24dc2bb3e7fd84"
   integrity sha512-pDiuqH+qY3zM9lhhLjbKJ1tnKOHzQ2V4Wr/3qsxyKeKAkuPMI/BVGvZG1PbrikUw949cGVTfVEt4ETKKYnrj0Q==
 
-"@aws-cdk/aws-iot-actions-alpha@^2.256.1-alpha.0":
-  version "2.256.1-alpha.0"
-  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-iot-actions-alpha/-/aws-iot-actions-alpha-2.256.1-alpha.0.tgz#f19201846db07ecf0bddf485391c3c6365826b53"
-  integrity sha512-xTCTiOnOC6+QWhAlxmDeU59eOnVnQN8W27+mtFz6BiMMUwo2DncirYFX7vddRuV/H5o0+08/I99fs+qywTWD3Q==
+"@aws-cdk/aws-iot-actions-alpha@^2.257.0-alpha.0":
+  version "2.257.0-alpha.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-iot-actions-alpha/-/aws-iot-actions-alpha-2.257.0-alpha.0.tgz#8b083f58830602e94df6d71aec8c78c5c984e670"
+  integrity sha512-DzucasPYS5PkYPvV+htwU3Q4fydLaSgmn6PA50WPc7XmVQnlwrXPigXQQP09+ufEgBT1ja21P+1TdZDyz9ohGw==
   dependencies:
     case "1.6.3"
 
@@ -23,6 +23,11 @@
   version "2.256.1-alpha.0"
   resolved "https://registry.yarnpkg.com/@aws-cdk/aws-iot-alpha/-/aws-iot-alpha-2.256.1-alpha.0.tgz#3e38fd253cc253fa249ec743989ec0cd853aadef"
   integrity sha512-ivZkKv+m5+Wkyu3MAcTU9wWzFvq4fKZFLpY9SujrHtVmhUE5PbqJY757L2dxoCRbeMTHzuvX1U6zlRHz6ogTrg==
+
+"@aws-cdk/aws-lambda-python-alpha@^2.257.0-alpha.0":
+  version "2.257.0-alpha.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-lambda-python-alpha/-/aws-lambda-python-alpha-2.257.0-alpha.0.tgz#aae17af47cd3d5b61a32b601d3c58e02f5659ce5"
+  integrity sha512-snBmZkyvwG0P7EkUCEcYGy5TBzNpLdxIDrSoS8sD5aYXFbX+SeDs3rcYdx6Y22W8cn5vhXiIPYxl4NCDimKBSA==
 
 "@aws-cdk/cloud-assembly-api@^2.2.4":
   version "2.2.5"

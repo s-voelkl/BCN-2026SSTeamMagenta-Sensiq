@@ -9,6 +9,9 @@ defaults:
   run:
     working-directory: sys-src/sensiq-aws
 
+env:
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+
 jobs:
   ci-aws:
     name: CI AWS
@@ -24,14 +27,29 @@ jobs:
           cache: yarn
           cache-dependency-path: sys-src/sensiq-aws/yarn.lock
 
-      - name: Install dependencies
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Node dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Lint
-        run: yarn lint
+      - name: Lint TS
+        run: yarn lint:ts
+
+      - name: Test TS
+        run: yarn test:ts --ci --forceExit --passWithNoTests
 
       - name: Typecheck
         run: yarn tsc --noEmit
 
-      - name: Test
-        run: yarn test --ci --forceExit --passWithNoTests
+      - name: Install Python dependencies
+        run: yarn setup:python
+
+      - name: Lint Lambda
+        run: yarn lint:lambda
+
+      - name: Test Lambda
+        run: yarn test:lambda

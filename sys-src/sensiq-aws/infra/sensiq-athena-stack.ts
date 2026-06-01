@@ -5,14 +5,18 @@ import * as glue from 'aws-cdk-lib/aws-glue';
 import * as athena from 'aws-cdk-lib/aws-athena';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
+import path from 'path';
+
 
 export class SensiqAthenaStack extends cdk.Stack {
+    public readonly dataBucket: s3.Bucket; // expose the bucket to other stacks and resources
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
         // S3 bucket for incoming IoT data.
         // It is expected that AWS Firehose will write Parquet files to this bucket.
-        const dataBucket = new s3.Bucket(this, 'SensiqHistoryIoTDataBucket', {
+        this.dataBucket = new s3.Bucket(this, 'SensiqHistoryIoTDataBucket', {
             // bucketName: "" // removed, for multi-enviromnent readiness
             encryption: s3.BucketEncryption.S3_MANAGED, // server-side encryption with S3-managed keys
             versioned: true, // higher costs, but also prevents accidental data loss
@@ -65,7 +69,7 @@ export class SensiqAthenaStack extends cdk.Stack {
                     'projection.day.type': 'integer',
                     'projection.day.range': '1,31',
                     'projection.day.digits': '2',
-                    'storage.location.template': `s3://${dataBucket.bucketName}/data/year=\${year}/month=\${month}/day=\${day}/`,
+                    'storage.location.template': `s3://${this.dataBucket.bucketName}/data/year=\${year}/month=\${month}/day=\${day}/`,
                 },
                 // efficient partitioning and querying by year/month/day
                 partitionKeys: [
@@ -75,7 +79,7 @@ export class SensiqAthenaStack extends cdk.Stack {
                 ],
                 // defines data schema and Parquet reader/writer settings
                 storageDescriptor: {
-                    location: `s3://${dataBucket.bucketName}/data/`,
+                    location: `s3://${this.dataBucket.bucketName}/data/`,
                     inputFormat: 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat', // Parquet input format
                     outputFormat: 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat', // Parquet output format
                     serdeInfo: {
@@ -113,9 +117,10 @@ export class SensiqAthenaStack extends cdk.Stack {
 
         // Lambda Function for API Gateway
         // Python lambda function in lambda/history/handle_history_data.py with handle_history_data.handler()
-        const lambdaHandleHistoryData = new lambda.Function(this, 'HandleHistoryData', {
-            code: lambda.Code.fromAsset('lambda/history'),
-            handler: 'handle_history_data.handler',
+        const lambdaHandleHistoryData = new PythonFunction(this, 'HandleHistoryData', {
+            entry: path.join(__dirname, '..', 'src', 'lambda', 'history'), // points to the directory containing the lambda function code
+            index: 'handle_history_data.py', // the file containing the lambda handler
+            handler: 'handler',
             runtime: lambda.Runtime.PYTHON_3_12,
             timeout: cdk.Duration.seconds(15), // timeout reduced, to support cost-efficient asynchronous trigger pattern
             environment: {
@@ -154,7 +159,7 @@ export class SensiqAthenaStack extends cdk.Stack {
         // L3-Construct-Comfort-Function: 
         // Enables the lambda to read parquet files from the dataBucket and write temporary Athena 
         // query outputs and metadata to the queryResultsBucket and returns the results
-        dataBucket.grantRead(lambdaHandleHistoryData);
+        this.dataBucket.grantRead(lambdaHandleHistoryData);
         queryResultsBucket.grantReadWrite(lambdaHandleHistoryData);
     }
 }

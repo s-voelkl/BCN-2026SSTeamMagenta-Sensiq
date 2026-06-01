@@ -1,34 +1,12 @@
 # python project configuration, https://packaging.python.org/en/latest/guides/writing-pyproject-toml
-# python build backend configuration
-[build-system]
-requires = ["setuptools >= 77.0.3"]
-build-backend = "setuptools.build_meta"
-
-# setuptools configuration
-[tool.setuptools]
-packages = ["history"]
-package-dir = { "" = "lambda" }
-
-# setuptools_scm configuration for dynamic versioning based on git tags
-[tool.setuptools_scm]
 
 # project metadata
 [project]
 name = "sensiq-aws"
 dynamic = ["version"] # version is determined dynamically from git tags
 
-# python package requirements, replaces requirements.txt for python projects
-dependencies = [
-    "boto3",
-    "botocore[crt]",
-    # "pytest",
-    # "pytest-cov",
-    # "pytest-mock",
-    # "ruff",
-]
-
 # minimum python version supported
-requires-python = ">= 3.10"
+requires-python = ">= 3.12"
 
 authors = [
     { name = "Simon Völkl", email = "s.voelkl2@oth-aw.de" },
@@ -59,10 +37,6 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-# defined here, so project is kept slim in prod
-[project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "pytest-mock", "ruff"]
-
 [project.urls]
 Documentation = "https://github.com/s-voelkl/BCN-2026SSTeamMagenta-Sensiq/tree/main/sys-doc"
 Repository = "https://github.com/s-voelkl/BCN-2026SSTeamMagenta-Sensiq"
@@ -72,7 +46,7 @@ Issues = "https://github.com/s-voelkl/BCN-2026SSTeamMagenta-Sensiq/issues"
 # ruff configuration, see: https://docs.astral.sh/ruff/configuration/
 [tool.ruff]
 # supported python version
-target-version = "py314"
+target-version = "py312"
 
 # maximum line length (default is 88, similar to Black formatter)
 line-length = 88
@@ -81,14 +55,15 @@ indent-width = 4
 # folders and files to be completely ignored (similar to ESLint)
 exclude = [
     ".git",
-    ".venv",
-    "__pycache__",
+    "**/.venv",
+    "**/__pycache__",
     "coverage",
     "bin",
-    "lib",
+    "infra",
     "cdk.out",
     "node_modules",
     "test",
+    "**/submodules"
 ]
 
 [tool.ruff.lint]
@@ -133,10 +108,10 @@ docstring-code-line-length = "dynamic"
 # pytest configuration
 [tool.pytest.ini_options]
 # pytest looks here for test functions
-testpaths = ["lambda_tests", "lambda"]
+testpaths = ["src/lambda"]
 
 # if running from lambda_tests, also look in lambda for test dependencies
-pythonpath = ["lambda"]
+pythonpath = ["src/lambda"]
 
 # coverage report as markdown file for better readability in the codebase, stored in coverage folder
-addopts = "--cov=lambda --cov-report=term-missing --cov-report=markdown:coverage/pytest-lambda-coverage.md"
+addopts = "--cov=src/lambda --cov-config=.coveragerc --cov-report=term-missing --cov-report=markdown:coverage/pytest-lambda-coverage.md"

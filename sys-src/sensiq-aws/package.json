@@ -4,10 +4,15 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "jest --coverage && pytest",
+    "setup:python": "python3 -m venv src/lambda/.venv && ./src/lambda/.venv/bin/pip install -r src/lambda/requirements-dev.txt",
+    "test:lambda": "./src/lambda/.venv/bin/python -m pytest src/lambda/",
+    "test:ts": "jest --coverage",
+    "test": "jest --coverage && ./src/lambda/.venv/bin/python -m pytest src/lambda/",
     "cdk": "cdk",
-    "lint": "eslint . --ext .ts,.tsx && echo running ruff lint for python... && ruff check .",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix && echo running ruff lint for python... && ruff check . --fix"
+    "lint:ts": "eslint . --ext .ts,.tsx",
+    "lint:lambda": "./src/lambda/.venv/bin/python -m ruff check src/lambda/",
+    "lint": "eslint . --ext .ts,.tsx && echo running ruff lint for python... && ./src/lambda/.venv/bin/python -m ruff check src/lambda/",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix && echo running ruff lint for python... && ./src/lambda/.venv/bin/python -m ruff check src/lambda/ --fix"
   },
   "devDependencies": {
     "@types/jest": "^30",
@@ -22,8 +27,9 @@
     "typescript-eslint": "^8.59.4"
   },
   "dependencies": {
-    "@aws-cdk/aws-iot-actions-alpha": "^2.256.1-alpha.0",
+    "@aws-cdk/aws-iot-actions-alpha": "^2.257.0-alpha.0",
     "@aws-cdk/aws-iot-alpha": "^2.256.1-alpha.0",
+    "@aws-cdk/aws-lambda-python-alpha": "^2.257.0-alpha.0",
     "aws-cdk-lib": "^2.254.0",
     "constructs": "^10.5.0"
   }
