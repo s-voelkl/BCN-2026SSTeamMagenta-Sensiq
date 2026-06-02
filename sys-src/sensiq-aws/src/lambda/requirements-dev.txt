@@ -3,7 +3,7 @@
 -r live/requirements.txt
 
 boto3
-botocore
+botocore[crt]
 pytest
 pytest-mock
 pytest-cov
