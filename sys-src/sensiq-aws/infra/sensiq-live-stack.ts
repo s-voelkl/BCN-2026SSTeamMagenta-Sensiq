@@ -8,7 +8,7 @@ import path from 'path';
 
 
 
-export class IotCoreStack extends cdk.Stack {
+export class SensiqLiveStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 

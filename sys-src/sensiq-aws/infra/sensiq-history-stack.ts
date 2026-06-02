@@ -12,7 +12,7 @@ import * as firehose from 'aws-cdk-lib/aws-kinesisfirehose';
 import path from 'path';
 
 
-export class SensiqAthenaStack extends cdk.Stack {
+export class SensiqHistoryStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
@@ -127,21 +127,39 @@ export class SensiqAthenaStack extends cdk.Stack {
 
 
         const firehoseRole = new iam.Role(this, 'FirehoseRole', {
-        assumedBy: new iam.ServicePrincipal('firehose.amazonaws.com'),
+            assumedBy: new iam.ServicePrincipal('firehose.amazonaws.com'),
+            inlinePolicies: {
+                FirehoseGlueAndS3Policy: new iam.PolicyDocument({
+                    statements: [
+                        // Explicitly listed Glue actions for format conversion validation
+                        new iam.PolicyStatement({
+                            actions: [
+                                'glue:GetDatabase',
+                                'glue:GetTable',
+                                'glue:GetTableVersion',
+                                'glue:GetTableVersions'
+                            ],
+                            resources: [glueCatalogArn, glueDatabaseArn, glueTableArn],
+                        }),
+                        // Necessary S3 permissions for delivery destinations
+                        new iam.PolicyStatement({
+                            actions: [
+                                's3:AbortMultipartUpload',
+                                's3:GetBucketLocation',
+                                's3:GetObject',
+                                's3:ListBucket',
+                                's3:ListBucketMultipartUploads',
+                                's3:PutObject'
+                            ],
+                            resources: [
+                                dataBucket.bucketArn,
+                                `${dataBucket.bucketArn}/*`
+                            ],
+                        })
+                    ]
+                })
+            }
         });
-
-        dataBucket.grantReadWrite(firehoseRole);
-
-        // Glue permissions so Firehose can use the schema for Parquet conversion
-        firehoseRole.addToPolicy(new iam.PolicyStatement({
-        actions: [
-            'glue:GetTable',
-            'glue:GetDatabase',
-            'glue:GetTableVersion',
-            'glue:GetTableVersions'
-        ],
-        resources: [glueCatalogArn, glueDatabaseArn, glueTableArn]
-        }));
 
         // --- Firehose Delivery Stream ---
         const firehoseStream = new firehose.CfnDeliveryStream(this, 'SensiqHistoryFirehose', {

@@ -1,11 +1,11 @@
 import * as cdk from 'aws-cdk-lib';
 import { Template, Match } from 'aws-cdk-lib/assertions';
-import { SensiqAthenaStack } from '../infra/sensiq-athena-stack';
+import { SensiqHistoryStack } from '../infra/sensiq-history-stack';
 
 let template: Template;
 beforeAll(() => {
     const app = new cdk.App();
-    const stack = new SensiqAthenaStack(app, 'TestAthenaStack');
+    const stack = new SensiqHistoryStack(app, 'TestHistoryStack');
     template = Template.fromStack(stack);
 });
 

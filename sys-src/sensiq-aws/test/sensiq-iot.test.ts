@@ -1,12 +1,12 @@
 import * as cdk from 'aws-cdk-lib';
-import { IotCoreStack } from '../infra/sensiq-iot-stack'; 
+import { SensiqLiveStack } from '../infra/sensiq-live-stack'; 
 import { Template} from 'aws-cdk-lib/assertions';
 
 let template: Template;
 
 beforeAll(() => {
     const app = new cdk.App();
-    const stack = new IotCoreStack(app, 'TestIotStack',);
+    const stack = new SensiqLiveStack(app, 'TestLiveStack',);
     template = Template.fromStack(stack);
 });
 
