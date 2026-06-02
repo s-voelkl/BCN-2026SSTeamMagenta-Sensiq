@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as iot from 'aws-cdk-lib/aws-iot';
 import * as cr from 'aws-cdk-lib/custom-resources';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 
 export class SensiqIotDeviceStack extends cdk.Stack {
@@ -14,9 +15,10 @@ export class SensiqIotDeviceStack extends cdk.Stack {
       thingName: thingNameSpecific,
     });
 
-    // Cert creation -> SAFE the console output! It has to be put into the ESP manually.
-    // Note: Since only onCreate and onDelete are defined (no onUpdate), the certificates
-    // are only generated once during initial stack creation and remain unchanged during stack updates.
+    // Creates the certificate on first deploy only.
+    // onUpdate reads the existing cert via describeCertificate to avoid
+    // regenerating it on every stack update — the private key is only
+    // returned once by AWS, so recreating it would break the physical device.
     const createCert = new cr.AwsCustomResource(this, 'CreateCert', {
       onCreate: {
         service: 'Iot',
@@ -25,7 +27,13 @@ export class SensiqIotDeviceStack extends cdk.Stack {
         physicalResourceId: cr.PhysicalResourceId.fromResponse('certificateId'),
         outputPaths: ['certificateArn', 'certificatePem', 'keyPair.PrivateKey', 'certificateId'],
       },
-      // important for cleanup when stack is destroyed -> otherwise certs would pile up in the AWS account
+      onUpdate: {
+        service: 'Iot',
+        action: 'describeCertificate',
+        parameters: { certificateId: new cr.PhysicalResourceIdReference() },
+        physicalResourceId: cr.PhysicalResourceId.fromResponse('certificateDescription.certificateId'),
+        outputPaths: ['certificateDescription.certificateArn'],
+      },
       onDelete: {
         service: 'Iot',
         action: 'updateCertificate',
@@ -39,9 +47,39 @@ export class SensiqIotDeviceStack extends cdk.Stack {
       }),
     });
 
+    // --- SSM Parameters ---
+    // We store all three cert values in SSM so they are retrievable at any
+    // time, not just during the initial deploy. Without this, certPem and
+    // privKey are lost after the first deploy since AWS never returns the
+    // private key again. The CfnOutputs below would show empty strings on
+    // any subsequent update — SSM fixes that.
+    //
+    // All three use StringParameter (not SecureString) for simplicity.
+    // For a production system you would use SecureString with KMS for
+    // privKey at minimum, but that requires a custom resource since CDK
+    // does not support SecureString natively.
+    //
+    // Standard tier parameters are free — no storage or API call costs.
+
+    new ssm.StringParameter(this, 'CertArnParam', {
+      parameterName: `/sensiq/${thingNameSpecific}/certificateArn`,
+      stringValue: createCert.getResponseField('certificateArn'),
+      description: `IoT certificate ARN for ${thingNameSpecific}`,
+    });
+
+    new ssm.StringParameter(this, 'CertPemParam', {
+      parameterName: `/sensiq/${thingNameSpecific}/certificatePem`,
+      stringValue: createCert.getResponseField('certificatePem'),
+      description: `IoT certificate PEM for ${thingNameSpecific}`,
+    });
+
+    new ssm.StringParameter(this, 'PrivKeyParam', {
+      parameterName: `/sensiq/${thingNameSpecific}/privateKey`,
+      stringValue: createCert.getResponseField('keyPair.PrivateKey'),
+      description: `IoT private key for ${thingNameSpecific}`,
+    });
+
     const certArn = createCert.getResponseField('certificateArn');
-    const certPem = createCert.getResponseField('certificatePem');
-    const privKey = createCert.getResponseField('keyPair.PrivateKey');
 
     const region = cdk.Stack.of(this).region;
     const account = cdk.Stack.of(this).account;
@@ -51,60 +89,50 @@ export class SensiqIotDeviceStack extends cdk.Stack {
       policyDocument: {
         Version: '2012-10-17',
         Statement: [
-          // Testing only: universal permissions for all iot actions and resources.
-          // {
-          //   Effect: 'Allow',
-          //   Action: 'iot:*',
-          //   Resource: 'arn:aws:iot:*:*:*'
-          // },
-          // granular permissions for every iot action (could be more granular)
           {
             Effect: 'Allow',
             Action: 'iot:Connect',
-            Resource: `arn:aws:iot:${region}:${account}:client/${thingNameGeneral}*` // could be further restricted, but it is ok for now
+            Resource: `arn:aws:iot:${region}:${account}:client/${thingNameGeneral}*`,
           },
-          // data topic for sensor data sending
           {
             Effect: 'Allow',
             Action: 'iot:Publish',
-            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/data` // same here
+            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/data`,
           },
           {
             Effect: 'Allow',
             Action: 'iot:Subscribe',
-            Resource: `arn:aws:iot:${region}:${account}:topicfilter/sensiq/${thingNameGeneral}*/data` // same here
+            Resource: `arn:aws:iot:${region}:${account}:topicfilter/sensiq/${thingNameGeneral}*/data`,
           },
           {
             Effect: 'Allow',
             Action: 'iot:Receive',
-            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/data` // same here
+            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/data`,
           },
-          // test topic for automatic and manual testing
           {
             Effect: 'Allow',
             Action: 'iot:Publish',
-            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/test` // same here
+            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/test`,
           },
           {
             Effect: 'Allow',
             Action: 'iot:Subscribe',
-            Resource: `arn:aws:iot:${region}:${account}:topicfilter/sensiq/${thingNameGeneral}*/test` // same here
+            Resource: `arn:aws:iot:${region}:${account}:topicfilter/sensiq/${thingNameGeneral}*/test`,
           },
           {
             Effect: 'Allow',
             Action: 'iot:Receive',
-            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/test` // same here
+            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/test`,
           },
-          // command topic for receiving commands from the backend
           {
             Effect: 'Allow',
             Action: 'iot:Subscribe',
-            Resource: `arn:aws:iot:${region}:${account}:topicfilter/sensiq/${thingNameGeneral}*/commands` // same here
+            Resource: `arn:aws:iot:${region}:${account}:topicfilter/sensiq/${thingNameGeneral}*/commands`,
           },
           {
             Effect: 'Allow',
             Action: 'iot:Receive',
-            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/commands` // same here
+            Resource: `arn:aws:iot:${region}:${account}:topic/sensiq/${thingNameGeneral}*/commands`,
           },
         ],
       },
@@ -115,16 +143,19 @@ export class SensiqIotDeviceStack extends cdk.Stack {
       principal: certArn,
     });
 
-    // Use thing.ref and an explicit dependency to ensure CloudFormation creates
-    // the IoT Thing BEFORE attempting to attach the certificate. Using a hardcoded
-    // string causes a ResourceNotFoundException due to premature attachment.
     const thingAttach = new iot.CfnThingPrincipalAttachment(this, 'ThingAttach', {
       thingName: thing.ref,
       principal: certArn,
     });
     thingAttach.addDependency(thing);
 
-    new cdk.CfnOutput(this, 'DeviceCertificatePem', { value: certPem });
-    new cdk.CfnOutput(this, 'DevicePrivateKey', { value: privKey });
+    new cdk.CfnOutput(this, 'CertPemSsmPath', {
+      value: `/sensiq/${thingNameSpecific}/certificatePem`,
+      description: 'Retrieve with: aws ssm get-parameter --name /sensiq/esp32-lab-001/certificatePem --query Parameter.Value --output text',
+    });
+    new cdk.CfnOutput(this, 'PrivKeySsmPath', {
+      value: `/sensiq/${thingNameSpecific}/privateKey`,
+      description: 'Retrieve with: aws ssm get-parameter --name /sensiq/esp32-lab-001/privateKey --query Parameter.Value --output text',
+    });
   }
 }
