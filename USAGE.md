@@ -14,6 +14,8 @@ AWS IAM Role <https://eu-central-1.console.aws.amazon.com/console/home?region=eu
 
 Start Windows Subsystem for Linux ([WSL](https://learn.microsoft.com/en-us/windows/wsl/install)): ``WSL start``
 
+Enable Docker for WSL with [Docker Desktop](https://docs.docker.com/desktop/features/wsl/)
+
 Login with Key: ``aws configure (key)``
 
 Recommended Login: ``aws login --remote`` -> login with browser (may need to configure region first)
@@ -111,7 +113,8 @@ Manual run of the workflow dispatch with github actions.
 
 The MCU with sensors is needed for the local development.
 
-When deploying the CDK stack (including the ``SensiqIotDeviceStack``) via ``cdk deploy`` the CLI output will show the generated certificate and private key for the thing.
+When deploying the CDK stack (including the ``SensiqIotDeviceStack``) via ``cdk deploy`` the certificates are saved to
+the [AWS Systems Manager Parameter Store](https://eu-central-1.console.aws.amazon.com/systems-manager/parameters/?region=eu-central-1) and can be retrieved from there for the hardware configuration.
 The config file ``sys-src/sensiq-hardware/src/config.h`` (see template in the folder above)
 needs to be adjusted in order to run the hardware unit and connect via MQTT to the AWS cloud by inserting the generated certificate and private key like the following:
 

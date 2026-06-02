@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.0.3 Chrome/140.0.7339.249 Electron/38.7.0 Safari/537.36">
   <diagram name="Page-1" id="v-F1l2QLrbzhOFst-t-a">
-    <mxGraphModel dx="2020" dy="1201" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1285" dy="765" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -29,7 +29,7 @@
           <mxGeometry height="78" width="78" x="233.63" y="1090" as="geometry" />
         </mxCell>
         <mxCell id="9A_8AggbtKs-fJ3Yn483-51" parent="7g5Pe62k6TPIi5mnXdjZ-14" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CCB3;strokeColor=none;align=left;verticalAlign=top;" value="" vertex="1">
-          <mxGeometry height="730" width="540" x="10" y="310" as="geometry" />
+          <mxGeometry height="730" width="550" x="10" y="310" as="geometry" />
         </mxCell>
         <mxCell id="9A_8AggbtKs-fJ3Yn483-50" parent="7g5Pe62k6TPIi5mnXdjZ-14" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CCB3;strokeColor=none;align=left;verticalAlign=top;" value="" vertex="1">
           <mxGeometry height="800" width="370" x="590" y="130" as="geometry" />
@@ -61,6 +61,14 @@
         </mxCell>
         <mxCell id="7g5Pe62k6TPIi5mnXdjZ-28" parent="7g5Pe62k6TPIi5mnXdjZ-14" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;b&gt;AWS IoT Core&lt;/b&gt;" vertex="1">
           <mxGeometry height="30" width="90.13" x="227.57" y="178" as="geometry" />
+        </mxCell>
+        <mxCell id="uhj6eOJakIovXTkHSTFg-1" edge="1" parent="7g5Pe62k6TPIi5mnXdjZ-14" source="7g5Pe62k6TPIi5mnXdjZ-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7g5Pe62k6TPIi5mnXdjZ-25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uhj6eOJakIovXTkHSTFg-3" connectable="0" parent="uhj6eOJakIovXTkHSTFg-1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="uses &lt;span style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;pre-defined &lt;/span&gt;&lt;span style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;entry&lt;/span&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.4992" y="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
         </mxCell>
         <mxCell id="7g5Pe62k6TPIi5mnXdjZ-29" parent="7g5Pe62k6TPIi5mnXdjZ-14" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#8C4FFF;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.kinesis_data_firehose;" value="" vertex="1">
           <mxGeometry height="78" width="78" x="635.13" y="201" as="geometry" />
@@ -340,7 +348,7 @@
         <mxCell id="divDCwrai4AroL3woqbc-6" parent="7g5Pe62k6TPIi5mnXdjZ-14" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 14px; color: rgb(0, 189, 0);&quot;&gt;&lt;b style=&quot;&quot;&gt;Johannes&lt;/b&gt;&lt;/font&gt;" vertex="1">
           <mxGeometry height="30" width="60" x="315.13" y="190" as="geometry" />
         </mxCell>
-        <mxCell id="divDCwrai4AroL3woqbc-11" parent="7g5Pe62k6TPIi5mnXdjZ-14" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontColor=#FF8000;" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Johannes&lt;/b&gt;&lt;/font&gt;" vertex="1">
+        <mxCell id="divDCwrai4AroL3woqbc-11" parent="7g5Pe62k6TPIi5mnXdjZ-14" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontColor=#00BD00;" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Johannes&lt;/b&gt;&lt;/font&gt;" vertex="1">
           <mxGeometry height="30" width="60" x="432.13" y="208" as="geometry" />
         </mxCell>
         <mxCell id="divDCwrai4AroL3woqbc-12" parent="7g5Pe62k6TPIi5mnXdjZ-14" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 14px; color: rgb(0, 189, 0);&quot;&gt;&lt;b style=&quot;&quot;&gt;Johannes&lt;/b&gt;&lt;/font&gt;" vertex="1">
@@ -410,7 +418,7 @@
         <mxCell id="divDCwrai4AroL3woqbc-58" parent="7g5Pe62k6TPIi5mnXdjZ-14" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;b&gt;AWS Sagemaker:&amp;nbsp;&lt;/b&gt;&lt;div&gt;&lt;b&gt;Model Training&lt;/b&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="30" width="113" x="415.13" y="359" as="geometry" />
         </mxCell>
-        <mxCell id="9A_8AggbtKs-fJ3Yn483-1" parent="7g5Pe62k6TPIi5mnXdjZ-14" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontColor=#FF8000;" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Johannes&lt;/b&gt;&lt;/font&gt;" vertex="1">
+        <mxCell id="9A_8AggbtKs-fJ3Yn483-1" parent="7g5Pe62k6TPIi5mnXdjZ-14" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontColor=#00BD00;" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Johannes&lt;/b&gt;&lt;/font&gt;" vertex="1">
           <mxGeometry height="30" width="60" x="720" y="190" as="geometry" />
         </mxCell>
         <mxCell id="9A_8AggbtKs-fJ3Yn483-4" parent="7g5Pe62k6TPIi5mnXdjZ-14" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontColor=#FF8000;" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Sebastian&lt;/b&gt;&lt;/font&gt;" vertex="1">
