@@ -22,6 +22,8 @@ struct SensorData
     int thermistorAnalog;
     bool thermistorDigital;
     float thermistorTemp;
+    bool isOutlier;
+    bool collectTraining;
 };
 
 /**

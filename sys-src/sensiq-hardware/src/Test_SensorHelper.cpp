@@ -16,6 +16,8 @@ test(SensorHelper_buildJsonString_exportsCorrectJsonData)
     testData.thermistorAnalog = 2000;
     testData.thermistorDigital = false;
     testData.thermistorTemp = 25.0f;
+    testData.isOutlier = true;
+    testData.collectTraining = false;
 
     String jsonResult = buildJsonString(testData);
 
@@ -39,6 +41,8 @@ test(SensorHelper_buildJsonString_exportsCorrectJsonData)
     assertEqual(doc["thermistor_analog"].as<int>(), 2000);
     assertFalse(doc["thermistor_digital"].as<bool>());
     assertNear(doc["thermistor_temp"].as<float>(), 25.0f, 0.01f);
+    assertTrue(doc["is_outlier"].as<bool>());
+    assertFalse(doc["collect_training"].as<bool>());
 
     // running_time should be present and valid
     assertTrue(doc.containsKey("running_time"));
@@ -70,6 +74,10 @@ test(SensorHelper_readSensorsMock_returnsValidData)
 
     // Verify thermistorTemp is within a reasonable range
     assertTrue(data.thermistorTemp >= -40.0f && data.thermistorTemp <= 125.0f);
+
+    // Verify outlier and training flags are boolean
+    assertTrue(data.isOutlier == true || data.isOutlier == false);
+    assertTrue(data.collectTraining == true || data.collectTraining == false);
 }
 
 test(SensorHelper_getMeanSensorData_returnsCorrectMean)
@@ -86,6 +94,8 @@ test(SensorHelper_getMeanSensorData_returnsCorrectMean)
     dataList[0].thermistorAnalog = 2000;
     dataList[0].thermistorDigital = true;
     dataList[0].thermistorTemp = 20.0f;
+    dataList[0].isOutlier = false;
+    dataList[0].collectTraining = true;
 
     dataList[1].timestamp = "2026-05-14T12:00:01Z";
     dataList[1].dhtHumidity = 50.0f;
@@ -96,6 +106,8 @@ test(SensorHelper_getMeanSensorData_returnsCorrectMean)
     dataList[1].thermistorAnalog = 3000;
     dataList[1].thermistorDigital = false;
     dataList[1].thermistorTemp = 25.0f;
+    dataList[1].isOutlier = true;
+    dataList[1].collectTraining = false;
 
     dataList[2].timestamp = "2026-05-14T12:00:02Z"; // Newest
     dataList[2].dhtHumidity = 60.0f;
@@ -106,6 +118,8 @@ test(SensorHelper_getMeanSensorData_returnsCorrectMean)
     dataList[2].thermistorAnalog = 4000;
     dataList[2].thermistorDigital = false;
     dataList[2].thermistorTemp = 30.0f;
+    dataList[2].isOutlier = true;
+    dataList[2].collectTraining = true;
 
     // Act: call method
     SensorData meanData = getMeanSensorData(dataList, 3);
@@ -120,6 +134,8 @@ test(SensorHelper_getMeanSensorData_returnsCorrectMean)
     assertEqual(meanData.thermistorAnalog, 3000);
     assertFalse(meanData.thermistorDigital); // 1 true vs 2 false < majority
     assertNear(meanData.thermistorTemp, 25.0f, 0.01f);
+    assertTrue(meanData.isOutlier);       // 2 trues vs 1 false > majority
+    assertTrue(meanData.collectTraining); // 2 trues vs 1 false > majority
 }
 
 test(SensorHelper_readSensorsAveraged_delaysCorrectly)
