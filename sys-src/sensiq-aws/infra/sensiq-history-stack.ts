@@ -125,7 +125,7 @@ export class SensiqHistoryStack extends cdk.Stack {
         const glueTableArn = cdk.Arn.format({ service: 'glue', resource: 'table', resourceName: `${glueDatabaseName}/${tableName}` }, this);
         const athenaWorkgroupArn = cdk.Arn.format({ service: 'athena', resource: 'workgroup', resourceName: workgroup.name }, this);
 
-
+        // IAM Role for Firehose with necessary permissions for Glue schema validation and S3 access
         const firehoseRole = new iam.Role(this, 'FirehoseRole', {
             assumedBy: new iam.ServicePrincipal('firehose.amazonaws.com'),
             inlinePolicies: {
@@ -162,90 +162,93 @@ export class SensiqHistoryStack extends cdk.Stack {
         });
 
         // --- Firehose Delivery Stream ---
+        // Input: DirectPut from IoT Rule (JSON messages from IoT Core)
+        // Output: Parquet files in S3 with dynamic partitioning by year/month/day, and error logging for failed records
         const firehoseStream = new firehose.CfnDeliveryStream(this, 'SensiqHistoryFirehose', {
-        deliveryStreamType: 'DirectPut',
-        extendedS3DestinationConfiguration: {
-            bucketArn: dataBucket.bucketArn,
-            roleArn: firehoseRole.roleArn,
-            prefix: 'data/year=!{partitionKeyFromQuery:year}/month=!{partitionKeyFromQuery:month}/day=!{partitionKeyFromQuery:day}/',
-            errorOutputPrefix: 'errors/!{firehose:error-output-type}/year=!{timestamp:yyyy}/month=!{timestamp:MM}/day=!{timestamp:dd}/',
-
-            // Dynamic partitioning — extracts year/month/day from the timestamp field
-            dynamicPartitioningConfiguration: {
-            enabled: true,
-            },
-            processingConfiguration: {
-            enabled: true,
-            processors: [
-                {
-                type: 'MetadataExtraction',
-                parameters: [
-                    {
-                    parameterName: 'MetadataExtractionQuery',
-                    // Extracts partition keys from the IoT message timestamp field
-                    parameterValue: '{year: .timestamp[0:4], month: .timestamp[5:7], day: .timestamp[8:10]}',
-                    },
-                    {
-                    parameterName: 'JsonParsingEngine',
-                    parameterValue: 'JQ-1.6',
-                    },
-                ],
-                },
-            ],
-            },
-
-            // Parquet conversion via Glue schema
-            dataFormatConversionConfiguration: {
-            enabled: true,
-            inputFormatConfiguration: {
-                deserializer: {
-                openXJsonSerDe: {}, // reads incoming JSON from IoT Core
-                },
-            },
-            outputFormatConfiguration: {
-                serializer: {
-                parquetSerDe: {
-                    compression: 'SNAPPY', // good balance of speed and size
-                },
-                },
-            },
-            schemaConfiguration: {
-                catalogId: this.account,
+            deliveryStreamType: 'DirectPut',
+            extendedS3DestinationConfiguration: {
+                bucketArn: dataBucket.bucketArn,
                 roleArn: firehoseRole.roleArn,
-                databaseName: 'sensiq_history_db',
-                tableName: 'sensor_data',
-                region: this.region,
-                versionId: 'LATEST',
-            },
-            },
+                prefix: 'data/year=!{partitionKeyFromQuery:year}/month=!{partitionKeyFromQuery:month}/day=!{partitionKeyFromQuery:day}/',
+                // error logging for failed records, with same partitioning structure for easier debugging
+                errorOutputPrefix: 'errors/!{firehose:error-output-type}/year=!{timestamp:yyyy}/month=!{timestamp:MM}/day=!{timestamp:dd}/',
 
-            // Firehose buffers before writing — minimum values to keep latency low
-            bufferingHints: {
-            intervalInSeconds: 60,   // flush every 60s
-            sizeInMBs: 64,           // or when buffer hits 64MB
+                // Dynamic partitioning — extracts year/month/day from the timestamp field
+                dynamicPartitioningConfiguration: {
+                    enabled: true,
+                },
+                processingConfiguration: {
+                    enabled: true,
+                    processors: [
+                        {
+                            type: 'MetadataExtraction',
+                            parameters: [
+                                {
+                                    parameterName: 'MetadataExtractionQuery',
+                                    // Extracts partition keys from the IoT message timestamp field
+                                    parameterValue: '{year: .timestamp[0:4], month: .timestamp[5:7], day: .timestamp[8:10]}',
+                                },
+                                {
+                                    parameterName: 'JsonParsingEngine',
+                                    parameterValue: 'JQ-1.6',
+                                },
+                            ],
+                        },
+                    ],
+                },
+
+                // Parquet conversion via Glue schema
+                dataFormatConversionConfiguration: {
+                    enabled: true,
+                    inputFormatConfiguration: {
+                        deserializer: {
+                            openXJsonSerDe: {}, // reads incoming JSON from IoT Core
+                        },
+                    },
+                    outputFormatConfiguration: {
+                        serializer: {
+                            parquetSerDe: {
+                                compression: 'SNAPPY', // good balance of speed and size
+                            },
+                        },
+                    },
+                    schemaConfiguration: {
+                        catalogId: this.account,
+                        roleArn: firehoseRole.roleArn,
+                        databaseName: 'sensiq_history_db',
+                        tableName: 'sensor_data',
+                        region: this.region,
+                        versionId: 'LATEST',
+                    },
+                },
+
+                // Firehose buffers before writing — minimum values to keep latency low
+                bufferingHints: {
+                    intervalInSeconds: 60,   // flush every 60s
+                    sizeInMBs: 64,           // or when buffer hits 64MB
+                },
             },
-        },
         });
 
         // --- IoT Rule: wire HistoryRule to Firehose ---
         const iotFirehoseRole = new iam.Role(this, 'IotFirehoseRole', {
-        assumedBy: new iam.ServicePrincipal('iot.amazonaws.com'),
+            assumedBy: new iam.ServicePrincipal('iot.amazonaws.com'),
         });
 
         iotFirehoseRole.addToPolicy(new iam.PolicyStatement({
-        actions: ['firehose:PutRecord'],
-        resources: [firehoseStream.attrArn],
+            actions: ['firehose:PutRecord'],
+            resources: [firehoseStream.attrArn],
         }));
 
         new iot.TopicRule(this, 'HistoryRule', {
-        sql: iot.IotSql.fromStringAsVer20160323("SELECT * FROM 'sensiq/+/data'"),
-        actions: [
-            new actions.FirehosePutRecordAction(
-            // L2 construct wrapping the CfnDeliveryStream
-            firehose.DeliveryStream.fromDeliveryStreamArn(this, 'ImportedFirehose', firehoseStream.attrArn),
-            { batchMode: false }
-            ),
-        ],
+            sql: iot.IotSql.fromStringAsVer20160323("SELECT * FROM 'sensiq/+/data'"),
+            actions: [
+                new actions.FirehosePutRecordAction(
+                    // L2 construct wrapping the CfnDeliveryStream
+                    firehose.DeliveryStream.fromDeliveryStreamArn(this, 'ImportedFirehose', firehoseStream.attrArn),
+                    { batchMode: false }
+                ),
+            ],
         });
 
         // Lambda Function for API Gateway
