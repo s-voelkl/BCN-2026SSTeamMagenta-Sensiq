@@ -6,6 +6,8 @@
     "lib": [
       "es2022"
     ],
+    "outDir": "./dist",
+    "noEmit": true,
     "declaration": true,
     "strict": true,
     "noImplicitAny": true,
@@ -16,6 +18,7 @@
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": false,
+    "isolatedModules": true,
     "inlineSourceMap": true,
     "inlineSources": true,
     "experimentalDecorators": true,
@@ -23,7 +26,8 @@
     "skipLibCheck": true,
     "typeRoots": [
       "./node_modules/@types"
-    ]
+    ],
+    "types": ["jest", "node"]
   },
   "exclude": [
     "node_modules",
