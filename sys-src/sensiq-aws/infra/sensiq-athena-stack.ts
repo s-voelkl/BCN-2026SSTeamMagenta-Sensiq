@@ -6,18 +6,20 @@ import * as athena from 'aws-cdk-lib/aws-athena';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
+import * as iot from '@aws-cdk/aws-iot-alpha';
+import * as actions from '@aws-cdk/aws-iot-actions-alpha';
+import * as firehose from 'aws-cdk-lib/aws-kinesisfirehose';
 import path from 'path';
 
 
 export class SensiqAthenaStack extends cdk.Stack {
-    public readonly dataBucket: s3.Bucket; // expose the bucket to other stacks and resources
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
         // S3 bucket for incoming IoT data.
         // It is expected that AWS Firehose will write Parquet files to this bucket.
-        this.dataBucket = new s3.Bucket(this, 'SensiqHistoryIoTDataBucket', {
-            // bucketName: "" // removed, for multi-enviromnent readiness
+        const dataBucket = new s3.Bucket(this, 'SensiqHistoryIoTDataBucket', {
+            // bucketName: "" // removed, for multi-environment readiness
             encryption: s3.BucketEncryption.S3_MANAGED, // server-side encryption with S3-managed keys
             versioned: true, // higher costs, but also prevents accidental data loss
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, // blocking all public access
@@ -69,7 +71,7 @@ export class SensiqAthenaStack extends cdk.Stack {
                     'projection.day.type': 'integer',
                     'projection.day.range': '1,31',
                     'projection.day.digits': '2',
-                    'storage.location.template': `s3://${this.dataBucket.bucketName}/data/year=\${year}/month=\${month}/day=\${day}/`,
+                    'storage.location.template': `s3://${dataBucket.bucketName}/data/year=\${year}/month=\${month}/day=\${day}/`,
                 },
                 // efficient partitioning and querying by year/month/day
                 partitionKeys: [
@@ -79,7 +81,7 @@ export class SensiqAthenaStack extends cdk.Stack {
                 ],
                 // defines data schema and Parquet reader/writer settings
                 storageDescriptor: {
-                    location: `s3://${this.dataBucket.bucketName}/data/`,
+                    location: `s3://${dataBucket.bucketName}/data/`,
                     inputFormat: 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat', // Parquet input format
                     outputFormat: 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat', // Parquet output format
                     serdeInfo: {
@@ -115,6 +117,119 @@ export class SensiqAthenaStack extends cdk.Stack {
             },
         });
 
+        // IAM Permissions for Lambda to query Athena and read from S3
+        // ARN: Amazon Resource Name for referencing AWS resources.
+        // cdk.Arn.format builds an ARN string in a strict format: arn:aws:glue:<region>:<account>:<resourceType>/<resourceName>
+        const glueCatalogArn = cdk.Arn.format({ service: 'glue', resource: 'catalog' }, this);
+        const glueDatabaseArn = cdk.Arn.format({ service: 'glue', resource: 'database', resourceName: glueDatabaseName }, this);
+        const glueTableArn = cdk.Arn.format({ service: 'glue', resource: 'table', resourceName: `${glueDatabaseName}/${tableName}` }, this);
+        const athenaWorkgroupArn = cdk.Arn.format({ service: 'athena', resource: 'workgroup', resourceName: workgroup.name }, this);
+
+
+        const firehoseRole = new iam.Role(this, 'FirehoseRole', {
+        assumedBy: new iam.ServicePrincipal('firehose.amazonaws.com'),
+        });
+
+        dataBucket.grantReadWrite(firehoseRole);
+
+        // Glue permissions so Firehose can use the schema for Parquet conversion
+        firehoseRole.addToPolicy(new iam.PolicyStatement({
+        actions: [
+            'glue:GetTable',
+            'glue:GetDatabase',
+            'glue:GetTableVersion',
+            'glue:GetTableVersions'
+        ],
+        resources: [glueCatalogArn, glueDatabaseArn, glueTableArn]
+        }));
+
+        // --- Firehose Delivery Stream ---
+        const firehoseStream = new firehose.CfnDeliveryStream(this, 'SensiqHistoryFirehose', {
+        deliveryStreamType: 'DirectPut',
+        extendedS3DestinationConfiguration: {
+            bucketArn: dataBucket.bucketArn,
+            roleArn: firehoseRole.roleArn,
+            prefix: 'data/year=!{partitionKeyFromQuery:year}/month=!{partitionKeyFromQuery:month}/day=!{partitionKeyFromQuery:day}/',
+            errorOutputPrefix: 'errors/!{firehose:error-output-type}/year=!{timestamp:yyyy}/month=!{timestamp:MM}/day=!{timestamp:dd}/',
+
+            // Dynamic partitioning — extracts year/month/day from the timestamp field
+            dynamicPartitioningConfiguration: {
+            enabled: true,
+            },
+            processingConfiguration: {
+            enabled: true,
+            processors: [
+                {
+                type: 'MetadataExtraction',
+                parameters: [
+                    {
+                    parameterName: 'MetadataExtractionQuery',
+                    // Extracts partition keys from the IoT message timestamp field
+                    parameterValue: '{year: .timestamp[0:4], month: .timestamp[5:7], day: .timestamp[8:10]}',
+                    },
+                    {
+                    parameterName: 'JsonParsingEngine',
+                    parameterValue: 'JQ-1.6',
+                    },
+                ],
+                },
+            ],
+            },
+
+            // Parquet conversion via Glue schema
+            dataFormatConversionConfiguration: {
+            enabled: true,
+            inputFormatConfiguration: {
+                deserializer: {
+                openXJsonSerDe: {}, // reads incoming JSON from IoT Core
+                },
+            },
+            outputFormatConfiguration: {
+                serializer: {
+                parquetSerDe: {
+                    compression: 'SNAPPY', // good balance of speed and size
+                },
+                },
+            },
+            schemaConfiguration: {
+                catalogId: this.account,
+                roleArn: firehoseRole.roleArn,
+                databaseName: 'sensiq_history_db',
+                tableName: 'sensor_data',
+                region: this.region,
+                versionId: 'LATEST',
+            },
+            },
+
+            // Firehose buffers before writing — minimum values to keep latency low
+            bufferingHints: {
+            intervalInSeconds: 60,   // flush every 60s
+            sizeInMBs: 64,           // or when buffer hits 64MB
+            },
+        },
+        });
+
+        // --- IoT Rule: wire HistoryRule to Firehose ---
+        const iotFirehoseRole = new iam.Role(this, 'IotFirehoseRole', {
+        assumedBy: new iam.ServicePrincipal('iot.amazonaws.com'),
+        });
+
+        iotFirehoseRole.addToPolicy(new iam.PolicyStatement({
+        actions: ['firehose:PutRecord'],
+        resources: [firehoseStream.attrArn],
+        }));
+
+        new iot.TopicRule(this, 'HistoryRule', {
+        sql: iot.IotSql.fromStringAsVer20160323("SELECT * FROM 'sensiq/+/data'"),
+        actions: [
+            new actions.FirehosePutRecordAction(
+            // L2 construct wrapping the CfnDeliveryStream
+            firehose.DeliveryStream.fromDeliveryStreamArn(this, 'ImportedFirehose', firehoseStream.attrArn),
+            { batchMode: false }
+            ),
+        ],
+        });
+
         // Lambda Function for API Gateway
         // Python lambda function in lambda/history/handle_history_data.py with handle_history_data.handler()
         const lambdaHandleHistoryData = new PythonFunction(this, 'HandleHistoryData', {
@@ -128,14 +243,6 @@ export class SensiqAthenaStack extends cdk.Stack {
                 DATABASE_NAME: glueDatabaseName,
             }
         });
-
-        // IAM Permissions for Lambda to query Athena and read from S3
-        // ARN: Amazon Resource Name for referencing AWS resources.
-        // cdk.Arn.format builds an ARN string in a strict format: arn:aws:glue:<region>:<account>:<resourceType>/<resourceName>
-        const glueCatalogArn = cdk.Arn.format({ service: 'glue', resource: 'catalog' }, this);
-        const glueDatabaseArn = cdk.Arn.format({ service: 'glue', resource: 'database', resourceName: glueDatabaseName }, this);
-        const glueTableArn = cdk.Arn.format({ service: 'glue', resource: 'table', resourceName: `${glueDatabaseName}/${tableName}` }, this);
-        const athenaWorkgroupArn = cdk.Arn.format({ service: 'athena', resource: 'workgroup', resourceName: workgroup.name }, this);
 
         lambdaHandleHistoryData.addToRolePolicy(new iam.PolicyStatement({
             actions: [
@@ -159,7 +266,7 @@ export class SensiqAthenaStack extends cdk.Stack {
         // L3-Construct-Comfort-Function: 
         // Enables the lambda to read parquet files from the dataBucket and write temporary Athena 
         // query outputs and metadata to the queryResultsBucket and returns the results
-        this.dataBucket.grantRead(lambdaHandleHistoryData);
+        dataBucket.grantRead(lambdaHandleHistoryData);
         queryResultsBucket.grantReadWrite(lambdaHandleHistoryData);
     }
 }
