@@ -8,6 +8,8 @@
 #define FLAME_DIGITAL 35
 #define THERMISTOR_ANALOG 32
 #define THERMISTOR_DIGITAL 33
+#define BUTTON_OUTLIER_PIN 25
+#define BUTTON_TRAINING_PIN 26
 
 DHT dht11(DHT_PIN, DHTTYPE);
 
@@ -25,6 +27,12 @@ void initSensors()
     pinMode(THERMISTOR_ANALOG, INPUT);
     pinMode(THERMISTOR_DIGITAL, INPUT);
     // pinMode(LED_BUILTIN, OUTPUT);
+
+    // Ghetto-buttons with internal Pull-Up Resistor.
+    // 1 if cables open, so ghetto button not pressed.
+    // 0 if cables closed, so ghetto button pressed.
+    pinMode(BUTTON_OUTLIER_PIN, INPUT_PULLUP);
+    pinMode(BUTTON_TRAINING_PIN, INPUT_PULLUP);
 
     // init DHT11 sensor
     dht11.begin();
@@ -78,6 +86,10 @@ SensorData readSensors()
 
     // thermistor specific conversion
     data.thermistorTemp = thermistorSteinhartHart(thermistorAdcValue);
+
+    // read ghetto buttons (inverted logic due to pull-up resistors)
+    data.isOutlier = (digitalRead(BUTTON_OUTLIER_PIN) == LOW);
+    data.collectTraining = (digitalRead(BUTTON_TRAINING_PIN) == LOW);
 
     return data;
 }
@@ -145,7 +157,7 @@ SensorData getMeanSensorData(const SensorData *dataList, int count)
 
     float dhtHumSum = 0, dhtTempSum = 0, dhtHeatIndexSum = 0, thermistorTempSum = 0;
     long flameAnalogSum = 0, thermistorAnalogSum = 0;
-    int flameDigitalSum = 0, thermistorDigitalSum = 0;
+    int flameDigitalSum = 0, thermistorDigitalSum = 0, isOutlierSum = 0, collectTrainingSum = 0;
 
     for (int i = 0; i < count; i++)
     {
@@ -157,6 +169,8 @@ SensorData getMeanSensorData(const SensorData *dataList, int count)
         thermistorAnalogSum += dataList[i].thermistorAnalog;
         thermistorDigitalSum += dataList[i].thermistorDigital ? 1 : 0;
         thermistorTempSum += dataList[i].thermistorTemp;
+        isOutlierSum += dataList[i].isOutlier ? 1 : 0;
+        collectTrainingSum += dataList[i].collectTraining ? 1 : 0;
     }
 
     meanData.dhtHumidity = dhtHumSum / count;
@@ -167,6 +181,8 @@ SensorData getMeanSensorData(const SensorData *dataList, int count)
     meanData.thermistorAnalog = thermistorAnalogSum / count;
     meanData.thermistorDigital = (thermistorDigitalSum > count / 2);
     meanData.thermistorTemp = thermistorTempSum / count;
+    meanData.isOutlier = (isOutlierSum > count / 2);
+    meanData.collectTraining = (collectTrainingSum > count / 2);
 
     return meanData;
 }
@@ -229,6 +245,8 @@ String buildJsonString(const SensorData &data)
     doc["thermistor_analog"] = data.thermistorAnalog;
     doc["thermistor_digital"] = data.thermistorDigital;
     doc["thermistor_temp"] = data.thermistorTemp;
+    doc["is_outlier"] = data.isOutlier;
+    doc["collect_training"] = data.collectTraining;
 
     // Serialize JSON to string
     String json_output;
