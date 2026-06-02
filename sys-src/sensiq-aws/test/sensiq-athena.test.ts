@@ -73,8 +73,7 @@ test('Athena Stack creates necessary resources', () => {
                 'has_encrypted_data': 'false',
                 'projection.enabled': 'true',
                 'projection.year.type': 'integer',
-                'projection.year.min': '2020',
-                'projection.year.max': '9999',
+                'projection.year.range': '2026,2030',
                 'projection.year.digits': '4',
                 'projection.month.type': 'integer',
                 'projection.month.range': '1,12',
@@ -120,7 +119,7 @@ test('Athena Stack creates necessary resources', () => {
     template.hasResourceProperties('AWS::Lambda::Function', {
         Handler: 'handle_history_data.handler',
         Runtime: 'python3.12',
-        Timeout: 15,
+        Timeout: 29,
         Environment: {
             Variables: Match.objectLike({
                 ATHENA_WORKGROUP: Match.anyValue(),
@@ -155,7 +154,7 @@ test('Athena Stack creates necessary resources', () => {
     });
 });
 
-    test('Firehose delivery stream exists', () => {
+test('Firehose delivery stream exists', () => {
     template.hasResource('AWS::KinesisFirehose::DeliveryStream', {});
 });
 
@@ -245,21 +244,21 @@ test('Firehose MetadataExtraction processor uses JQ with correct timestamp query
     });
 });
 
-test('Firehose buffering interval is 60 seconds (minimum for dynamic partitioning)', () => {
+test('Firehose buffering interval is 900 seconds to reduce small-files overhead', () => {
     template.hasResourceProperties('AWS::KinesisFirehose::DeliveryStream', {
         ExtendedS3DestinationConfiguration: {
             BufferingHints: {
-                IntervalInSeconds: 60,
+                IntervalInSeconds: 900,
             },
         },
     });
 });
 
-test('Firehose buffering size is 64MB (minimum for dynamic partitioning)', () => {
+test('Firehose buffering size is 128MB to reduce small-files overhead', () => {
     template.hasResourceProperties('AWS::KinesisFirehose::DeliveryStream', {
         ExtendedS3DestinationConfiguration: {
             BufferingHints: {
-                SizeInMBs: 64,
+                SizeInMBs: 128,
             },
         },
     });
@@ -286,5 +285,28 @@ test('Firehose IAM role trusts Firehose service principal', () => {
                 }),
             ]),
         },
+    });
+});
+
+test('Shareable Lambda test event registry is created', () => {
+    template.hasResourceProperties('AWS::EventSchemas::Registry', {
+        RegistryName: 'lambda-testevent-schemas',
+    });
+});
+
+test('Lambda log group has a bounded retention (no deprecated logRetention custom resource)', () => {
+    template.hasResourceProperties('AWS::Logs::LogGroup', {
+        RetentionInDays: 7,
+    });
+});
+
+test('Shareable Lambda test event schema is created with OpenApi3 and contains the API Gateway example', () => {
+    template.hasResourceProperties('AWS::EventSchemas::Schema', {
+        RegistryName: 'lambda-testevent-schemas',
+        Type: 'OpenApi3',
+        // schemaName is built from the generated function name (a CFN token) at synth time
+        SchemaName: Match.anyValue(),
+        // The content is a serialized JSON string; verify it contains the example marker
+        Content: Match.stringLikeRegexp('apiGatewayHistoryGet'),
     });
 });

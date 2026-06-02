@@ -4,11 +4,14 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as glue from 'aws-cdk-lib/aws-glue';
 import * as athena from 'aws-cdk-lib/aws-athena';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import * as iot from '@aws-cdk/aws-iot-alpha';
 import * as actions from '@aws-cdk/aws-iot-actions-alpha';
 import * as firehose from 'aws-cdk-lib/aws-kinesisfirehose';
+import * as eventschemas from 'aws-cdk-lib/aws-eventschemas';
+import * as fs from 'fs';
 import path from 'path';
 
 
@@ -30,11 +33,14 @@ export class SensiqHistoryStack extends cdk.Stack {
 
         // S3 Bucket for Athena query results, with lifecycle policy to clean up old results.
         // The data is handled much more temporarily, so deletion is more aggressive.
+        // Saved to: <S3-BucketName>/results/<UUID>.csv
         const queryResultsBucket = new s3.Bucket(this, 'SensiqHistoryAthenaQueryResults', {
             encryption: s3.BucketEncryption.S3_MANAGED,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
             autoDeleteObjects: true,
-            lifecycleRules: [{ expiration: cdk.Duration.days(1) }], // more aggressive cleanup
+            // Query results can be as big as 1MB files.
+            // Still, S3 lifecycle expiration only supports whole-day granularity (1 day minimum).
+            lifecycleRules: [{ expiration: cdk.Duration.days(1) }],
         });
 
         // Glue Database
@@ -48,6 +54,7 @@ export class SensiqHistoryStack extends cdk.Stack {
         });
 
         // Glue Table for Parquet Data with Partition Projection
+        // See: https://eu-central-1.console.aws.amazon.com/glue/home?region=eu-central-1#/v2/data-catalog/tables
         const tableName = 'sensor_data';
         const table = new glue.CfnTable(this, 'SensiqHistoryGlueTable', {
             catalogId: this.account,
@@ -62,8 +69,12 @@ export class SensiqHistoryStack extends cdk.Stack {
                     // Partition Projection settings for automatic detection of new years/months/days
                     'projection.enabled': 'true',
                     'projection.year.type': 'integer',
-                    'projection.year.min': '2020',
-                    'projection.year.max': '9999', // safe upper bound limit for safe projection boundary
+                    // A wide range (e.g. 2020,9999) causes Athena to enumerate millions of
+                    // virtual partitions whenever no year predicate is supplied, making even trivial queries
+                    // take tens of seconds.
+                    // This needs to be wide enough to accommodate future data, 
+                    // but not so wide as to cause performance issues.
+                    'projection.year.range': '2026,2030',
                     'projection.year.digits': '4',
                     'projection.month.type': 'integer',
                     'projection.month.range': '1,12',
@@ -100,7 +111,9 @@ export class SensiqHistoryStack extends cdk.Stack {
                         { name: 'flame_digital', type: 'boolean' },
                         { name: 'thermistor_analog', type: 'int' },
                         { name: 'thermistor_digital', type: 'boolean' },
-                        { name: 'thermistor_temp', type: 'double' }
+                        { name: 'thermistor_temp', type: 'double' },
+                        { name: 'is_outlier', type: 'boolean' },
+                        { name: 'collect_training', type: 'boolean' }
                     ],
                 },
             },
@@ -108,6 +121,8 @@ export class SensiqHistoryStack extends cdk.Stack {
         table.addDependency(glueDatabase);
 
         // Athena Workgroup: Configures a workgroup for the query results to be stored in a S3 bucket.
+        // Can be used for manual testing, by using the here defined Athena Workgroup in the Console.
+        // See: https://eu-central-1.console.aws.amazon.com/athena/home?region=eu-central-1#/query-editor
         const workgroup = new athena.CfnWorkGroup(this, 'SensiqHistoryAthenaWorkGroup', {
             name: 'SensiqHistoryAthenaWorkGroup',
             workGroupConfiguration: {
@@ -222,10 +237,13 @@ export class SensiqHistoryStack extends cdk.Stack {
                     },
                 },
 
-                // Firehose buffers before writing — minimum values to keep latency low
+                // Firehose buffers before writing — larger buffers produce fewer, bigger Parquet files,
+                // which dramatically reduces per-file overhead in Athena scans (small-files problem).
+                // Bigger files are more efficient to query, but also increase latency 
+                // and risk of data loss on failure, so a good balance must be found.
                 bufferingHints: {
-                    intervalInSeconds: 60,   // flush every 60s
-                    sizeInMBs: 64,           // or when buffer hits 64MB
+                    intervalInSeconds: 900,  // flush every 15 minutes
+                    sizeInMBs: 128,          // or when buffer hits 128MB
                 },
             },
         });
@@ -251,6 +269,13 @@ export class SensiqHistoryStack extends cdk.Stack {
             ],
         });
 
+        // CloudWatch log group for the lambda. 
+        // Defined explicitly (instead of deprecated `logRetention` option).
+        const lambdaHandleHistoryDataLogGroup = new logs.LogGroup(this, 'HandleHistoryDataLogGroup', {
+            retention: logs.RetentionDays.ONE_WEEK,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
+
         // Lambda Function for API Gateway
         // Python lambda function in lambda/history/handle_history_data.py with handle_history_data.handler()
         const lambdaHandleHistoryData = new PythonFunction(this, 'HandleHistoryData', {
@@ -258,12 +283,16 @@ export class SensiqHistoryStack extends cdk.Stack {
             index: 'handle_history_data.py', // the file containing the lambda handler
             handler: 'handler',
             runtime: lambda.Runtime.PYTHON_3_12,
-            timeout: cdk.Duration.seconds(15), // timeout reduced, to support cost-efficient asynchronous trigger pattern
+            timeout: cdk.Duration.seconds(29), // aligned with API Gateway max timeout to accommodate Athena cold starts
+            logGroup: lambdaHandleHistoryDataLogGroup,
             environment: {
                 ATHENA_WORKGROUP: workgroup.name,
                 DATABASE_NAME: glueDatabaseName,
+                LOG_LEVEL: 'INFO',
             }
         });
+
+
 
         lambdaHandleHistoryData.addToRolePolicy(new iam.PolicyStatement({
             actions: [
@@ -289,5 +318,43 @@ export class SensiqHistoryStack extends cdk.Stack {
         // query outputs and metadata to the queryResultsBucket and returns the results
         dataBucket.grantRead(lambdaHandleHistoryData);
         queryResultsBucket.grantReadWrite(lambdaHandleHistoryData);
+
+        // Shareable Lambda test event (visible in the AWS Lambda Console under Test tab).
+        // Lambda reads these from EventBridge Schemas: registry 'lambda-testevent-schemas',
+        // schema name '_<FunctionName>-schema'. The schema is OpenAPI 3.0 with the event as an example.
+        const testEventPath = path.join(__dirname, '..', 'src', 'lambda', 'history', 'test_event.json');
+        const testEventJson = JSON.parse(fs.readFileSync(testEventPath, 'utf-8'));
+
+        const testEventRegistry = new eventschemas.CfnRegistry(this, 'LambdaTestEventRegistry', {
+            registryName: 'lambda-testevent-schemas',
+            description: 'Registry for shareable Lambda test events (consumed by the Lambda console).',
+        });
+
+        const testEventSchema = new eventschemas.CfnSchema(this, 'HandleHistoryDataTestEventSchema', {
+            registryName: 'lambda-testevent-schemas',
+            schemaName: `_${lambdaHandleHistoryData.functionName}-schema`,
+            type: 'OpenApi3',
+            description: 'Shareable test event for HandleHistoryData lambda (API Gateway proxy GET /history).',
+            content: JSON.stringify({
+                openapi: '3.0.0',
+                info: { version: '1.0.0', title: 'Event' },
+                paths: {},
+                components: {
+                    schemas: {
+                        Event: {
+                            type: 'object',
+                            properties: { eventName: { type: 'string' } },
+                            example: testEventJson,
+                            'x-amazon-events-detail-type': 'apiGatewayHistoryGet',
+                            'x-amazon-events-source': 'aws.lambda',
+                        },
+                    },
+                    examples: {
+                        apiGatewayHistoryGet: { value: testEventJson },
+                    },
+                },
+            }),
+        });
+        testEventSchema.addDependency(testEventRegistry);
     }
 }
