@@ -1,0 +1,73 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    
+env:
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  deploy-aws:
+    name: Deploy AWS
+    runs-on: ubuntu-latest
+    permissions:
+        id-token: write
+        contents: read
+
+    defaults:
+        run:
+            working-directory: sys-src/sensiq-aws
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: 'yarn'
+          cache-dependency-path: sys-src/sensiq-aws/yarn.lock
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Node dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint TS
+        run: yarn lint:ts
+
+      - name: Test TS
+        run: yarn test:ts --ci --forceExit --passWithNoTests
+
+      - name: Typecheck
+        run: yarn tsc --noEmit
+
+      - name: Install Python dependencies
+        run: yarn setup:python
+
+      - name: Lint Lambda
+        run: yarn lint:lambda
+
+      - name: Test Lambda
+        run: yarn test:lambda
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: CDK Synth
+        run: npx cdk synth
+
+      - name: CDK Diff
+        run: npx cdk diff --all
+
+      - name: CDK Deploy
+        run: npx cdk deploy --all --require-approval never --tags Environment=prod
