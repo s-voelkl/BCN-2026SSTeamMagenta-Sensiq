@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+
+defaults:
+  run:
+    working-directory: sys-src/sensiq-aws
+
+env:
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  ci-aws:
+    name: CI AWS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: sys-src/sensiq-aws/yarn.lock
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Node dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint TS
+        run: yarn lint:ts
+
+      - name: Test TS
+        run: yarn test:ts --ci --forceExit --passWithNoTests
+
+      - name: Typecheck
+        run: yarn tsc --noEmit
+
+      - name: Install Python dependencies
+        run: yarn setup:python
+
+      - name: Lint Lambda
+        run: yarn lint:lambda
+
+      - name: Test Lambda
+        run: yarn test:lambda
