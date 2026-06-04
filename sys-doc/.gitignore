@@ -28,4 +28,6 @@ _minted/*
 *.upa
 *.upb
 *.bib
+!references.bib
+*.bkp
 *.bat
