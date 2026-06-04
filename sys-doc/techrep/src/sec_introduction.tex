@@ -4,13 +4,14 @@
 \section{Introduction}\label{sec:introduction}
 % TODO: State every non-trivial abbreviation on first occurrence here
 % e.g. MQTT (Message Queuing Telemetry Transport), ...
-Reliable environmental monitoring is a recurring requirement in
+Reliable indoor environment quality (IEQ) monitoring is a recurring requirement in
 laboratories, production halls, and similar facilities, where ambient
-conditions directly affect experimental validity, product quality, and
-occupational safety. Yet many existing solutions force a trade-off
-between real-time visibility, long-term data availability, and
-operational cost, leaving operators without a unified view of their
-environment.
+conditions like indoor air quality (IAQ) directly affect experimental
+validity, product quality, and occupational safety.
+Existing IoT-based monitoring platforms address parts of this problem
+but typically rely on on-premises servers, offer only coarse sampling,
+or restrict access through proprietary apps, as discussed in detail in
+\cref{sec:related_work}.
 
 This report describes Sensiq, a microcontroller unit (MCU) based
 Internet of Things (IoT) architecture that closes this gap by
@@ -39,29 +40,25 @@ vendor-locked third-party dashboards.
 
 \subsection{Motivation}\label{sec:motivation}
 In laboratory and small-scale production environments, deviations in
-temperature, humidity, gas concentration, or fire exposure can
+temperature, humidity, light intensity, gas concentration, or fire exposure can
 invalidate experiments, damage sensitive samples, or directly
-endanger personnel. Operators therefore need both an immediate view
+endanger personnel~\cite{ahlneck1990molecular,kockmann2017safety}.
+Operators therefore need both an immediate view
 of current conditions and a complete record of past readings for
 quality assurance and incident analysis.
 
-In practice, this combination is hard to obtain. Many low-cost setups
-remain confined to a single workstation and offer no programmatic
-access to their measurements, while turnkey commercial dashboards
-typically lock data into a vendor platform, charge per user, and
-restrict the business logic that can be layered on top. Historical
-data is frequently either discarded after a short retention window or
-stored in formats that do not scale to long observation periods,
-leaving gaps precisely where an audit trail would be needed.
+In practice, this combination is hard to obtain. Existing academic
+IoT platforms such as those by Mumtaz et al.~\cite{mumtaz2021internet}
+and Marques and Pitarma~\cite{marques2019internet} rely on
+on-premises stacks and use sampling or aggregation intervals that are
+too coarse to react to short-lived, safety-relevant events.
 
 Sensiq is motivated by this gap. By pairing an inexpensive ESP32
 sensor node with a serverless cloud backend, the system aims to
 provide real-time visibility, durable historical storage, and
 programmatic access through open REST endpoints, while keeping
 infrastructure and operating cost low enough for routine use in
-academic and industrial laboratories. A detailed comparison with
-existing academic and commercial solutions follows in
-\cref{sec:related_work}.
+academic and industrial laboratories.
 
 \subsection{Document Structure}\label{sec:document_structure}
 The remainder of this report is organised as follows.
