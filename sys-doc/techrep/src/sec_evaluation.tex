@@ -8,14 +8,62 @@
 
 \subsection{Testability}\label{sec:testability}
 % TODO: remove section information
-Discuss per-service testability: Lambda unit tests (SAM CLI), local
-emulation of DynamoDB / S3 / API Gateway, limitations for IoT Core
-(Device Advisor only), and the role of LocalStack for higher-level
-integration tests.
+% Discuss per-service testability: Lambda unit tests (SAM CLI), local
+% emulation of DynamoDB / S3 / API Gateway, limitations for IoT Core
+% (Device Advisor only), and the role of LocalStack for higher-level
+% integration tests.
+
+\subsubsection{Sensor Node Firmware}
+The testability of the sensor node, built around the ESP32 microcontroller
+(see \cref{sec:hardware}), presents specific challenges due to its embedded nature.
+Unit testing of the firmware is implemented using the AUnit
+framework~\cite{aunit_testing_arduino}, which is structured such that either the test suite or the main
+measurement loop executes, preventing interference between testing and regular operation.
+
+Unit tests are implemented for isolated modules such as the sensor readings,
+sensor data aggregation, Wi-Fi connection, basic MQTT connection and
+configuration settings. However, exhaustively testing the MQTT
+publication functionality described in \cref{sec:mqtt_publication} via unit tests is
+not feasible without extensive mocking. Since such mocking would deviate significantly
+from real-world behavior, and the underlying MQTT library is already well-tested
+and established in the community, complex local test implementations for MQTT were omitted.
+
+Instead, the hardware node employs a direct feedback mechanism for connectivity
+validation during its real-world measurement workflow. Upon successfully
+establishing a connection to the MQTT broker, the node subscribes to the test
+topic to verify the connection's health, ensuring the publish functionality
+operates correctly in the physical environment.
 
 \subsection{Cost Estimation}\label{sec:cost_estimation}
 % TODO: remove section information
-Present the monthly operating-cost estimate per device under realistic
-assumptions (users, active hours, message volume). Compare Free Tier
-and Post Free Tier costs across all involved AWS services.
-Template available at end of document: tab:aws-costs.
+% Present the monthly operating-cost estimate per device under realistic
+% assumptions (users, active hours, message volume). Compare Free Tier
+% and Post Free Tier costs across all involved AWS services.
+% Template available at end of document: tab:aws-costs.
+
+\subsubsection{Hardware Cost}
+The one-time hardware cost per sensor node is based on the components used for prototyping.
+A breakdown of the individual component costs is presented in \cref{tab:hw-costs}.
+
+\begin{table}[htb]
+	\centering
+	\caption{Hardware Cost per Sensor Node}
+	\label{tab:hw-costs}
+	\small
+	\begin{tabularx}{0.7\linewidth}{>{\raggedright\arraybackslash}X r r}
+		\toprule
+		\textbf{Component}         & \textbf{Unit Cost}     \\
+		\midrule
+		ESP32-DevKitC              & 8\,€                   \\
+		Bosch BME680               & 18\,€                  \\
+		TSL2561 Light Sensor       & 5\,€                   \\
+		DHT11 Sensor               & 3\,€                   \\
+		Joy-it KY-026 Flame Sensor & 3\,€                   \\
+		Joy-it KY-028 Thermistor   & 3\,€                   \\
+		Prototyping equipment      & \(\sim\)3\,€           \\
+		\midrule
+		\textbf{Total}             & \textbf{\(\sim\)43\,€} \\
+		\bottomrule
+	\end{tabularx}
+\end{table}
+

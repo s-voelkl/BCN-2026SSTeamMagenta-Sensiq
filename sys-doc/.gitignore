@@ -32,3 +32,4 @@ _minted/*
 *.bkp
 *.bat
 __latexindent_temp*
+*-SAVE-ERROR
