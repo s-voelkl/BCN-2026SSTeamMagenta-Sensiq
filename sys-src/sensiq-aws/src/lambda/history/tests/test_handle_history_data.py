@@ -19,66 +19,64 @@ sys.path.insert(0, os.path.join(current_dir, ".."))
 
 class TestHandleHistoryData(unittest.TestCase):
 	def test_build_query_defaults(self):
-		"""Test build_query with no parameters"""
-		# Call the function with an empty dictionary to simulate no query parameters provided
+		"""Test build_query with no parameters uses default lookback window for pruning"""
 		query, params = build_query({})
 
-		# Assert that the default SQL query is returned exactly as expected
-		self.assertEqual(
-			query, "SELECT * FROM sensor_data ORDER BY timestamp DESC LIMIT 100"
-		)
-
-		# Assert that the execution parameters list is empty since no dates were provided
+		# No explicit date predicates, but partition predicate must be present and prune by year/month/day
+		self.assertIn("SELECT * FROM sensor_data WHERE ", query)
+		self.assertIn("(year, month, day) IN (", query)
+		self.assertNotIn("from_iso8601_timestamp", query)
+		self.assertTrue(query.endswith("ORDER BY timestamp DESC LIMIT 100"))
 		self.assertEqual(params, [])
 
 	def test_build_query_with_limit_and_dates(self):
 		"""Test build_query with start/end dates and custom limit"""
-		# Define a mock dictionary simulating API Gateway query string parameters
 		query_params = {
 			"limit": "50",
 			"startDate": "2026-01-01T00:00:00Z",
-			"endDate": "2026-12-31T23:59:59Z",
+			"endDate": "2026-01-03T23:59:59Z",
 		}
 		query, params = build_query(query_params)
 
-		# Expected query includes 'CAST(? AS timestamp)' placeholders to prevent SQL injection
-		expected_query = (
-			"SELECT * FROM sensor_data WHERE timestamp >= CAST(? AS timestamp)"
-			+ " AND timestamp <= CAST(? AS timestamp) ORDER BY timestamp DESC LIMIT 50"
-		)
-		self.assertEqual(query, expected_query)
-		self.assertEqual(params, ["2026-01-01T00:00:00Z", "2026-12-31T23:59:59Z"])
+		# Partition predicate emitted as IN-list over concrete (year, month, day) tuples
+		self.assertIn("(year, month, day) IN (", query)
+		self.assertIn("('2026','01','01')", query)
+		self.assertIn("('2026','01','02')", query)
+		self.assertIn("('2026','01','03')", query)
+		# Timestamp predicates use parameterised from_iso8601_timestamp(?)
+		self.assertIn("timestamp >= from_iso8601_timestamp(?)", query)
+		self.assertIn("timestamp <= from_iso8601_timestamp(?)", query)
+		self.assertTrue(query.endswith("ORDER BY timestamp DESC LIMIT 50"))
+		self.assertEqual(params, ["2026-01-01T00:00:00Z", "2026-01-03T23:59:59Z"])
+
+	def test_build_query_wide_date_range_uses_year_bounds(self):
+		"""Ranges > 366 days fall back to a year  BETWEEN predicate"""
+		query, params = build_query({
+			"startDate": "2024-01-01T00:00:00Z",
+			"endDate": "2026-12-31T23:59:59Z",
+		})
+		self.assertIn("year BETWEEN '2024' AND '2026'", query)
+		self.assertNotIn("(year, month, day) IN (", query)
+		self.assertEqual(params, ["2024-01-01T00:00:00Z", "2026-12-31T23:59:59Z"])
 
 	def test_build_query_invalid_limit(self):
 		"""Test build_query gracefully handles invalid limit parameter"""
-		# Provide a non-integer string as the limit to trigger the ValueError handling
 		query, params = build_query({"limit": "invalid_string"})
 
-		# Assert that the function gracefully falls back to the default limit (100)
-		self.assertEqual(
-			query, "SELECT * FROM sensor_data ORDER BY timestamp DESC LIMIT 100"
-		)
+		self.assertIn("(year, month, day) IN (", query)
+		self.assertTrue(query.endswith("ORDER BY timestamp DESC LIMIT 100"))
 		self.assertEqual(params, [])
 
 	def test_build_query_limit_boundaries(self):
 		"""Test build_query gracefully handles limits outside allowed range"""
-		# Test lower boundary violation (0) -> defaults to 100
-		query, params = build_query({"limit": "0"})
-		self.assertEqual(
-			query, "SELECT * FROM sensor_data ORDER BY timestamp DESC LIMIT 100"
-		)
+		query, _ = build_query({"limit": "0"})
+		self.assertTrue(query.endswith("LIMIT 100"))
 
-		# Test lower boundary violation (negative) -> defaults to 100
-		query, params = build_query({"limit": "-5"})
-		self.assertEqual(
-			query, "SELECT * FROM sensor_data ORDER BY timestamp DESC LIMIT 100"
-		)
+		query, _ = build_query({"limit": "-5"})
+		self.assertTrue(query.endswith("LIMIT 100"))
 
-		# Test upper boundary violation (> 1000) -> capped at 1000
-		query, params = build_query({"limit": "1001"})
-		self.assertEqual(
-			query, "SELECT * FROM sensor_data ORDER BY timestamp DESC LIMIT 1000"
-		)
+		query, _ = build_query({"limit": "1001"})
+		self.assertTrue(query.endswith("LIMIT 1000"))
 
 	# Mock time.sleep to run the test instantly without actually waiting
 	@patch("history.handle_history_data.time.sleep", return_value=None)
@@ -132,9 +130,18 @@ class TestHandleHistoryData(unittest.TestCase):
 		mock_get_query_execution.return_value = {
 			"QueryExecution": {"Status": {"State": "RUNNING"}}
 		}
-		# time() returns 0 on assignment (start_time), and 26 on first while loop check.
-		# This tricks the while loop into thinking 26 seconds have passed instantaneously, exceeding the 25s timeout.
-		mock_time.side_effect = [0, 26]
+		# First time() call captures start_time (=0); every subsequent call returns 26,
+		# so the elapsed-time check trips on the first loop iteration regardless of how
+		# many time.time() calls the implementation makes per iteration (e.g. for logging).
+		mock_time.side_effect = lambda: 0 if not mock_time.call_count_marker else 26
+		# `side_effect` as a callable is invoked on every call; use a simple counter via
+		# an attribute on the mock to differentiate the first call from the rest.
+		mock_time.call_count_marker = 0
+		def _fake_time():
+			value = 0 if mock_time.call_count_marker == 0 else 26
+			mock_time.call_count_marker += 1
+			return value
+		mock_time.side_effect = _fake_time
 
 		# Expect a timeout Exception to be raised instead of getting stuck in an infinite loop
 		with self.assertRaises(Exception) as context:

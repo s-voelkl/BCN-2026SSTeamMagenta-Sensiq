@@ -3,6 +3,10 @@ name: CD
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    
+env:
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
 
 jobs:
   deploy-aws:
@@ -23,8 +27,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: 20
           cache: 'yarn'
+          cache-dependency-path: sys-src/sensiq-aws/yarn.lock
 
       - name: Setup Python
         uses: actions/setup-python@v5

@@ -1,12 +1,15 @@
 import * as cdk from 'aws-cdk-lib';
 import { Template, Match } from 'aws-cdk-lib/assertions';
-import { SensiqAthenaStack } from '../infra/sensiq-athena-stack';
+import { SensiqHistoryStack } from '../infra/sensiq-history-stack';
+
+let template: Template;
+beforeAll(() => {
+    const app = new cdk.App();
+    const stack = new SensiqHistoryStack(app, 'TestHistoryStack');
+    template = Template.fromStack(stack);
+});
 
 test('Athena Stack creates necessary resources', () => {
-    const app = new cdk.App();
-    const stack = new SensiqAthenaStack(app, 'TestAthenaStack');
-    const template = Template.fromStack(stack);
-
     // S3 data bucket with correct properties
     template.hasResourceProperties('AWS::S3::Bucket', {
         VersioningConfiguration: {
@@ -70,8 +73,7 @@ test('Athena Stack creates necessary resources', () => {
                 'has_encrypted_data': 'false',
                 'projection.enabled': 'true',
                 'projection.year.type': 'integer',
-                'projection.year.min': '2020',
-                'projection.year.max': '9999',
+                'projection.year.range': '2026,2030',
                 'projection.year.digits': '4',
                 'projection.month.type': 'integer',
                 'projection.month.range': '1,12',
@@ -117,7 +119,7 @@ test('Athena Stack creates necessary resources', () => {
     template.hasResourceProperties('AWS::Lambda::Function', {
         Handler: 'handle_history_data.handler',
         Runtime: 'python3.12',
-        Timeout: 15,
+        Timeout: 29,
         Environment: {
             Variables: Match.objectLike({
                 ATHENA_WORKGROUP: Match.anyValue(),
@@ -149,5 +151,162 @@ test('Athena Stack creates necessary resources', () => {
                 })
             ])
         })
+    });
+});
+
+test('Firehose delivery stream exists', () => {
+    template.hasResource('AWS::KinesisFirehose::DeliveryStream', {});
+});
+
+test('Firehose has DirectPut as source', () => {
+    template.hasResourceProperties('AWS::KinesisFirehose::DeliveryStream', {
+        DeliveryStreamType: 'DirectPut',
+    });
+});
+
+test('Firehose S3 destination points to data bucket', () => {
+    template.hasResourceProperties('AWS::KinesisFirehose::DeliveryStream', {
+        ExtendedS3DestinationConfiguration: {
+            Prefix: 'data/year=!{partitionKeyFromQuery:year}/month=!{partitionKeyFromQuery:month}/day=!{partitionKeyFromQuery:day}/',
+        },
+    });
+});
+
+test('Firehose error prefix is configured', () => {
+    template.hasResourceProperties('AWS::KinesisFirehose::DeliveryStream', {
+        ExtendedS3DestinationConfiguration: {
+            ErrorOutputPrefix: Match.stringLikeRegexp('errors/'),
+        },
+    });
+});
+
+test('Firehose has Parquet output format conversion enabled', () => {
+    template.hasResourceProperties('AWS::KinesisFirehose::DeliveryStream', {
+        ExtendedS3DestinationConfiguration: {
+            DataFormatConversionConfiguration: {
+                Enabled: true,
+                OutputFormatConfiguration: {
+                    Serializer: {
+                        ParquetSerDe: {},
+                    },
+                },
+            },
+        },
+    });
+});
+
+test('Firehose schema configuration references correct Glue database and table', () => {
+    template.hasResourceProperties('AWS::KinesisFirehose::DeliveryStream', {
+        ExtendedS3DestinationConfiguration: {
+            DataFormatConversionConfiguration: {
+                SchemaConfiguration: {
+                    DatabaseName: 'sensiq_history_db',
+                    TableName: 'sensor_data',
+                },
+            },
+        },
+    });
+});
+
+test('Firehose dynamic partitioning is enabled', () => {
+    template.hasResourceProperties('AWS::KinesisFirehose::DeliveryStream', {
+        ExtendedS3DestinationConfiguration: {
+            DynamicPartitioningConfiguration: {
+                Enabled: true,
+            },
+        },
+    });
+});
+
+test('Firehose MetadataExtraction processor uses JQ with correct timestamp query', () => {
+    template.hasResourceProperties('AWS::KinesisFirehose::DeliveryStream', {
+        ExtendedS3DestinationConfiguration: {
+            ProcessingConfiguration: {
+                Enabled: true,
+                Processors: Match.arrayWith([
+                    Match.objectLike({
+                        Type: 'MetadataExtraction',
+                        Parameters: Match.arrayWith([
+                            {
+                                ParameterName: 'MetadataExtractionQuery',
+                                // important: extraction of partition keys from timestamp
+                                ParameterValue: '{year: .timestamp[0:4], month: .timestamp[5:7], day: .timestamp[8:10]}',
+                            },
+                            {
+                                ParameterName: 'JsonParsingEngine',
+                                ParameterValue: 'JQ-1.6',
+                            },
+                        ]),
+                    }),
+                ]),
+            },
+        },
+    });
+});
+
+test('Firehose buffering interval is 900 seconds to reduce small-files overhead', () => {
+    template.hasResourceProperties('AWS::KinesisFirehose::DeliveryStream', {
+        ExtendedS3DestinationConfiguration: {
+            BufferingHints: {
+                IntervalInSeconds: 900,
+            },
+        },
+    });
+});
+
+test('Firehose buffering size is 128MB to reduce small-files overhead', () => {
+    template.hasResourceProperties('AWS::KinesisFirehose::DeliveryStream', {
+        ExtendedS3DestinationConfiguration: {
+            BufferingHints: {
+                SizeInMBs: 128,
+            },
+        },
+    });
+});
+
+test('HistoryRule action points to Firehose stream', () => {
+    template.hasResourceProperties('AWS::IoT::TopicRule', {
+        TopicRulePayload: {
+            Sql: "SELECT * FROM 'sensiq/+/data'",
+            Actions: Match.arrayWith([
+                Match.objectLike({ Firehose: {} }),
+            ]),
+        },
+    });
+});
+
+test('Firehose IAM role trusts Firehose service principal', () => {
+    template.hasResourceProperties('AWS::IAM::Role', {
+        AssumeRolePolicyDocument: {
+            Statement: Match.arrayWith([
+                Match.objectLike({
+                    Principal: { Service: 'firehose.amazonaws.com' },
+                    Action: 'sts:AssumeRole',
+                }),
+            ]),
+        },
+    });
+});
+
+test('Shareable Lambda test event registry is created', () => {
+    template.hasResourceProperties('AWS::EventSchemas::Registry', {
+        RegistryName: 'lambda-testevent-schemas',
+    });
+});
+
+test('Lambda log group has a bounded retention (no deprecated logRetention custom resource)', () => {
+    template.hasResourceProperties('AWS::Logs::LogGroup', {
+        RetentionInDays: 7,
+    });
+});
+
+test('Shareable Lambda test event schema is created with OpenApi3 and contains the API Gateway example', () => {
+    template.hasResourceProperties('AWS::EventSchemas::Schema', {
+        RegistryName: 'lambda-testevent-schemas',
+        Type: 'OpenApi3',
+        // schemaName is built from the generated function name (a CFN token) at synth time
+        SchemaName: Match.anyValue(),
+        // The content is a serialized JSON string; verify it contains the example marker
+        Content: Match.stringLikeRegexp('apiGatewayHistoryGet'),
     });
 });

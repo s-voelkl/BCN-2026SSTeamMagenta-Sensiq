@@ -1,47 +1,13 @@
-// required for enabling SSL/TLS support in AsyncMqttClient, before including the library header
-#define ASYNC_TCP_SSL_ENABLED 1
-
 #include "MqttConnection.h"
 #include "config.h"
-#include <AsyncMqtt_Generic.h>
+#include <MQTT.h>
 #include <WiFiClientSecure.h>
 
-AsyncMqttClient mqttClient;
+MQTTClient mqttClient(1024);
 WiFiClientSecure secureClient;
 
 String fullTopic = String(mqtt_topic) + "/" + String(device_id) + "/" + String(mqtt_subtopic_data);
 String testTopic = String(mqtt_topic) + "/" + String(device_id) + "/" + String(mqtt_subtopic_test);
-
-/**
- * @brief Callback function for successful MQTT connection, verifies connection.
- * This function is called when the MQTT client successfully connects to the broker.
- * It performs a test subscription and a test publish to verify that the connection is working correctly.
- */
-void onMqttConnect(bool sessionPresent)
-{
-    Serial.println("MQTT connected successfully!");
-
-    // Set subscription for real usage.
-    uint16_t packetIdSub = mqttClient.subscribe(fullTopic.c_str(), 1);
-    Serial.println("Subscribed at QoS 1, packetId: " + String(packetIdSub) + ", topic: " + fullTopic);
-
-    // Test subscription to verify connection with test topic and qos 1.
-    packetIdSub = mqttClient.subscribe(testTopic.c_str(), 1);
-    Serial.println("Subscribed at QoS 1, packetId: " + String(packetIdSub) + ", topic: " + testTopic);
-
-    // Test publish to verify connection with test topic and qos 1.
-    String testPayload = "Test message from " + String(device_id);
-    uint16_t packetIdPub = mqttClient.publish(testTopic.c_str(), 1, false, testPayload.c_str());
-    Serial.println("Published at QoS 1, packetId: " + String(packetIdPub) + ", topic: " + testTopic);
-}
-
-/**
- * @brief Callback function for MQTT disconnection.
- */
-void onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
-{
-    Serial.println("MQTT disconnected.");
-}
 
 /**
  * @brief Callback function for handling incoming MQTT messages.
@@ -49,15 +15,10 @@ void onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
  *
  * @param topic The topic the message was received on.
  * @param payload The message payload.
- * @param properties MQTT message properties.
- * @param len The length of the payload.
- * @param index The index of the current payload chunk.
- * @param total The total size of the payload.
  */
-void onMqttMessage(char *topic, char *payload, const AsyncMqttClientMessageProperties &properties,
-                   const size_t &len, const size_t &index, const size_t &total)
+void messageReceived(String &topic, String &payload)
 {
-    Serial.println("MQTT Message received on topic " + String(topic) + " with payload length " + String(len));
+    Serial.println("MQTT Message received on topic " + topic + " with payload length " + String(payload.length()));
 }
 
 /**
@@ -69,27 +30,20 @@ void onMqttMessage(char *topic, char *payload, const AsyncMqttClientMessagePrope
  */
 void setupMQTT()
 {
-    Serial.print("Setting up Secure MQTT client: " + String(mqtt_server_hostname) + ":" + String(mqtt_server_port));
+    Serial.println("Setting up Secure MQTT client: " + String(mqtt_server_hostname) + ":" + String(mqtt_server_port));
 
-    // Set root certificate. Exact time required for TLS certificate validation, as certificates have a validity period.
-    secureClient.setCACert(mqtt_root_ca_cert);
-    // TODO: For production, replace this with the actual CA certificate of the MQTT broker for secure TLS connection.
-    // secureClient.setInsecure();
+    // Configure TLS certificates for secure connection to AWS IoT Core.
+    // Exact time required for TLS certificate validation, as certificates have a validity period.
+    secureClient.setCACert(mqtt_aws_root_ca_cert);
+    secureClient.setCertificate(mqtt_aws_device_cert);
+    secureClient.setPrivateKey(mqtt_aws_private_key);
 
-    // callback functions
-    mqttClient.onConnect(onMqttConnect);
-    mqttClient.onDisconnect(onMqttDisconnect);
-    mqttClient.onMessage(onMqttMessage);
+    // Larger timeout needed for TLS handshake and connection to AWS IoT Core, in milliseconds.
+    secureClient.setTimeout(10000); // 10 seconds
 
     // server settings
-    mqttClient.setServer(mqtt_server_hostname, mqtt_server_port);
-    mqttClient.setCredentials(mqtt_username, mqtt_password);
-
-    // keep alive interval in seconds
-    mqttClient.setKeepAlive(60);
-
-    // sometimes explicit secure flag is required for some versions of AsyncMQTT
-    mqttClient.setSecure(true);
+    mqttClient.begin(mqtt_server_hostname, mqtt_server_port, secureClient);
+    mqttClient.onMessage(messageReceived);
 }
 
 /**
@@ -104,9 +58,43 @@ void connectToMQTT()
         Serial.print(mqtt_server_hostname);
         Serial.println("...");
 
-        // Attempt to connect (non-blocking)
-        mqttClient.connect();
+        // Attempt to connect
+        if (mqttClient.connect(device_id))
+        {
+            Serial.println("MQTT connected successfully!");
+
+            // Set subscription for data
+            // NOTE: Comment these lines out, or else the controller is registered as a subscriber
+            // to AWS IoT Core, receiving all data messages.
+            // This doubles (!) the sent messages in IoT Core, resulting in doubled costs!
+            // The success-code of the publishing must be enough (see publishMQTTData() method).
+            // Also, the test topic can be used for each connection establishment.
+            // mqttClient.subscribe(fullTopic, mqtt_qos);
+            // Serial.println("Data: Subscribed at QoS " + String(mqtt_qos) + ", topic: " + fullTopic);
+
+            // Test subscription to verify connection with test topic.
+            mqttClient.subscribe(testTopic, mqtt_qos);
+            Serial.println("Test: Subscribed at QoS " + String(mqtt_qos) + ", topic: " + testTopic);
+
+            // Test publish to verify connection with test topic.
+            String testPayload = "Test message from " + String(device_id);
+            mqttClient.publish(testTopic, testPayload, false, mqtt_qos);
+            Serial.println("Test: Published to topic: " + testTopic);
+        }
+        else
+        {
+            Serial.println("MQTT connection failed. Retrying later.");
+        }
     }
+}
+
+/**
+ * @brief Handles background MQTT tasks.
+ * Should be called in the main loop to process incoming messages and keep the connection alive.
+ */
+void loopMQTT()
+{
+    mqttClient.loop();
 }
 
 /**
@@ -122,17 +110,16 @@ bool publishMQTTData(const String &payload)
 
     if (mqttClient.connected())
     {
-        // topic, qos, retain (not saved by broker for later subscribers), payload
-        uint16_t packetIdPub = mqttClient.publish(fullTopic.c_str(), mqtt_qos, false, payload.c_str());
-        // success if packetIdPub > 0, failure if 0
-        if (packetIdPub > 0)
+        // publish(topic, payload, retained, qos)
+        bool success = mqttClient.publish(fullTopic, payload, false, mqtt_qos);
+        if (success)
         {
             Serial.println("MQTT Publish: Success.");
             return true;
         }
         else
         {
-            Serial.println("MQTT Publish: Failed (Packed ID 0).");
+            Serial.println("MQTT Publish: Failed.");
             return false;
         }
     }

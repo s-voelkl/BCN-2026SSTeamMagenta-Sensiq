@@ -1,8 +1,12 @@
 import json
 import logging
+import os
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
+# Can be set to DEBUG via Console to mitigate re-deployments for debugging purposes.
+# ENV: Lambda > Specific Lambda Function > Environment Variables > LOG_LEVEL = DEBUG / INFO
+# Logs: CloudWatch > Log management > SensiqHistoryStack-HandleValidation...
+logger.setLevel(os.environ.get("LOG_LEVEL", "INFO")) 
 
 # import boto3
 # dynamodb = boto3.resource('dynamodb')
