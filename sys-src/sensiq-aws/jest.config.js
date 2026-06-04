@@ -1,9 +1,15 @@
 module.exports = {
   testEnvironment: 'node',
-  roots: ['<rootDir>/test'],
+  roots: ['<rootDir>'],
   testMatch: ['**/*.test.ts'],
   transform: {
     '^.+\\.tsx?$': 'ts-jest'
   },
-  setupFilesAfterEnv: ['aws-cdk-lib/testhelpers/jest-autoclean'],
+  setupFilesAfterEnv: [],
+  collectCoverage: true,
+  collectCoverageFrom: [
+    'infra/**/*.ts',
+    'bin/**/*.ts'
+  ],
+  coverageDirectory: 'coverage/jest-aws-coverage',
 };

@@ -1,0 +1,49 @@
+{
+    "resource": "/history",
+    "path": "/history",
+    "httpMethod": "GET",
+    "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Host": "example.execute-api.eu-central-1.amazonaws.com",
+        "User-Agent": "aws-console-test"
+    },
+    "multiValueHeaders": {
+        "Accept": ["application/json"],
+        "Content-Type": ["application/json"]
+    },
+    "queryStringParameters": {
+        "limit": "10",
+        "startDate": "2026-01-01T00:00:00Z",
+        "endDate": "2028-12-31T23:59:59Z"
+    },
+    "multiValueQueryStringParameters": {
+        "limit": ["10"],
+        "startDate": ["2026-01-01T00:00:00Z"],
+        "endDate": ["2028-12-31T23:59:59Z"]
+    },
+    "pathParameters": null,
+    "stageVariables": null,
+    "requestContext": {
+        "resourceId": "abc123",
+        "resourcePath": "/history",
+        "httpMethod": "GET",
+        "extendedRequestId": "TestRequestId=",
+        "requestTime": "02/Jun/2026:12:00:00 +0000",
+        "path": "/prod/history",
+        "accountId": "123456789012",
+        "protocol": "HTTP/1.1",
+        "stage": "prod",
+        "domainPrefix": "example",
+        "requestTimeEpoch": 1780000000000,
+        "requestId": "00000000-0000-0000-0000-000000000000",
+        "identity": {
+            "sourceIp": "127.0.0.1",
+            "userAgent": "aws-console-test"
+        },
+        "domainName": "example.execute-api.eu-central-1.amazonaws.com",
+        "apiId": "abcdef1234"
+    },
+    "body": null,
+    "isBase64Encoded": false
+}

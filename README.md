@@ -11,7 +11,96 @@ The [documentation](doc/) is licensed under the Creative Commons Attribution 4.0
 
 <!-- For the recommended project structure, see the given [slides](https://moodle.oth-aw.de/pluginfile.php/480813/mod_resource/content/0/BCN_SU01_50_Benotung.pdf) on page 51. -->
 
-## Test Coverage
+## Code Coverage
+
+The hardware code coverage results can be obtained from ``sys-src/sensiq-hardware/test_output.md``.
+
+The AWS code coverage can be splitted into Python lambda handlers and the AWS infrastructure code. 
+The Python code coverage results can be obtained from ``sys-src/sensiq-aws/coverage/pytest-lambda-coverage.md``; the Typescript code coverage results using Jest can be found in the ``sys-src/sensiq-aws/coverage/jest-aws-coverage`` directory.
+
+<!-- TODO: Frontend code coverage -->
+
+## Hardware
+
+### Example JSON Payload
+
+```json
+{
+    "running_time":9881892,
+    "timestamp":"2026-05-25T22:56:12Z",
+    "device_id":"esp32-lab-001",
+    "location":"Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany",
+    "dht_humidity":61,
+    "dht_temperature":23.8,
+    "dht_heat_index":23.82809,
+    "flame_analog":0,
+    "flame_digital":false,
+    "thermistor_analog":2005,
+    "thermistor_digital":false,
+    "thermistor_temp":24.05634,
+    "is_outlier":false, // tbd, not implemented yet!
+    "collect_training":false // tbd, not implemented yet!
+}
+```
+
+## User Interface
+
+### API Gateway
+
+The API Gateway is configured with a timeout of 29 seconds, which is the maximum allowed by AWS.
+If queries on the Athena database take longer than 29 seconds to execute, the API Gateway will return a 504 Timeout Error.
+If this problem consistently occurs, a switch from synchronous to asynchronous processing may be necessary.
+
+## AWS IoT Core
+
+Additional Information on topic declaration found in the [docs](https://docs.aws.amazon.com/iot/latest/developerguide/iot-action-resources.html).
+
+## AWS History Branch
+
+### S3 Bucket
+
+Partitioning: A too high granularity (e.g. by seconds) leads to a small file problem and
+leads to a very bad performance. So the buffering in Kinesis Firehose should be set to 5 to 15 minutes or
+until a file size of n MB is reached. The Partitioning with year/month/day would be enough.
+[Using Partition Projection with Amazon Athena](https://docs.aws.amazon.com/athena/latest/ug/partition-projection.html)
+
+File Format: Apache Parquet is being used as file format, guaranteeing minimal storage and good performance.
+
+As the type of S3 bucket, the standard storage class is used, as the data is accessed and changed frequently,
+the access must have low latency and high throughput, and the cost should be kept low (see [Docs](https://aws.amazon.com/de/s3/storage-classes/)).
+
+[Amazon S3 Lifecycle Configurations User Guide](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html)
+
+### Athena
+
+[AWS Athena Docs](https://docs.aws.amazon.com/athena/latest/ug/getting-started.html)
+
+[Managing Athena Workgroups to Control Costs](https://docs.aws.amazon.com/athena/latest/ug/manage-queries-control-costs-with-workgroups.html)
+
+### Lambda Handle History Data
+
+For a safe usage of Athena, the Lambda function uses prepared statements to prevent SQL injection and ensure that user input is properly sanitized before being included in the query execution. The query is built with parameters as limit, startDate and endDate for flexible filtering from the client side.
+[Querying with Prepared Statements in Athena](https://docs.aws.amazon.com/athena/latest/ug/querying-with-prepared-statements-querying.html) 
+[Athena Query Execution States API Reference](https://docs.aws.amazon.com/athena/latest/APIReference/API_QueryExecutionStatus.html)
+
+During the wait for a response from Athena, the Lambda function implements a polling mechanism that periodically checks the status of the query execution. The query execution status can be one of the following: QUEUED, RUNNING, SUCCEEDED, FAILED, or CANCELLED. After a given timeout threshold (e.g., 25 seconds to stay within the API Gateway limit), if the query has not reached a terminal state (SUCCEEDED, FAILED, or CANCELLED), the Lambda function will return a timeout response to the client, indicating that the query is still processing and advising them to check back later for results.
+
+After receiving a successful response from Athena, the Lambda function retrieves the query results and transforms them into a JSON structure that can be easily consumed by the client application. Dependent on the success or failure of the query execution, the Lambda function returns an appropriate HTTP response code (e.g., 200 for success, 500 for server error) along with a JSON body containing either the query results or error details.
+
+The methods were fully tested with unit tests using the unittest framework and mocks.
+
+### Glue Data Catalog
+
+Using the Glue Feature Partition Projection, Athena can automatically calculate the time
+paths without needing to load new metadata.
+
+[AWS Glue Docs](https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html)
+[AWS Glue Data Catalog Docs](https://docs.aws.amazon.com/athena/latest/ug/data-sources-glue.html)
+[Control Access to AWS Glue Data Catalogs with IAM Policies](https://docs.aws.amazon.com/athena/latest/ug/datacatalogs-iam-policy.html)
+
+### Data Firehose
+
+[AWS Firehose Docs](https://docs.aws.amazon.com/firehose/latest/dev/basic-create.html)
 
 ## etc
 

@@ -858,3 +858,6 @@ $RECYCLE.BIN/
 # Allow aws cdk folders
 !sys-src/sensiq-aws/bin
 !sys-src/sensiq-aws/lib
+
+# vs code
+.vscode/*

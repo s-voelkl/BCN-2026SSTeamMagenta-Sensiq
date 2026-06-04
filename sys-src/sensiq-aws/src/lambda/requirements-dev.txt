@@ -1,0 +1,10 @@
+-r history/requirements.txt
+-r validation/requirements.txt
+-r live/requirements.txt
+
+boto3
+botocore[crt]
+pytest
+pytest-mock
+pytest-cov
+ruff
