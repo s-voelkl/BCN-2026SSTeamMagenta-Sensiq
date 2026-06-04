@@ -1,5 +1,4 @@
 import Greeting from './Greeting'
-// import KPICard from './KPICard'
 import { useLiveData } from '../hooks/useDashboardData'
 import KPICard from './KPICard'
 import type { KPIs } from '../types/dashboard'
@@ -10,10 +9,21 @@ function SkeletonCard({ className = '' }: { className?: string }) {
   )
 }
 
+// Lookup tables => less writing effort
+const colSpanClass = {
+  1: 'col-span-1', 2: 'col-span-2',
+  3: 'col-span-3', 4: 'col-span-4', 5: 'col-span-5',
+} as const
+
+const rowSpanClass = {
+  1: 'row-span-1', 2: 'row-span-2',
+  3: 'row-span-3', 4: 'row-span-4',
+} as const
+
 const KPI: KPIs = [
-  { id: '1', label: 'Temperature', unit: '°C', measure: 'dht_temperature' },
-  { id: '2', label: 'Humidity', unit: '%', measure: 'dht_humidity' },
-  { id: '3', label: 'Flame', unit: '', measure: 'flame_analog' },
+  { id: '1', label: 'Temperature', unit: '°C', measure: 'dht_temperature', colSpan: 1, rowSpan: 2, rowStart: 2, colStart: 3 },
+  { id: '2', label: 'Humidity', unit: '%', measure: 'dht_humidity', colSpan: 1, rowSpan: 2 },
+  { id: '3', label: 'Flame', unit: '', measure: 'flame_analog', colSpan: 1, rowSpan: 2 },
   // add more KPIs as needed
 ]
 
@@ -53,9 +63,19 @@ export default function BentoGrid() {
         <Greeting deviceId={deviceId} />
       </div>
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-3 gap-4 lg:grid-cols-5" style={{ gridAutoRows: '100px' }}>
         {KPI.map(kpi => (
-          <KPICard key={kpi.id} kpi={kpi} data={data} />
+          <div key={kpi.id} 
+            className={[
+              colSpanClass[kpi.colSpan ?? 1],
+              rowSpanClass[kpi.rowSpan ?? 1],
+          ].join(' ')}
+            style={{
+            gridColumnStart: kpi.colStart,
+            gridRowStart:    kpi.rowStart,
+          }}>
+            <KPICard key={kpi.id} kpi={kpi} data={data} />
+          </div>
         ))}
       </div>
       {/* Chart */}

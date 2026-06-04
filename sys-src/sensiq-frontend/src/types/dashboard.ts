@@ -8,6 +8,10 @@ export type KPI = {
   label: string
   unit: string
   measure: "dht_temperature" | "dht_humidity" | "flame_analog" // add more measures as needed, must match keys in SensorData
+  colSpan?: 1 | 2 | 3 | 4 | 5
+  rowSpan?: 1 | 2 | 3 | 4
+  rowStart?: number // optional, for manual grid placement
+  colStart?: number // optional, for manual grid placement
 }
 
 export const SensorSchema = z.object({
