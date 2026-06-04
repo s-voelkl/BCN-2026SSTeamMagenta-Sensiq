@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { /* SensorSchema,*/ type SensorData, type SensorHistory } from '../types/dashboard'
+import { /* SensorSchema,*/ type SensorData, type SensorHistory, type TimeRanges } from '../types/dashboard'
 
 export const mockData: SensorData = {
     running_time: 111164587,
@@ -73,7 +73,7 @@ export function useLiveData() {
 
 // not in use yet
 const fetchHistoryData = async (): Promise<SensorHistory> => {
-  // const res = await fetch('https://jsonplaceholder.typicode.com/todos/1', {
+  // const res = await fetch('<REPLACE_WITH_API_ENDPOINT>?range={range}', {
   //   // headers: {
   //   //   'x-api-key':    "<Replace API Key here>",
   //   //   'Content-Type': 'application/json',
@@ -85,10 +85,10 @@ const fetchHistoryData = async (): Promise<SensorHistory> => {
 }
 
 // not in use yet
-export function useHistoryData() {
+export function useHistoryData(range: TimeRanges) {
   return useQuery<SensorHistory>({
-    queryKey: ['historyData'],
-    queryFn: fetchHistoryData,
+    queryKey: ['historyData', range],
+    queryFn: () => fetchHistoryData(), // pass range as prop to fetch different time ranges from the API (remove for linting)
     staleTime: 0,
   })
 }

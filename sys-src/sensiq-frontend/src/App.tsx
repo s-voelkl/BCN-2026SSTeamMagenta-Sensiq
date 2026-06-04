@@ -21,7 +21,7 @@ function App() {
           className="pointer-events-none fixed inset-0 z-0"
           style={{
             background:
-              'radial-gradient(ellipse 60% 40% at 10% 0%, rgba(245,158,11,0.06) 0%, transparent 70%)',
+              'bg-gradient-to-br from-slate-900/60 via-slate-950/60 to-slate-900/60',
           }}
         />
 

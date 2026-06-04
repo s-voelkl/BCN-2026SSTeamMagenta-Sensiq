@@ -1,7 +1,9 @@
 import Greeting from './Greeting'
-import { useLiveData } from '../hooks/useDashboardData'
+import { useHistoryData, useLiveData } from '../hooks/useDashboardData'
 import KPICard from './KPICard'
-import type { KPIs } from '../types/dashboard'
+import type { KPIs, TimeRanges } from '../types/dashboard'
+import { useState } from 'react'
+import SensorChart from './SensorChart'
 
 function SkeletonCard({ className = '' }: { className?: string }) {
   return (
@@ -21,9 +23,9 @@ const rowSpanClass = {
 } as const
 
 const KPI: KPIs = [
-  { id: '1', label: 'Temperature', unit: '°C', measure: 'dht_temperature', colSpan: 1, rowSpan: 2, rowStart: 2, colStart: 3 },
-  { id: '2', label: 'Humidity', unit: '%', measure: 'dht_humidity', colSpan: 1, rowSpan: 2 },
-  { id: '3', label: 'Flame', unit: '', measure: 'flame_analog', colSpan: 1, rowSpan: 2 },
+  { id: '1', label: 'Temperature', unit: '°C', measure: 'dht_temperature', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 1 },
+  { id: '2', label: 'Humidity', unit: '%', measure: 'dht_humidity', colSpan: 1, rowSpan: 2, rowStart: 3, colStart: 1 },
+  { id: '3', label: 'Flame', unit: '', measure: 'flame_analog', colSpan: 1, rowSpan: 2, rowStart: 5, colStart: 1 },
   // add more KPIs as needed
 ]
 
@@ -32,6 +34,10 @@ export default function BentoGrid() {
 
   const deviceId = data?.device_id || "Unknown Device"
   
+  const [range, setRange] = useState<TimeRanges>('1D')
+  const { data: historyData, isLoading: historyLoading } = useHistoryData(range)
+
+
   // Loading State
   if (isLoading) {
     return (
@@ -63,7 +69,7 @@ export default function BentoGrid() {
         <Greeting deviceId={deviceId} />
       </div>
       {/* KPIs */}
-      <div className="grid grid-cols-3 gap-4 lg:grid-cols-5" style={{ gridAutoRows: '100px' }}>
+      <div className="grid grid-cols-3 gap-4 lg:grid-cols-5" style={{ gridAutoRows: '80px' }}>
         {KPI.map(kpi => (
           <div key={kpi.id} 
             className={[
@@ -77,9 +83,23 @@ export default function BentoGrid() {
             <KPICard key={kpi.id} kpi={kpi} data={data} />
           </div>
         ))}
+        {/* Chart */}
+        <div className="col-span-5 row-span-6 col-start-2 row-start-1">
+          {historyLoading ? (
+            <SkeletonCard className="h-full" />
+          ):(
+          <SensorChart
+            data={historyData ?? []}
+            measure="dht_temperature"
+            label="Temperature"
+            unit="°C"
+            color="#f59e0b"
+            range={range}
+            onRangeChange={setRange}
+            />
+          )}
+        </div>
       </div>
-      {/* Chart */}
-
     </div>
   )
 }
