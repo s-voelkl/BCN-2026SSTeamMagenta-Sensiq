@@ -7,23 +7,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     device_id = path_parameters.get("deviceId", "esp32-lab-01")
 
     body = {
-        "deviceId": device_id,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "location": "Lab A",
-        "measurements": {
-            "dht11_temperature": {
-                "value": 20,
-                "unit": "°C"
-            },
-            "dht11_humidity": {
-                "value": 50,
-                "unit": "%"
-            },
-            "flame_analog": {
-                "value": 4000,
-                "unit": "adc"
-            }
-        }
+        "running_time": 111164587,
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "device_id": "esp32-lab-001",
+        "location": "Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany",
+        "dht_humidity": 51,
+        "dht_temperature": 25.1,
+        "dht_heat_index": 24.99697,
+        "flame_analog": 0,
+        "flame_digital": False,
+        "thermistor_analog": 2027,
+        "thermistor_digital": False,
+        "thermistor_temp": 24.5484
     }
 
     return {
