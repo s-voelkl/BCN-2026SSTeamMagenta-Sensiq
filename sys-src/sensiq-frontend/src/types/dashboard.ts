@@ -30,3 +30,6 @@ export const SensorSchema = z.object({
 })
 
 export type SensorData = z.infer<typeof SensorSchema>
+
+export const SensorHistorySchema = z.array(SensorSchema)
+export type SensorHistory = z.infer<typeof SensorHistorySchema>
