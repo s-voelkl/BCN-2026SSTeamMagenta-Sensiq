@@ -19,33 +19,36 @@ export type KPI = {
 }
 
 export interface SensorChartProps {
-  data:    SensorHistory
-  measure: measures 
-  label:   string
-  unit?:   string
-  color?:  string
+  data: SensorHistory
+  measure: measures
+  label: string
+  unit?: string
+  color?: string
   onRangeChange?: (range: TimeRanges) => void
   range?: TimeRanges
   className?: string
 }
 
-
 export const SensorSchema = z.object({
-  running_time:        z.number(),
-  timestamp:           z.string(),
-  device_id:           z.string(),
-  location:            z.string(),
-  dht_humidity:        z.number(),
-  dht_temperature:     z.number(),
-  dht_heat_index:      z.number(),
-  flame_analog:        z.number(),
-  flame_digital:       z.boolean(),
-  thermistor_analog:   z.number(),
-  thermistor_digital:  z.boolean(),
-  thermistor_temp:     z.number(),
+  running_time: z.number(),
+  timestamp: z.string(),
+  device_id: z.string(),
+  location: z.string(),
+  dht_humidity: z.number(),
+  dht_temperature: z.number(),
+  dht_heat_index: z.number(),
+  flame_analog: z.number(),
+  flame_digital: z.boolean(),
+  thermistor_analog: z.number(),
+  thermistor_digital: z.boolean(),
+  thermistor_temp: z.number(),
+  is_outlier: z.boolean().optional(), // for training purposes, future use
+  collect_training: z.boolean().optional(), // for training purposes, future use
+  outlier_prediction: z.boolean().optional(), // optional outlier prediction field, future use
 })
 
 export type SensorData = z.infer<typeof SensorSchema>
 
 export const SensorHistorySchema = z.array(SensorSchema)
+
 export type SensorHistory = z.infer<typeof SensorHistorySchema>
