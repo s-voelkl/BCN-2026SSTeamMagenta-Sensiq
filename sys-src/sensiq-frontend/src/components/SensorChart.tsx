@@ -18,10 +18,10 @@ const TIME_RANGES = [
 ] as const
 
 type TooltipProps = {
-  active: boolean
+  active?: boolean
   payload?: { value: number }[]
-  label: string
-  unit: string
+  label?: string
+  unit?: string
 }
 
 
@@ -31,7 +31,7 @@ function CustomTooltip({ active, payload, label, unit }: TooltipProps) { // not 
     <div className="rounded-xl border border-slate-700 bg-slate-800/95 px-4 py-3 text-sm shadow-xl backdrop-blur-sm">
       <p className="mb-1 font-mono text-xs text-slate-400">{label}</p>
       <p className="font-mono font-bold text-slate-50">
-        {payload[0].value} {unit}
+        {payload[0].value}{unit}
       </p>
     </div>
   )
