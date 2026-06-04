@@ -31,3 +31,4 @@ _minted/*
 !references.bib
 *.bkp
 *.bat
+__latexindent_temp*
