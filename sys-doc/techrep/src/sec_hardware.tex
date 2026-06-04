@@ -1,0 +1,22 @@
+% ----------------------------------------------------------------------
+% Section 4 — Hardware
+% ----------------------------------------------------------------------
+\section{Hardware}\label{sec:hardware}
+% TODO: remove section information
+Detailed description of the edge tier of the system.
+
+\subsection{ESP32 Sensor Node}\label{sec:esp32_node}
+% TODO: remove section information
+Describe the ESP32 microcontroller, the selected sensors (DHT11 for
+temperature/humidity, KY-026 flame sensor, KY-028 thermistor, and any
+additional gas/light sensors), wiring, and on-device pre-processing.
+Include a photograph or schematic of the assembled node
+(see template: figure*).
+
+\subsection{MQTT Publication to AWS IoT Core}\label{sec:mqtt_publication}
+% TODO: remove section information
+Explain the firmware-side MQTT client: topic structure, JSON payload
+schema %(see template: lst:data_model_json)
+, publish frequency, and the
+TLS / X.509 certificate-based authentication that secures the link
+between device and AWS IoT Core.

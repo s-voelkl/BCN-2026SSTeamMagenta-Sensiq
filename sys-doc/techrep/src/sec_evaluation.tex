@@ -1,0 +1,21 @@
+% ----------------------------------------------------------------------
+% Section 7 — Evaluation
+% Rationale: Testability and cost are assessment results rather than
+% design decisions; grouping them in a dedicated Evaluation section
+% separates "what was built" from "how it was assessed".
+% ----------------------------------------------------------------------
+\section{Evaluation}\label{sec:evaluation}
+
+\subsection{Testability}\label{sec:testability}
+% TODO: remove section information
+Discuss per-service testability: Lambda unit tests (SAM CLI), local
+emulation of DynamoDB / S3 / API Gateway, limitations for IoT Core
+(Device Advisor only), and the role of LocalStack for higher-level
+integration tests.
+
+\subsection{Cost Estimation}\label{sec:cost_estimation}
+% TODO: remove section information
+Present the monthly operating-cost estimate per device under realistic
+assumptions (users, active hours, message volume). Compare Free Tier
+and Post Free Tier costs across all involved AWS services.
+Template available at end of document: tab:aws-costs.
