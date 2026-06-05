@@ -5,10 +5,6 @@ on:
     branches:
       - "**"
 
-defaults:
-  run:
-    working-directory: sys-src/sensiq-aws
-
 env:
   AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
 
@@ -16,6 +12,9 @@ jobs:
   ci-aws:
     name: CI AWS
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sys-src/sensiq-aws
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -53,3 +52,31 @@ jobs:
 
       - name: Test Lambda
         run: yarn test:lambda
+  ci-frontend:
+    name: CI Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sys-src/sensiq-frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: sys-src/sensiq-frontend/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint TS
+        run: yarn lint
+
+      - name: Test TS
+        run: yarn test
+
+      - name: Typecheck
+        run: yarn tsc --noEmit
