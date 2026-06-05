@@ -16,6 +16,8 @@ import path from 'path';
 
 
 export class SensiqHistoryStack extends cdk.Stack {
+    public readonly lambdaHandleHistoryData: lambda.Function;
+
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
@@ -278,7 +280,7 @@ export class SensiqHistoryStack extends cdk.Stack {
 
         // Lambda Function for API Gateway
         // Python lambda function in lambda/history/handle_history_data.py with handle_history_data.handler()
-        const lambdaHandleHistoryData = new PythonFunction(this, 'HandleHistoryData', {
+        this.lambdaHandleHistoryData = new PythonFunction(this, 'HandleHistoryData', {
             entry: path.join(__dirname, '..', 'src', 'lambda', 'history'), // points to the directory containing the lambda function code
             index: 'handle_history_data.py', // the file containing the lambda handler
             handler: 'handler',
@@ -294,7 +296,7 @@ export class SensiqHistoryStack extends cdk.Stack {
 
 
 
-        lambdaHandleHistoryData.addToRolePolicy(new iam.PolicyStatement({
+        this.lambdaHandleHistoryData.addToRolePolicy(new iam.PolicyStatement({
             actions: [
                 'athena:StartQueryExecution',
                 'athena:GetQueryExecution',
@@ -305,7 +307,7 @@ export class SensiqHistoryStack extends cdk.Stack {
 
         // Gives lambda read-access for the Glue Catalog, Database, and Table.
         // Lambda starts an Athena query that references the Glue Table, so permissions are needed.
-        lambdaHandleHistoryData.addToRolePolicy(new iam.PolicyStatement({
+        this.lambdaHandleHistoryData.addToRolePolicy(new iam.PolicyStatement({
             actions: [
                 'glue:GetTable',
                 'glue:GetDatabase'
@@ -316,8 +318,8 @@ export class SensiqHistoryStack extends cdk.Stack {
         // L3-Construct-Comfort-Function: 
         // Enables the lambda to read parquet files from the dataBucket and write temporary Athena 
         // query outputs and metadata to the queryResultsBucket and returns the results
-        dataBucket.grantRead(lambdaHandleHistoryData);
-        queryResultsBucket.grantReadWrite(lambdaHandleHistoryData);
+        dataBucket.grantRead(this.lambdaHandleHistoryData);
+        queryResultsBucket.grantReadWrite(this.lambdaHandleHistoryData);
 
         // Shareable Lambda test event (visible in the AWS Lambda Console under Test tab).
         // Lambda reads these from EventBridge Schemas: registry 'lambda-testevent-schemas',
@@ -332,7 +334,7 @@ export class SensiqHistoryStack extends cdk.Stack {
 
         const testEventSchema = new eventschemas.CfnSchema(this, 'HandleHistoryDataTestEventSchema', {
             registryName: 'lambda-testevent-schemas',
-            schemaName: `_${lambdaHandleHistoryData.functionName}-schema`,
+            schemaName: `_${this.lambdaHandleHistoryData.functionName}-schema`,
             type: 'OpenApi3',
             description: 'Shareable test event for HandleHistoryData lambda (API Gateway proxy GET /history).',
             content: JSON.stringify({

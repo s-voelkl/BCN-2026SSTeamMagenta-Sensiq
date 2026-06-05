@@ -13,7 +13,9 @@ const historyStack = new SensiqHistoryStack(app, 'SensiqHistoryStack'); // eslin
 
 const liveStack = new SensiqLiveStack(app, 'SensiqLiveStack');
 
-const apiStack = new SensiqApiStack(app, 'SensiqApiStack');
+const apiStack = new SensiqApiStack(app, 'SensiqApiStack', {
+    historyFunction: historyStack.lambdaHandleHistoryData,
+});
 
 liveStack.addDependency(deviceStack);
 apiStack.addDependency(liveStack);
