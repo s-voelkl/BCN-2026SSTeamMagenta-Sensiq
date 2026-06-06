@@ -75,6 +75,12 @@ def handler(event, context):
     """
     logger.info("Received IoT message: %s", json.dumps(event))
 
+    alert_reasons = get_alert_reasons(event)
+
+    for reason in alert_reasons:
+        publish_alert(event, reason)
+
+
     # TODO: extract fields once message schema is defined, e.g.:
     # device_id = event.get('device_id')
     # timestamp = event.get('timestamp')
@@ -96,4 +102,10 @@ def handler(event, context):
     #     logger.error("Failed to write to DynamoDB: %s", str(e))
     #     raise
 
-    return {"statusCode": 200, "body": "OK"}
+    return {
+        "statusCode": 200,
+        "body": json.dumps({
+            "message": "Validation completed",
+            "alert_reasons": alert_reasons,
+        }),
+    }
