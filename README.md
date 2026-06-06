@@ -1,5 +1,9 @@
 # BCN-2026SSTeamMagenta-Sensiq
 
+## Usage
+
+For usage instructions, please refer to the the [usage.md file](usage.md) in the root directory of this repository.
+
 ## License
 
 The source files are licensed under the MIT License; the documentation is licensed under the Creative Commons Attribution 4.0 International License.
