@@ -37,7 +37,7 @@ def publish_alert(sensor_data: dict, reason: str) -> None:
 
     sns_client.publish(
         TopicArn=ALERT_TOPIC_ARN,
-        Subject=f"Sensiq Alert: {reason}",
+        Subject=f"Sensiq Alert: {len(reason)} critical condition(s)",
         Message=json.dumps(message, indent=2),
     )
 
@@ -77,8 +77,8 @@ def handler(event, context):
 
     alert_reasons = get_alert_reasons(event)
 
-    for reason in alert_reasons:
-        publish_alert(event, reason)
+    if alert_reasons:
+        publish_alert(event, alert_reasons)
 
 
     # TODO: extract fields once message schema is defined, e.g.:
