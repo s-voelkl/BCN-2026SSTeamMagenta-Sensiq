@@ -4,6 +4,7 @@ import * as actions from '@aws-cdk/aws-iot-actions-alpha';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import { Construct } from 'constructs';
 import path from 'path';
@@ -17,6 +18,22 @@ export class SensiqLiveStack extends cdk.Stack {
       const alertTopic = new sns.Topic(this, 'SensiqAlertTopic', {
           topicName: 'sensiq-alerts',
           displayName: 'Sensiq Alerts',
+      });
+
+      // Stores the latest email timestamp per device and alert reason.
+      // This prevents repeated emails while a sensor value stays critical.
+      const sentEmailsTable = new dynamodb.Table(this, 'SensiqSentEmailsTable', {
+          tableName: 'sensiq-email-list-sent-mails',
+          partitionKey: {
+              name: 'device_id',
+              type: dynamodb.AttributeType.STRING,
+          },
+          sortKey: {
+              name: 'reason',
+              type: dynamodb.AttributeType.STRING,
+          },
+          billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+          removalPolicy: cdk.RemovalPolicy.DESTROY,
       });
 
       const alertEmail = this.node.tryGetContext('alertEmail') as string | undefined;
@@ -36,10 +53,12 @@ export class SensiqLiveStack extends cdk.Stack {
         timeout: cdk.Duration.seconds(15),
         environment: {
             ALERT_TOPIC_ARN: alertTopic.topicArn,
+            SENT_EMAILS_TABLE_NAME: sentEmailsTable.tableName,
         }}
     );
 
     alertTopic.grantPublish(lambdaHandleValidation);
+    sentEmailsTable.grantReadWriteData(lambdaHandleValidation);
 
     // for validation lambda trigger
     new iot.TopicRule(this, 'LiveRule', {
