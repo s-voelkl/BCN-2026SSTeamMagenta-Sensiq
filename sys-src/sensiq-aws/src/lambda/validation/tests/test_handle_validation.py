@@ -1,45 +1,52 @@
-import json
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 import validation.handle_validation as handle_validation
 
 
 class TestHandleValidation(unittest.TestCase):
 
-    def _make_event(self, overrides=None):
-        base = {
-                "running_time": 111164587,
-                "timestamp": "2026-05-28T00:39:39Z",
-                "device_id": "esp32-lab-001",
-                "location": "Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany",
-                "dht_humidity": 51,
-                "dht_temperature": 25.1,
-                "dht_heat_index": 24.99697,
-                "flame_analog": 0,
-                "flame_digital": False,
-                "thermistor_analog": 2027,
-                "thermistor_digital": False,
-                "thermistor_temp": 24.5484,
-                "topic": "sensiq/sensor-001/data"
+    def setUp(self):
+        self.mock_context = MagicMock()
+        self.valid_event = {
+            "device_id": "esp32-lab-001",
+            "timestamp": "2026-05-28T00:39:39Z",
+            "dht_temperature": 25.0,
+            "dht_humidity": 50.0,
+            "flame_analog": 900,
+            "thermistor_temp": 24.0
         }
-        return {**base, **(overrides or {})}
 
-    def test_returns_200(self):
-        response = handle_validation.handler(self._make_event(), {})
-        self.assertEqual(response["statusCode"], 200)
+    @patch("validation.handle_validation.dynamodb")
+    def test_normal_data_returns_200(self, mock_dynamodb):
+        mock_dynamodb.Table.return_value = MagicMock()
+        result = handle_validation.handler(self.valid_event, self.mock_context)
+        self.assertEqual(result["statusCode"], 200)
 
-    def test_logs_message(self):
-        event = self._make_event()
-        with patch("validation.handle_validation.logger") as mock_logger:
-            handle_validation.handler(event, {})
-            mock_logger.info.assert_called_once_with(
-                "Received IoT message: %s", json.dumps(event)
-            )
+    def test_no_device_id_returns_400(self):
+        event = dict(self.valid_event)
+        del event["device_id"]
+        result = handle_validation.handler(event, self.mock_context)
+        self.assertEqual(result["statusCode"], 400)
 
-    def test_missing_fields_dont_crash(self):
-        """Handler should not raise even with a minimal/empty payload."""
-        response = handle_validation.handler({}, {})
-        self.assertEqual(response["statusCode"], 200)
+    def test_no_timestamp_returns_400(self):
+        event = dict(self.valid_event)
+        del event["timestamp"]
+        result = handle_validation.handler(event, self.mock_context)
+        self.assertEqual(result["statusCode"], 400)
+
+    @patch("validation.handle_validation.dynamodb")
+    def test_high_temperature_still_saves(self, mock_dynamodb):
+        mock_dynamodb.Table.return_value = MagicMock()
+        event = dict(self.valid_event)
+        event["dht_temperature"] = 35.0
+        result = handle_validation.handler(event, self.mock_context)
+        self.assertEqual(result["statusCode"], 200)
+
+    @patch("validation.handle_validation.dynamodb")
+    def test_dynamo_error_returns_500(self, mock_dynamodb):
+        mock_dynamodb.Table.return_value.put_item.side_effect = Exception("error")
+        result = handle_validation.handler(self.valid_event, self.mock_context)
+        self.assertEqual(result["statusCode"], 500)
 
 
 if __name__ == "__main__":

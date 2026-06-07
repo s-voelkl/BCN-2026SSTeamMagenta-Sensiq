@@ -78,7 +78,7 @@ def handler(event, context=None):
         logger.info(f"Data successfully saved to DynamoDB for: {device_id}")
 
         # --- SNS ALARM (TODO) ---
-        if item.get('is_outlier') == True:
+        if item.get('is_outlier'):
              #if SNS_TOPIC_ARN:
                  #sns.publish(
                      #TopicArn=SNS_TOPIC_ARN,
