@@ -1,0 +1,85 @@
+% ----------------------------------------------------------------------
+% Section 1 — Introduction
+% ----------------------------------------------------------------------
+\section{Introduction}\label{sec:introduction}
+% TODO: State every non-trivial abbreviation on first occurrence here
+% e.g. MQTT (Message Queuing Telemetry Transport), ...
+Reliable indoor environment quality (IEQ) monitoring is a recurring requirement in
+laboratories, production halls, and similar facilities, where ambient
+conditions like indoor air quality (IAQ) directly affect experimental
+validity, product quality, and occupational safety.
+Existing IoT-based monitoring platforms address parts of this problem
+but typically rely on on-premises servers, offer only coarse sampling,
+or restrict access through proprietary apps, as discussed in detail in
+\cref{sec:related_work}.
+
+This report describes Sensiq, a microcontroller unit (MCU) based
+Internet of Things (IoT) architecture that closes this gap by
+combining ESP32 (Espressif Systems) edge devices with a serverless
+Amazon Web Services (AWS) cloud backend. Sensor readings are
+transmitted over Message Queuing Telemetry Transport (MQTT) secured
+with Transport Layer Security (TLS), validated and persisted in the
+cloud via AWS services for a live and historical view, and exposed
+through Representational State Transfer (REST)
+Application Programming Interface (API) endpoints. A React-based web
+frontend consumes these endpoints to visualize live and historical
+data, and threshold-driven email alerts notify responsible personnel
+of critical events. The remainder of this section presents the mission
+statement and the underlying motivation for the system.
+
+\subsection{Mission Statement}\label{sec:mission_statement}
+Sensiq is an end-to-end environmental monitoring system that enables
+laboratory operators, occupational safety officers, facility managers,
+and IT administrators to observe critical ambient parameters such as
+temperature, humidity, light intensity, gas concentration, and flame exposure in
+real time, while also providing scalable access to historical data for
+long-term analysis. Its overarching goal is to deliver reliable,
+low-latency live monitoring together with cost-efficient historical
+analytics on a fully serverless backend, without depending on
+vendor-locked third-party dashboards.
+
+\subsection{Motivation}\label{sec:motivation}
+In laboratory and small-scale production environments, deviations in
+temperature, humidity, light intensity, gas concentration, or fire exposure can
+invalidate experiments, damage sensitive samples, or directly
+endanger personnel~\cite{ahlneck1990molecular,kockmann2017safety}.
+Operators therefore need both an immediate view
+of current conditions and a complete record of past readings for
+quality assurance and incident analysis.
+
+In practice, this combination is hard to obtain. Existing academic
+IoT platforms such as those by Mumtaz et al.~\cite{mumtaz2021internet}
+and Marques and Pitarma~\cite{marques2019internet} rely on
+on-premises stacks and use sampling or aggregation intervals that are
+too coarse to react to short-lived, safety-relevant events.
+
+Sensiq is motivated by this gap. By pairing an inexpensive ESP32
+sensor node with a serverless cloud backend, the system aims to
+provide real-time visibility, durable historical storage, and
+programmatic access through open REST endpoints, while keeping
+infrastructure and operating cost low enough for routine use in
+academic and industrial laboratories.
+The full source code is available on GitHub under the MIT License~\cite{sensiq_github}.
+
+\subsection{Document Structure}\label{sec:document_structure}
+The remainder of this report is organised as follows.
+\Cref{sec:related_work} positions Sensiq against existing academic and
+commercial monitoring solutions and motivates the design decisions
+taken in this project.
+\Cref{sec:technical_concept} introduces the conceptual building blocks
+of the system and presents the end-to-end architecture in a
+technology-agnostic manner.
+
+The subsequent three sections refine this concept along the data flow:
+\cref{sec:hardware} details the ESP32-based sensor node and its secure
+MQTT publication to AWS IoT Core;
+\cref{sec:aws_services} describes the serverless cloud pipeline,
+covering both the low-latency live route and the long-term history
+route;
+and \cref{sec:user_interaction} explains how end users consume the
+data through the React-based web frontend and how they are notified of
+critical events via email.
+\Cref{sec:evaluation} assesses the resulting system with respect to
+testability and operating cost.
+Finally, \cref{sec:summary} summarises the contribution of the report
+and outlines directions for future work.
