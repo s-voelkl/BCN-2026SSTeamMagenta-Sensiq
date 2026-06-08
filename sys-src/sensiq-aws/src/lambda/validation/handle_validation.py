@@ -63,7 +63,7 @@ def mark_alert_as_sent(device_id: str, reason: str, current_timestamp: int) -> N
         }
     )
 
-def publish_alert(sensor_data: dict, reasons: str) -> None:
+def publish_alert(sensor_data: dict, reasons: list[str]) -> None:
     """Publish a sensor alert to SNS."""
     if not ALERT_TOPIC_ARN:
         logger.warning("ALERT_TOPIC_ARN is not configured, skipping SNS alert")
@@ -138,7 +138,7 @@ def handler(event, context):
         for reason in reasons_to_send:
             mark_alert_as_sent(device_id, reason, current_timestamp)
     else:
-        logger.info("All alert reasons are currently in cooldown for device %s", device_id)
+        logger.debug("All alert reasons are currently in cooldown for device %s", device_id)
 
 
     #if alert_reasons:
