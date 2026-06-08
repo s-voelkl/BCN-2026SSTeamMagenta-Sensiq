@@ -66,10 +66,10 @@ export default function BentoGrid() {
     <div className="space-y-4">
       {/* Greeting */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-6 py-5 backdrop-blur-sm">
-        <Greeting deviceId={deviceId} />
+        <Greeting deviceId={deviceId} timestamp={data.timestamp}/>
       </div>
       {/* KPIs */}
-      <div className="grid grid-cols-3 gap-4 lg:grid-cols-5" style={{ gridAutoRows: '80px' }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:grid-cols-5" style={{ gridAutoRows: '80px' }}>
         {KPI.map(kpi => (
           <div key={kpi.id} 
             className={[
@@ -93,7 +93,7 @@ export default function BentoGrid() {
             measure="dht_temperature"
             label="Temperature"
             unit="°C"
-            color="#f59e0b"
+            color="#2abe9bff"
             range={range}
             onRangeChange={setRange}
             />

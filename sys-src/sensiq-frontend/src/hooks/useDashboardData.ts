@@ -1,6 +1,24 @@
 import { useQuery } from '@tanstack/react-query'
 import { /* SensorSchema,*/ type SensorData, type SensorHistory, type TimeRanges } from '../types/dashboard'
 
+export const mockLiveDataActiveDevice: SensorData = {
+  running_time: 111164587,
+  timestamp: new Date().toISOString(), // current time to simulate active device
+  device_id: "esp32-lab-001",
+  location: "Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany",
+  dht_humidity: 51,
+  dht_temperature: 25.11111,
+  dht_heat_index: 24.99697,
+  flame_analog: 0,
+  flame_digital: false,
+  thermistor_analog: 2027,
+  thermistor_digital: false,
+  thermistor_temp: 24.5484,
+  is_outlier: false,
+  collect_training: false,
+  outlier_prediction: false
+}
+
 export const mockLiveData: SensorData = {
   running_time: 111164587,
   timestamp: "2026-05-28T00:43:00Z",
@@ -84,7 +102,7 @@ const fetchLiveData = async (): Promise<SensorData> => {
   // })
   // if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard data`)
   // return SensorSchema.parse(await res.json())
-  return mockLiveData // replace this line with the above code to fetch real data from the API
+  return mockLiveDataActiveDevice // replace this line with the above code to fetch real data from the API
 }
 
 // fetches data every 5 seconds for live updates

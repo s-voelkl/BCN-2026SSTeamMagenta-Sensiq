@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import logo from "../assets/sensiq_logo.png"
 
 interface GreetingProps {
   deviceId: string
+  timestamp?: string // optional timestamp for freshness check, future use
 }
 
 function getGreeting(): { label: string; emoji: string } {
@@ -12,7 +14,14 @@ function getGreeting(): { label: string; emoji: string } {
   return       { label: 'Good Evening',          emoji: '🌆' }
 }
 
-export default function Greeting({ deviceId }: GreetingProps) {
+function isWithinFiveMinutes(timestamp: string): boolean {
+  const given = new Date(timestamp).getTime();
+  const now = Date.now();
+  const diffMs = now - given;
+  return diffMs < 5 * 60 * 1000;
+}
+
+export default function Greeting({ deviceId, timestamp }: GreetingProps) {
   const [now, setNow] = useState(new Date())
 
   useEffect(() => {
@@ -35,16 +44,23 @@ export default function Greeting({ deviceId }: GreetingProps) {
     second: '2-digit',
   })
 
+  const isOnline = timestamp ? isWithinFiveMinutes(timestamp) : false
+
   return (
-    <div className="flex items-end justify-between">
+    <div className="flex items-center justify-between">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400 mb-1.5">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-1.5" style={{color: "#2abe9bff"}}>
           {emoji}&ensp;{label}
         </p>
+        <p className="mt-1.5 text-sm text-slate-500">{dateStr}</p>
+      </div>
+      <div className='flex gap-2 horizontal-and-vertical-center text-center items-center'>
+        <div className='h-20'>
+          <img src={logo} alt="sensiq" className='h-full'/>
+        </div>
         <label className="font-display text-5xl font-bold tracking-tight text-slate-50">
           Sensiq
         </label>
-        <p className="mt-1.5 text-sm text-slate-500">{dateStr}</p>
       </div>
 
       <div className="text-right">
@@ -54,10 +70,17 @@ export default function Greeting({ deviceId }: GreetingProps) {
         >
           {timeStr}
         </p>
-        <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-emerald-800/60 bg-emerald-950/60 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
-          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-          {deviceId}
-        </span>
+      <span className={`mt-1.5 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+        isOnline
+          ? "border-emerald-800/60 bg-emerald-950/60"
+          : "border-red-800/60 bg-red-950/60 text-red-400"
+      }`}
+      style={isOnline?{color:"#2abe9bff"}:{}}>
+        <span className={`inline-block h-1.5 w-1.5 rounded-full ${
+          isOnline ? "animate-pulse bg-emerald-400" : "bg-red-500"
+        }`} />
+        {deviceId}
+      </span>
       </div>
     </div>
   )

@@ -6,7 +6,6 @@ import {
 import Card from './Card'
 import type {SensorChartProps } from '../types/dashboard'
 
-
 // time range lookup table
 const TIME_RANGES = [
   { label: '1H',  ms: 1000 * 60 * 60           },
@@ -43,7 +42,7 @@ export default function SensorChart({
   measure,
   label,
   unit  = '',
-  color = '#f59e0b',
+  color = '#2abe9bff',
   range = '1D',
   onRangeChange,
   className,
@@ -72,7 +71,7 @@ export default function SensorChart({
     <Card className={"h-full flex flex-col overflow-hidden " + (className || '')}>
       <div className="mb-5 flex items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.15em]" >
             Historical
           </p>
           <p className="mt-0.5 text-lg font-bold text-slate-50">{label}</p>
@@ -89,6 +88,7 @@ export default function SensorChart({
                   ? 'bg-amber-500 text-slate-950'
                   : 'text-slate-400 hover:text-slate-200',
               ].join(' ')}
+              style={{backgroundColor: range === r.label? "#2abe9bff": ""}}
             >
               {r.label}
             </button>
