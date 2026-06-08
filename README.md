@@ -19,7 +19,7 @@ The [documentation](doc/) is licensed under the Creative Commons Attribution 4.0
 
 The hardware code coverage results can be obtained from ``sys-src/sensiq-hardware/test_output.md``.
 
-The AWS code coverage can be splitted into Python lambda handlers and the AWS infrastructure code. 
+The AWS code coverage can be splitted into Python lambda handlers and the AWS infrastructure code.
 The Python code coverage results can be obtained from ``sys-src/sensiq-aws/coverage/pytest-lambda-coverage.md``; the Typescript code coverage results using Jest can be found in the ``sys-src/sensiq-aws/coverage/jest-aws-coverage`` directory.
 
 <!-- TODO: Frontend code coverage -->
@@ -79,12 +79,12 @@ the access must have low latency and high throughput, and the cost should be kep
 
 [AWS Athena Docs](https://docs.aws.amazon.com/athena/latest/ug/getting-started.html)
 
-[Managing Athena Workgroups to Control Costs](https://docs.aws.amazon.com/athena/latest/ug/manage-queries-control-costs-with-workgroups.html)
+[Managing Athena Workgroups to Control Costs](https://docs.aws.amazon.com/athena/latest/ug/workgroups-manage-queries-control-costs.html)
 
 ### Lambda Handle History Data
 
 For a safe usage of Athena, the Lambda function uses prepared statements to prevent SQL injection and ensure that user input is properly sanitized before being included in the query execution. The query is built with parameters as limit, startDate and endDate for flexible filtering from the client side.
-[Querying with Prepared Statements in Athena](https://docs.aws.amazon.com/athena/latest/ug/querying-with-prepared-statements-querying.html) 
+[Querying with Prepared Statements in Athena](https://docs.aws.amazon.com/athena/latest/ug/querying-with-prepared-statements-querying.html)
 [Athena Query Execution States API Reference](https://docs.aws.amazon.com/athena/latest/APIReference/API_QueryExecutionStatus.html)
 
 During the wait for a response from Athena, the Lambda function implements a polling mechanism that periodically checks the status of the query execution. The query execution status can be one of the following: QUEUED, RUNNING, SUCCEEDED, FAILED, or CANCELLED. After a given timeout threshold (e.g., 25 seconds to stay within the API Gateway limit), if the query has not reached a terminal state (SUCCEEDED, FAILED, or CANCELLED), the Lambda function will return a timeout response to the client, indicating that the query is still processing and advising them to check back later for results.
@@ -109,8 +109,6 @@ paths without needing to load new metadata.
 ## etc
 
 <!-- # BCN-2026SSTeamMagenta-Sensiq
-
-
 
 ## Getting started
 
