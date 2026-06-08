@@ -12,7 +12,7 @@ beforeAll(() => {
 
 test('Table created corectly', () => {
     template.hasResourceProperties('AWS::DynamoDB::Table', {
-        TableName: 'SensiqLiveState',
+        TableName: 'LiveDataDB',
         ProvisionedThroughput: {
             ReadCapacityUnits: 1,
             WriteCapacityUnits: 1
@@ -57,7 +57,7 @@ test('Live Data Lambda Function created corectly', () => {
 });
 
 
-test('Authorization Check', () => {
+test('Lambdas have IAM permissions for DynamoDB', () => {
     template.hasResourceProperties('AWS::IAM::Policy', {
         PolicyDocument: Match.objectLike({
             Statement: Match.arrayWith([

@@ -13,7 +13,7 @@ dynamodb = boto3.resource('dynamodb')
 # TODO: activate later
 # sns = boto3.client('sns')
 
-TABLE_NAME = os.environ.get('TABLE_NAME', 'SensiqLiveState')
+TABLE_NAME = os.environ.get('TABLE_NAME', 'LiveDataDB')
 
 # TODO: activate later
 # SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN')
@@ -37,7 +37,7 @@ def handler(event, context=None):
         timestamp = item.get('timestamp')
 
         if not device_id or not timestamp:
-            logger.error("DATA !!")
+            logger.error("missing timestamp or device_id ")
             return {'statusCode': 400, 'body': 'device_id or timestamp is missing'}
 
         item['is_outlier'] = False
@@ -90,5 +90,5 @@ def handler(event, context=None):
         return {'statusCode': 200, 'body': 'ok'}
 
     except Exception as e:
-        logger.error(f"Kritischer Fehler: {str(e)}")
+        logger.error(f"Critical error: {str(e)}")
         return {'statusCode': 500, 'body': str(e)}

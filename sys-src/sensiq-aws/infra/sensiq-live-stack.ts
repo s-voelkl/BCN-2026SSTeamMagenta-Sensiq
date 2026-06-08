@@ -14,7 +14,7 @@ export class SensiqLiveStack extends cdk.Stack {
     super(scope, id, props);
 
     const liveTable = new dynamodb.Table(this,'LiveDataDB',{
-      tableName: 'SensiqLiveState',
+      tableName: 'LiveDataDB',
       partitionKey:{
         name:'device_id',
         type:dynamodb.AttributeType.STRING,

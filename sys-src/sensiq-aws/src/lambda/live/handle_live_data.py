@@ -8,7 +8,7 @@ logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
 dynamodb = boto3.resource('dynamodb')
-TABLE_NAME = os.environ.get('TABLE_NAME', 'SensiqLiveState')
+TABLE_NAME = os.environ.get('TABLE_NAME', 'LiveDataDB')
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -40,7 +40,7 @@ def handler(event, context=None):
                 return {
                     'statusCode': 404,
                     'headers': headers,
-                    'body': json.dumps({'message': 'Device not here'})
+                    'body': json.dumps({'message': 'No Entry found for this Device'})
                 }
 
             logger.info(f"Success: {device_id}")
@@ -49,17 +49,15 @@ def handler(event, context=None):
                 'headers': headers,
                 'body': json.dumps(item, cls=DecimalEncoder)
             }
-
         else:
-            response = table.scan(Limit=10)
-            items = response.get('Items', [])
-
-            logger.info(f"Success {len(items)} items from LiveDataDB")
+            logger.error("Missing device_id")
             return {
-                'statusCode': 200,
+                'statusCode': 400,
                 'headers': headers,
-                'body': json.dumps(items, cls=DecimalEncoder)
+                'body': json.dumps({'error': 'Missing required parameter: device_id'})
             }
+
+
 
     except Exception as e:
         logger.error(f"servererror: {str(e)}")
