@@ -3,6 +3,7 @@ import boto3
 import os
 import logging
 from decimal import Decimal
+from datetime import datetime, timezone
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
@@ -42,6 +43,21 @@ def handler(event, context=None):
                     'headers': headers,
                     'body': json.dumps({'message': 'No Entry found for this Device'})
                 }
+            timestamp_str = item.get('timestamp')
+            if timestamp_str:
+                try:
+                    item_time = datetime.strptime(timestamp_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                    now = datetime.now(timezone.utc)
+                    
+                    if (now - item_time).total_seconds() > 360:
+                        logger.warning(f"Device {device_id} is offline. Last seen: {timestamp_str}")
+                        return {
+                            'statusCode': 437,
+                            'headers': headers,
+                            'body': json.dumps({'message': 'Device is offline'})
+                        }
+                except ValueError as e:
+                    logger.error(f"Timestamp parsing failed for {device_id}: {str(e)}")
 
             logger.info(f"Success: {device_id}")
             return {
