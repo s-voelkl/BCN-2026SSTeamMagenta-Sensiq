@@ -7,32 +7,31 @@
 \section{Evaluation}\label{sec:evaluation}
 
 \subsection{Testability}\label{sec:testability}
-% TODO: remove section information
-% Discuss per-service testability: Lambda unit tests (SAM CLI), local
-% emulation of DynamoDB / S3 / API Gateway, limitations for IoT Core
-% (Device Advisor only), and the role of LocalStack for higher-level
-% integration tests.
+The cloud system's testability is ensured through rigorous automated checks for
+both infrastructure and application logic. Local \texttt{yarn} scripts automate
+test execution and coverage reporting.
+
+\subsubsection{AWS Infrastructure}
+The AWS cloud infrastructure configuration is automatically validated using
+built-in AWS Cloud Development Kit (CDK) assertions, leveraging the
+\texttt{Template} and \texttt{Match} constructs. This ensures that the generated
+resources and policies match the intended architectural design prior to deployment.
+
+\subsubsection{AWS Lambda Handlers}
+AWS Lambda functions are thoroughly unit-tested using Python's \texttt{unittest}
+or \texttt{pytest} frameworks, employing exhaustive mocking to isolate execution
+behavior. To evaluate Lambda handlers independently of the API Gateway, a locally
+defined \texttt{TestEvent} JSON payload is utilized to replicate realistic
+incoming requests during testing. Additionally, for runtime observance and
+debugging in the deployed environment, Lambda function executions and errors
+are continually logged to dedicated AWS CloudWatch log groups.
 
 \subsubsection{Sensor Node Firmware}
-The testability of the sensor node, built around the ESP32 microcontroller
-(see \cref{sec:hardware}), presents specific challenges due to its embedded nature.
-Unit testing of the firmware is implemented using the AUnit
-framework~\cite{aunit_testing_arduino}, which is structured such that either the test suite or the main
-measurement loop executes, preventing interference between testing and regular operation.
-
-Unit tests are implemented for isolated modules such as the sensor readings,
-sensor data aggregation, Wi-Fi connection, basic MQTT connection and
-configuration settings. However, exhaustively testing the MQTT
-publication functionality described in \cref{sec:mqtt_publication} via unit tests is
-not feasible without extensive mocking. Since such mocking would deviate significantly
-from real-world behavior, and the underlying MQTT library is already well-tested
-and established in the community, complex local test implementations for MQTT were omitted.
-
-Instead, the hardware node employs a direct feedback mechanism for connectivity
-validation during its real-world measurement workflow. Upon successfully
-establishing a connection to the MQTT broker, the node subscribes to the test
-topic to verify the connection's health, ensuring the publish functionality
-operates correctly in the physical environment.
+Firmware unit testing utilizes the AUnit framework~\cite{aunit_testing_arduino}
+to cover modules like sensor readings, data aggregation, configurations, and Wi-Fi. Exhaustive
+MQTT mocking was omitted due to real-world deviations. Instead, the node
+subscribes to an MQTT test topic during operation to directly verify connection
+health and publish functionality.
 
 \subsection{Cost Estimation}\label{sec:cost_estimation}
 % TODO: remove section information
@@ -40,6 +39,9 @@ operates correctly in the physical environment.
 % assumptions (users, active hours, message volume). Compare Free Tier
 % and Post Free Tier costs across all involved AWS services.
 % Template available at end of document: tab:aws-costs.
+
+\subsubsection{AWS Service Costs}
+% TODO!
 
 \subsubsection{Hardware Cost}
 The one-time hardware cost per sensor node is based on the components used for prototyping.

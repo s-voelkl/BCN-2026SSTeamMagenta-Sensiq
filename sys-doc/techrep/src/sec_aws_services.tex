@@ -15,8 +15,42 @@ reading per device) -> API Gateway -> GET /live. Discuss latency
 targets, payload shape, and error handling.
 
 \subsection{History Route}\label{sec:history_route}
-% TODO: remove section information
-Path from IoT Core / validation Lambda -> S3 (Parquet, partitioned by
-date) -> Glue catalogue -> Athena -> history Lambda -> API Gateway ->
-GET /history. Discuss partitioning strategy, query patterns, and
-expected query latency.
+The history route provides a long-term data retrieval mechanism, exposing a
+\texttt{GET /history} endpoint via API Gateway. It accepts query parameters
+such as time ranges and limits, and returns historical sensor data as a
+structured JSON payload. The pipeline bridges data ingestion from AWS IoT
+Core to a highly optimized query backend.
+
+\subsubsection{Data Ingestion and Storage}
+Incoming JSON messages from AWS IoT Core are captured by an IoT rule and
+forwarded to Amazon Kinesis Data Firehose~\cite{aws-firehose}. To mitigate
+the small-files problem, Firehose buffers the data for up to 15 minutes or
+until a size of 128\,MB is reached before converting it to Apache Parquet
+format. The Parquet files are written to a S3 Standard data
+bucket~\cite{aws-s3-storage-classes},
+partitioned by year, month, and day to ensure efficient storage and rapid
+retrieval. S3 lifecycle management policies~\cite{aws-s3-lifecycle-management}
+are configured to retain the data securely for an extended period, while an
+AWS Glue Data Catalog maintains the structural metadata of the
+\texttt{sensor\_data} table. IAM policies tightly control access to the Glue
+catalog and underlying S3 buckets~\cite{aws-athena-iam-policies}.
+
+\subsubsection{Query Execution and Processing}
+A dedicated AWS Lambda function coordinates the fulfillment of history
+requests. It parses the incoming query parameters, validates them, and
+constructs an Athena query using query execution
+parameters~\cite{aws-athena-execution-parameters} to defend against SQL attacks.
+Athena utilizes Glue's partition projection
+mapping~\cite{aws-athena-partition-projection} to prune directories rapidly
+without needing to load external metadata. A dedicated Athena
+workgroup~\cite{aws-athena-workgroups} manages the query execution, saving the
+result datasets to a secondary S3 query results bucket.
+
+During execution, the Lambda function continually polls the query execution
+status~\cite{aws-athena-query-execution-status}. Once the query yields a
+terminal state, the Lambda handler retrieves the generated results from the
+S3 bucket, formats them into a JSON response, and returns them to the API
+Gateway. Although Athena queries induce higher latency compared to the live
+route, processing is typically completed well within the 29-second timeout limit,
+mostly in under 5 seconds.
+

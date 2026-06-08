@@ -2,92 +2,95 @@
 % Section 4 — Hardware
 % ----------------------------------------------------------------------
 \section{Hardware}\label{sec:hardware}
-% TODO: remove section information
-% Detailed description of the edge tier of the system.
 
-The sensor node is the physical edge component of the Sensiq system
-and is built around an ESP32 microcontroller hosting a set of
-environmental sensors that cover temperature, humidity, ambient
-light, air pressure, volatile organic compounds (VOCs), flame
-radiation and high-temperature events. The following part of this
-section first lists the individual hardware components and their
-characteristics, then describes the firmware-level measurement
-workflow (sensor initialization, periodic sampling, averaging and
-MQTT publication), and finally documents the Steinhart--Hart
-conversion used for the analog thermistor readings. The resulting
-JSON payload sent to AWS IoT Core is described in
-\cref{sec:mqtt_publication}.
+The sensor node is the physical edge component of the Sensiq system,
+built around an ESP32 microcontroller with a set of environmental sensors.
+This section maps the hardware components (\cref{sec:component_overview}),
+outlines the firmware measurement loops (\cref{sec:measurement_workflow}),
+and details the secure MQTT publication strategy (\cref{sec:mqtt_publication}).
 
-\subsection*{Component Overview}\label{sec:component_overview}
+\subsection{Component Overview}\label{sec:component_overview}
 
-The following hardware components are used in the sensor node:
+% The following hardware components are used in the sensor node:
 
-\begin{description}
-	\item[ESP32 NodeMCU board] Open-source development board carrying
-	      the ESP-WROOM-32 module, breaking out 38~pins and providing a
-	      CP2102 USB-to-serial bridge for programming and
-	      power~\cite{esp32_berrybase}.
-	\item[ESP-WROOM-32 module] Xtensa dual-core 32-bit LX6 CPU with up to
-	      \SI{240}{\mega\hertz}, \SI{520}{\kilo\byte} SRAM and
-	      \SI{4}{\mega\byte} SPI flash; integrated Wi-Fi
-	      802.11\,b/g/n with up to \SI{150}{\mega\bit\per\second} and
-	      Bluetooth; on-chip 12-bit SAR ADC (analog-to-digital converter) and
-	      DAC (digital-to-analog converter). Supplied at
-	      \SIrange{3.0}{3.6}{\volt}, operating range
-	      \SIrange{-40}{85}{\celsius}~\cite{esp32_wroom_datasheet}.
-	\item[DHT11] Single-wire digital temperature/humidity sensor;
-	      range \SIrange{-20}{60}{\celsius} at \SI{\pm 2}{\celsius}
-	      and \SIrange{5}{98}{\percent}~r.H.\ at
-	      \SI{\pm 5}{\percent}~r.H.; sampling at
-	      \SI{0.5}{\hertz}~\cite{dht11_asair}.
-	\item[Joy-it KY-026 flame sensor] Detects flames in the IR band
-	      \SIrange{760}{1100}{\nano\metre} with a \SI{60}{\degree}
-	      detection cone up to \SI{100}{\centi\metre}. Provides an
-	      inverted analog output (sampled by the ESP32 ADC) and a
-	      potentiometer-adjustable digital threshold output for
-	      event-driven triggering~\cite{ky026_joyit}.
-	\item[Joy-it KY-028 thermistor] NTC temperature sensor covering
-	      \SIrange{-55}{125}{\celsius} at \SI{\pm 0.5}{\celsius}.
-	      Exposes an analog reading (ADC-limited rate) and a digital
-	      over-temperature flag with adjustable
-	      threshold~\cite{ky028_joyit}.
-	\item[TSL2561 light sensor] Digital I\textsuperscript{2}C
-	      ambient-light sensor with two photodiodes (visible and IR);
-	      \SIrange{0.1}{40000}{\lux} at \SI{0.1}{\lux}
-	      resolution~\cite{tsl2561_datasheet}.
-	\item[Bosch BME680] Low-power I\textsuperscript{2}C/SPI sensor combining
-	      temperature (\SI{\pm 1.0}{\celsius}), humidity
-	      (\SI{\pm 3}{\percent}~r.H.), pressure
-	      (\SI{\pm 0.6}{\hecto\pascal}) and a VOC gas channel
-	      (\SIrange{2}{5}{\percent} accuracy for ethane, isoprene,
-	      ethanol, acetone, CO) exposed as an IAQ index. Configurable
-	      update rate up to \SI{1}{\hertz}; operating range
-	      \SIrange{-40}{85}{\celsius} and
-	      \SIrange{300}{1100}{\hecto\pascal}~\cite{bme680_bosch}.
-	\item[Auxiliary switches] Two switches reserved for future work
-	      on AI-based outlier detection with gathered training data
-	      (see \cref{sec:summary}): one marks a reading as a labeled
-	      training sample, the other flags a measurement as an
-	      outlier.
-\end{description}
+% \begin{description}
+% 	\item[ESP32 NodeMCU board] Open-source development board carrying
+% 	      the ESP-WROOM-32 module, breaking out 38~pins and providing a
+% 	      CP2102 USB-to-serial bridge for programming and
+% 	      power~\cite{esp32_berrybase}.
+% 	\item[ESP-WROOM-32 module] Xtensa dual-core 32-bit LX6 CPU with up to
+% 	      \SI{240}{\mega\hertz}, \SI{520}{\kilo\byte} SRAM and
+% 	      \SI{4}{\mega\byte} SPI flash; integrated Wi-Fi
+% 	      802.11\,b/g/n with up to \SI{150}{\mega\bit\per\second} and
+% 	      Bluetooth; on-chip 12-bit SAR ADC (analog-to-digital converter) and
+% 	      DAC (digital-to-analog converter). Supplied at
+% 	      \SIrange{3.0}{3.6}{\volt}, operating range
+% 	      \SIrange{-40}{85}{\celsius}~\cite{esp32_wroom_datasheet}.
+% 	\item[DHT11] Single-wire digital temperature/
+% 	humidity sensor;
+% 	      range \SIrange{-20}{60}{\celsius} at \SI{\pm 2}{\celsius}
+% 	      and \SIrange{5}{98}{\percent}~r.H.\ at
+% 	      \SI{\pm 5}{\percent}~r.H.; sampling at
+% 	      \SI{0.5}{\hertz}~\cite{dht11_asair}.
+% 	\item[Joy-it KY-026 flame sensor] Detects flames in the IR band
+% 	      \SIrange{760}{1100}{\nano\metre} with a \SI{60}{\degree}
+% 	      detection cone up to \SI{100}{\centi\metre}. Provides an
+% 	      inverted analog output (sampled by the ESP32 ADC) and a
+% 	      potentiometer-adjustable digital threshold output for
+% 	      event-driven triggering~\cite{ky026_joyit}.
+% 	\item[Joy-it KY-028 thermistor] NTC temperature sensor covering
+% 	      \SIrange{-55}{125}{\celsius} at \SI{\pm 0.5}{\celsius}.
+% 	      Exposes an analog reading (ADC-limited rate) and a digital
+% 	      over-temperature flag with adjustable
+% 	      threshold~\cite{ky028_joyit}.
+% 	\item[TSL2561 light sensor] Digital I\textsuperscript{2}C
+% 	      ambient-light sensor with two photodiodes (
+% 	visible and IR);
+% 	      \SIrange{0.1}{40000}{\lux} at \SI{0.1}{\lux}
+% 	      resolution~\cite{tsl2561_datasheet}.
+% 	\item[Bosch BME680] Low-power I\textsuperscript{2}C/SPI sensor combining
 
-The hardware design of the sensor node is presented from three
-complementary perspectives.
-\Cref{fig:hardware-circuit} shows the logical
-circuit diagram made with the KiCAD software~\cite{kicad_software}and documents how the ESP32-DevKitC is wired to the
-sensors, the two auxiliary switches and
-the power supply, including the GPIO assignment of each signal
-line.
-\Cref{fig:hardware-pcb} in turn shows the resulting printed circuit board (PCB)
-layout with the physical placement of the components, the routed
-copper traces and the board outline intended for fabrication.
-Both views are exported from the same KiCAD project and together
-relate the firmware-level GPIO numbers used in the measurement
-workflow to the corresponding physical pads on the planned PCB.
-The PCB has not been manufactured yet, so the actual sensor node
-shown in \cref{fig:hardware-picture} is built on a prototyping
-board with the components manually placed and wired according to
-the circuit diagram.
+% 	temperature (\SI{\pm 1.0}{\celsius}), humidity
+% 	      (\SI{\pm 3}{\percent}~r.H.), pressure
+% 	      (\SI{\pm 0.6}{\hecto\pascal}) and a VOC gas channel
+% 	      (\SIrange{2}{5}{\percent} accuracy for ethane, isoprene,
+% 	      ethanol, acetone, CO) exposed as an IAQ index. Configurable
+% 	      update rate up to \SI{1}{\hertz}; operating range
+% 	      \SIrange{-40}{85}{\celsius} and
+% 	      \SIrange{300}{1100}{\hecto\pascal}~\cite{bme680_bosch}.
+% 	\item[Auxiliary switches] Two switches reserved for 
+% 	future work
+% 	      on AI-based outlier detection with gathered training data
+% 	      (see \cref{sec:summary}): one marks a reading as a labeled
+% 	      training sample, the other flags a measurement as an
+% 	      outlier.
+% \end{description}
+
+The sensor node is built using the following core components:
+
+\begin{itemize}
+	\item \textbf{ESP32 NodeMCU:} Central microcontroller with
+	      integrated Wi-Fi and Bluetooth~\cite{esp32_berrybase, esp32_wroom_datasheet}.
+	\item \textbf{DHT11:} Basic digital temperature and
+	      humidity sensor~\cite{dht11_asair}.
+	\item \textbf{Joy-it KY-026 \& KY-028:} Analog flame sensor (IR band)
+	      and NTC thermistor, both with adjustable digital thresholds~\cite{ky026_joyit, ky028_joyit}.
+	\item \textbf{TSL2561:} Digital ambient-light sensor for
+	      visible and IR light~\cite{tsl2561_datasheet}.
+	\item \textbf{Bosch BME680:} Comprehensive sensor for precise
+	      temperature, humidity, pressure, and VOC gas concentrations~\cite{bme680_bosch}.
+	\item \textbf{Auxiliary Switches:} Two inputs reserved for
+	      labeling training data and outliers (see \cref{sec:summary}).
+\end{itemize}
+
+\medskip
+The hardware design is documented using two complementary views.
+\Cref{fig:hardware-circuit} shows the logical circuit diagram
+(created with KiCAD~\cite{kicad_software}), detailing wiring and GPIO assignments.
+% \Cref{fig:hardware-pcb} displays the corresponding PCB layout with physical
+% component placement and copper traces.
+The functional prototype is shown in \cref{fig:hardware-picture},
+demonstrating the assembled sensor node.
 
 \begin{figure*}[!tb]
 	\centering
@@ -99,15 +102,15 @@ the circuit diagram.
 	\label{fig:hardware-circuit}
 \end{figure*}
 
-\begin{figure}[htb]
-	\centering
-	\includegraphics[width=0.95\linewidth]{pcb_pdf_export_light.pdf}
-	\caption{PCB layout derived from the circuit diagram, showing
-		the physical placement of the ESP32-DevKitC and the
-		attached sensors, the routed copper traces and the board
-		outline intended for fabrication.}
-	\label{fig:hardware-pcb}
-\end{figure}
+% \begin{figure}[htb]
+% 	\centering
+% 	\includegraphics[width=0.95\linewidth]{pcb_pdf_export_light.pdf}
+% 	\caption{PCB layout derived from the circuit diagram, showing
+% 		the physical placement of the ESP32-DevKitC and the
+% 		attached sensors, the routed copper traces and the board
+% 		outline intended for fabrication.}
+% 	\label{fig:hardware-pcb}
+% \end{figure}
 
 \begin{figure}[htb]
 	\centering
@@ -117,7 +120,7 @@ the circuit diagram.
 	\label{fig:hardware-picture}
 \end{figure}
 
-\subsection*{Measurement Workflow}\label{sec:measurement_workflow}
+\subsection{Measurement Workflow}\label{sec:measurement_workflow}
 The firmware on the ESP32 follows a deterministic, two-phase
 lifecycle written in Arduino C++~\cite{arduino_language_reference}:
 a one-time \emph{startup} phase that prepares the
@@ -166,31 +169,36 @@ timestamp, numerical values (analog readings) are averaged
 arithmetically, and digital boolean signals are decided by majority
 voting over the buffered samples.
 
-\medskip
-\subsubsection*{Thermistor Conversion}
+% \medskip
+% \subsubsection*{Thermistor Conversion}
 
-The KY-028 module exposes the thermistor as an analog voltage divider
-that the ESP32 reads through its 12-bit ADC. The raw ADC value
-$\mathrm{adc}\in[0,4095]$ is first converted to a resistance
-$R$ assuming a sensor--internal \SI{10}{\kilo\ohm} pull-down resistor and a
-\SI{3.3}{\volt} supply, and then to an absolute temperature using the
-Steinhart--Hart equation~\cite{steinhart1968calibration}.
-The equation models the resistance--temperature relationship of a
-semiconductor thermistor as
+% The KY-028 module exposes the thermistor as an analog voltage divider
+% that the ESP32 reads through its 12-bit ADC. The raw ADC value
+% $\mathrm{adc}\in[0,4095]$ is first converted to a 
+% resistance
+% $R$ assuming a sensor--internal \SI{10}{\kilo\ohm} pull-down resistor and a
+% \SI{3.3}{\volt} supply, and then to an absolute temperature using the
+% Steinhart--Hart equation~\cite{steinhart1968calibration}.
+% The equation models the resistance--temperature relationship of a
+% semiconductor thermistor as
 
-\begin{equation}
-	\frac{1}{T} = A + B \ln R + C (\ln R)^{3},
-	\label{eq:steinhart_hart}
-\end{equation}
+% \begin{equation}
+% 	\frac{1}{T} = A + B \ln R + C (\ln R)^{3},
+% 	\label{eq:steinhart_hart}
+% \end{equation}
 
-where $T$ is the temperature in kelvin, $R$ is the thermistor
-resistance in ohms at temperature $T$, and $A$, $B$ and $C$ are the
-Steinhart--Hart coefficients characteristic of the specific
-thermistor over the temperature range of interest. The firmware
-uses the coefficients $A=1.129148\cdot 10^{-3}$,
-$B=2.34125\cdot 10^{-4}$ and $C=8.76741\cdot 10^{-8}$, then converts
-$T$ from kelvin to degrees Celsius before further using the value as
-\texttt{thermistor\_temp}.
+% where $T$ is the temperature in kelvin, $R$ is the thermistor
+% resistance in ohms at temperature $T$, and $A$, $B$ and $C$ are the
+% Steinhart--Hart coefficients characteristic of the specific
+% thermistor over the temperature range of interest. The firmware
+% uses the coefficients $A=1.129148\cdot 10^{-3}$,
+% $B=2.34125\cdot 10^{-4}$ and $C=8.76741\cdot 10^{-8}$, then converts
+% $T$ from kelvin to degrees Celsius before further using the value as
+% \texttt{thermistor\_temp}.
+
+For the KY-028 module, the raw 12-bit ADC reading is first converted to a
+resistance and then mapped to an absolute temperature in degrees Celsius
+using the Steinhart--Hart equation~\cite{steinhart1968calibration}.
 
 \subsection{MQTT Publication to AWS IoT Core}\label{sec:mqtt_publication}
 
