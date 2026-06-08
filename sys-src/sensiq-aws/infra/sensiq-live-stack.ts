@@ -23,7 +23,6 @@ export class SensiqLiveStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PROVISIONED,
       readCapacity: 1,
       writeCapacity:1,
-      timeToLiveAttribute: 'expiresAt',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     } );
 

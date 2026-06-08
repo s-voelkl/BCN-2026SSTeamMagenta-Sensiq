@@ -17,10 +17,7 @@ test('Table created corectly', () => {
             ReadCapacityUnits: 1,
             WriteCapacityUnits: 1
         },
-        TimeToLiveSpecification: {
-            AttributeName: 'expiresAt',
-            Enabled: true
-        },
+
         KeySchema: [
             {
                 AttributeName: 'device_id',
