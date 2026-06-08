@@ -1,7 +1,6 @@
 import json
 import boto3
 import os
-import time
 import logging
 from decimal import Decimal
 
@@ -10,14 +9,11 @@ logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
 dynamodb = boto3.resource('dynamodb')
 
-# TODO: activate later
 # sns = boto3.client('sns')
 
 TABLE_NAME = os.environ.get('TABLE_NAME', 'LiveDataDB')
 
-# TODO: activate later
 # SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN')
-
 
 THRESHOLDS = {
     'dht_temperature': 30,
@@ -27,58 +23,66 @@ THRESHOLDS = {
 }
 
 def handler(event, context=None):
-    logger.info(f"Receivet event: {json.dumps(event)}")
+    logger.info(f"Received event: {json.dumps(event)}")
     
     try:
-        conntent_str = json.dumps(event)
-        item = json.loads(conntent_str, parse_float=Decimal)
+        content_str = json.dumps(event)
+        raw_item = json.loads(content_str, parse_float=Decimal)
 
-        device_id = item.get('device_id')
-        timestamp = item.get('timestamp')
+        device_id = raw_item.get('device_id')
+        timestamp = raw_item.get('timestamp')
 
         if not device_id or not timestamp:
-            logger.error("missing timestamp or device_id ")
+            logger.error("Missing timestamp or device_id")
             return {'statusCode': 400, 'body': 'device_id or timestamp is missing'}
 
-        item['is_outlier'] = False
+        standardized_item = {
+            'device_id': device_id,
+            'timestamp': timestamp,
+            'location': raw_item.get('location'),
+            'dht_temperature': raw_item.get('dht_temperature'),
+            'dht_humidity': raw_item.get('dht_humidity'),
+            'dht_heat_index': raw_item.get('dht_heat_index'),
+            'flame_analog': raw_item.get('flame_analog'),
+            'thermistor_temp': raw_item.get('thermistor_temp'),
+            'is_outlier': False
+        }
+
+        bereinigtes_item = {}
+        for key, value in standardized_item.items():
+            if value is not None:
+                bereinigtes_item[key] = value
+        standardized_item = bereinigtes_item
         alerts = []
 
-        # Check Temperature
-        temp = item.get('dht_temperature')
+        temp = standardized_item.get('dht_temperature')
         if temp is not None and float(temp) > THRESHOLDS['dht_temperature']:
-            item['is_outlier'] = True
+            standardized_item['is_outlier'] = True
             alerts.append(f"Temperature too high: {temp}")
 
-        # Check Humidity
-        humidity = item.get('dht_humidity')
+        humidity = standardized_item.get('dht_humidity')
         if humidity is not None and float(humidity) > THRESHOLDS['dht_humidity']:
-            item['is_outlier'] = True
+            standardized_item['is_outlier'] = True
             alerts.append(f"Humidity too high: {humidity}")
 
-        # Check Flame
-        flame = item.get('flame_analog')
+        flame = standardized_item.get('flame_analog')
         if flame is not None and float(flame) > THRESHOLDS['flame_analog']:
-            item['is_outlier'] = True
+            standardized_item['is_outlier'] = True
             alerts.append(f"Flame detected: {flame}")
 
-        # Check Thermistor
-        thermistor = item.get('thermistor_temp')
+        thermistor = standardized_item.get('thermistor_temp')
         if thermistor is not None and float(thermistor) > THRESHOLDS['thermistor_temp']:
-            item['is_outlier'] = True
+            standardized_item['is_outlier'] = True
             alerts.append(f"Thermistor too high: {thermistor}")
 
-
-        if item['is_outlier']:
+        if standardized_item.get('is_outlier'):
             logger.warning(f"Outlier detected! Alerts: {alerts}")
        
-        item['expiresAt'] = int(time.time()) + 60
-
         table = dynamodb.Table(TABLE_NAME)
-        table.put_item(Item=item)
+        table.put_item(Item=standardized_item)
         logger.info(f"Data successfully saved to DynamoDB for: {device_id}")
 
-        # --- SNS ALARM (TODO) ---
-        if item.get('is_outlier'):
+        if standardized_item.get('is_outlier'):
              #if SNS_TOPIC_ARN:
                  #sns.publish(
                      #TopicArn=SNS_TOPIC_ARN,
