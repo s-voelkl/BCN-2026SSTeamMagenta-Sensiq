@@ -1,63 +1,75 @@
 import json
-import boto3
-import os
 import logging
+import os
 from decimal import Decimal
 
-logger = logging.getLogger()
+import boto3
+
+# Log level can be overridden at runtime via the Lambda environment variable
+# LOG_LEVEL (e.g. set to "DEBUG" in the AWS Console) without redeploying.
+# Logs are available in CloudWatch under the SensiqLiveStack-HandleValidation log group.
+logger = logging.getLogger(__name__)
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
-dynamodb = boto3.resource('dynamodb')
+# TABLE_NAME is injected by the CDK stack (see sensiq-live-stack.ts).
+TABLE_NAME = os.environ.get("TABLE_NAME", "LiveDataDB")
+dynamodb = boto3.resource("dynamodb")
 
-TABLE_NAME = os.environ.get('TABLE_NAME', 'LiveDataDB')
+# Fields forwarded from the raw IoT payload to DynamoDB. 
+# Any field not listed here is dropped, which keeps unexpected payload keys out of the table.
+ALLOWED_FIELDS = (
+    "location",
+    "dht_temperature",
+    "dht_humidity",
+    "dht_heat_index",
+    "flame_analog",
+    "thermistor_temp",
+)
+
 
 def handler(event, context=None):
+    """Validate an incoming IoT sensor payload and persist it to DynamoDB.
 
+    Triggered by the ``sensiq/+/data`` IoT Topic Rule defined in
+    ``sensiq-live-stack.ts``. The event is the raw MQTT message published by
+    the ESP32 device. Float values are decoded as ``Decimal`` so they can be
+    written to DynamoDB without precision loss, and ``None`` fields are
+    stripped before writing.
+
+    Response status codes:
+        200: Payload accepted and stored.
+        400: ``device_id`` or ``timestamp`` is missing from the payload.
+        500: Unexpected processing or database error.
     """
-    This Lambda function processes incoming sensor data and saves the cleaned records to DynamoDB.
-
-    Return Values (HTTP Status Codes):
-    - 200: Success (Data successfully processed and saved)
-    - 400: Bad Request (Missing required 'device_id' or 'timestamp')
-    - 500: Internal Server Error (Critical processing or database error)
-    """
-
     logger.info(f"Received event: {json.dumps(event)}")
 
     try:
-        content_str = json.dumps(event)
-        raw_item = json.loads(content_str, parse_float=Decimal)
+        # Re-parse through json so nested floats are converted to Decimal,
+        # which is the type DynamoDB requires for numeric attributes.
+        raw_item = json.loads(json.dumps(event), parse_float=Decimal)
 
-        device_id = raw_item.get('device_id')
-        timestamp = raw_item.get('timestamp')
+        device_id = raw_item.get("device_id")
+        timestamp = raw_item.get("timestamp")
 
         if not device_id or not timestamp:
             logger.error("Missing timestamp or device_id")
-            return {'statusCode': 400, 'body': 'device_id or timestamp is missing'}
+            return {"statusCode": 400, "body": "device_id or timestamp is missing"}
 
-        standardized_item = {
-            'device_id': device_id,
-            'timestamp': timestamp,
-            'location': raw_item.get('location'),
-            'dht_temperature': raw_item.get('dht_temperature'),
-            'dht_humidity': raw_item.get('dht_humidity'),
-            'dht_heat_index': raw_item.get('dht_heat_index'),
-            'flame_analog': raw_item.get('flame_analog'),
-            'thermistor_temp': raw_item.get('thermistor_temp'),
-        }
+        # Only include allowed fields in the DynamoDB item, which also filters out any None values.
+        # The device_id and timestamp are required and always included, while the other fields are optional.
+        item = {"device_id": device_id, "timestamp": timestamp}
+        for field in ALLOWED_FIELDS:
+            value = raw_item.get(field)
+            if value is not None:
+                item[field] = value
 
-        cleaned_item = {}
-        for key, value  in standardized_item.items():
-            if value  is not None:
-                cleaned_item[key] = value 
-        standardized_item = cleaned_item
-
-        table = dynamodb.Table(TABLE_NAME)
-        table.put_item(Item=standardized_item)
+        # Write the validated item to DynamoDB. 
+        # Requires the table to have a device_id (partition key) and timestamp.
+        dynamodb.Table(TABLE_NAME).put_item(Item=item)
         logger.info(f"Data successfully saved to DynamoDB for: {device_id}")
 
-        return {'statusCode': 200, 'body': 'ok'}
+        return {"statusCode": 200, "body": "ok"}
 
     except Exception as e:
         logger.error(f"Critical error: {str(e)}")
-        return {'statusCode': 500, 'body': str(e)}
+        return {"statusCode": 500, "body": str(e)}
