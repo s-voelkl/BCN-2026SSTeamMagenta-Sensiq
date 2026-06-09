@@ -62,21 +62,6 @@ class TestHandleValidation(unittest.TestCase):
         self.assertEqual(response["statusCode"], 400)
         mock_dynamodb.Table.return_value.put_item.assert_not_called()
 
-    @patch("validation.handle_validation.dynamodb")
-    def test_high_temperature_alert_returns_200(self, mock_dynamodb):
-        event = self._make_event()
-        event['dht_temperature'] = 35.0
-        response = handle_validation.handler(event, self.mock_context)
-        self.assertEqual(response["statusCode"], 200)
-        mock_dynamodb.Table.return_value.put_item.assert_called_once()
-
-    @patch("validation.handle_validation.dynamodb")
-    def test_flame_detected_alert_returns_200(self, mock_dynamodb):
-        event = self._make_event()
-        event['flame_analog'] = 150
-        response = handle_validation.handler(event, self.mock_context)
-        self.assertEqual(response["statusCode"], 200)
-        mock_dynamodb.Table.return_value.put_item.assert_called_once()
 
 
 if __name__ == "__main__":

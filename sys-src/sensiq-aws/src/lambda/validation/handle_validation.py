@@ -45,7 +45,6 @@ def handler(event, context=None):
             'dht_heat_index': raw_item.get('dht_heat_index'),
             'flame_analog': raw_item.get('flame_analog'),
             'thermistor_temp': raw_item.get('thermistor_temp'),
-            'is_outlier': False
         }
 
         bereinigtes_item = {}
