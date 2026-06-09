@@ -1,0 +1,22 @@
+% ----------------------------------------------------------------------
+% Section 5 — AWS Services
+% ----------------------------------------------------------------------
+\section{AWS Services}\label{sec:aws_services}
+% TODO: remove section information
+Detailed description of the cloud-side processing pipeline. Two
+functional routes are exposed by the backend: a low-latency live
+route and a long-term history route. Each is described in its own
+subsection together with the AWS services it relies on.
+
+\subsection{Live Route}\label{sec:live_route}
+% TODO: remove section information
+Path from IoT Core rule -> validation Lambda -> DynamoDB (latest
+reading per device) -> API Gateway -> GET /live. Discuss latency
+targets, payload shape, and error handling.
+
+\subsection{History Route}\label{sec:history_route}
+% TODO: remove section information
+Path from IoT Core / validation Lambda -> S3 (Parquet, partitioned by
+date) -> Glue catalogue -> Athena -> history Lambda -> API Gateway ->
+GET /history. Discuss partitioning strategy, query patterns, and
+expected query latency.
