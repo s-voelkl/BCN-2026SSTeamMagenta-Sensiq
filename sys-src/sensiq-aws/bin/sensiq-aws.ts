@@ -13,7 +13,10 @@ const historyStack = new SensiqHistoryStack(app, 'SensiqHistoryStack'); // eslin
 
 const liveStack = new SensiqLiveStack(app, 'SensiqLiveStack');
 
+// Live and history handlers are passed in from their domain stacks so each
+// Lambda keeps the permissions configured next to its data source.
 const apiStack = new SensiqApiStack(app, 'SensiqApiStack', {
+    liveFunction: liveStack.lambdaHandleLiveData,
     historyFunction: historyStack.lambdaHandleHistoryData,
 });
 
