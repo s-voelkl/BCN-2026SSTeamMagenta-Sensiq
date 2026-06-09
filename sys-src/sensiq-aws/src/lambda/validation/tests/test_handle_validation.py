@@ -62,6 +62,11 @@ class TestHandleValidation(unittest.TestCase):
         self.assertEqual(response["statusCode"], 400)
         mock_dynamodb.Table.return_value.put_item.assert_not_called()
 
+    @patch("validation.handle_validation.dynamodb")
+    def test_dynamo_error_returns_500(self, mock_dynamodb):
+        mock_dynamodb.Table.return_value.put_item.side_effect = Exception("error")
+        response = handle_validation.handler(self._make_event(), self.mock_context)
+        self.assertEqual(response["statusCode"], 500)
 
 
 if __name__ == "__main__":

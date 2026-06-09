@@ -63,12 +63,13 @@ def handler(event, context=None):
                     now = datetime.now(timezone.utc)
                     
                     # Device data not up to date, device offline
-                    if (now - item_time).total_seconds() > 360:
+                    if (now - item_time).total_seconds() > 300:
                         logger.warning(f"Device {device_id} is offline. Last seen: {timestamp_str}")
                         return {
                             'statusCode': 437,
                             'headers': headers,
-                            'body': json.dumps({'message': 'Device is offline'})
+                            'body': json.dumps({'message': 'Device is offline',
+                            'last_seen': timestamp_str})
                         }
                 except ValueError as e:
                     logger.error(f"Timestamp parsing failed for {device_id}: {str(e)}")
