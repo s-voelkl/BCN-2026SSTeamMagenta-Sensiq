@@ -23,6 +23,16 @@ THRESHOLDS = {
 }
 
 def handler(event, context=None):
+    
+    """
+    This Lambda function processes incoming sensor data, checks for threshold breaches (outliers), and saves the cleaned records to DynamoDB.
+
+    Return Values (HTTP Status Codes):
+    - 200: Success (Data successfully processed and saved)
+    - 400: Bad Request (Missing required 'device_id' or 'timestamp')
+    - 500: Internal Server Error (Critical processing or database error)
+    """
+
     logger.info(f"Received event: {json.dumps(event)}")
     
     try:
@@ -32,10 +42,12 @@ def handler(event, context=None):
         device_id = raw_item.get('device_id')
         timestamp = raw_item.get('timestamp')
 
+        # Checking if device ID and Timestamp are present
         if not device_id or not timestamp:
             logger.error("Missing timestamp or device_id")
             return {'statusCode': 400, 'body': 'device_id or timestamp is missing'}
 
+        # Structure and map the raw incoming sensor data
         standardized_item = {
             'device_id': device_id,
             'timestamp': timestamp,
@@ -54,6 +66,7 @@ def handler(event, context=None):
         standardized_item = bereinigtes_item
         alerts = []
 
+        # Check sensor values against thresholds to detect outliers and collect alerts
         temp = standardized_item.get('dht_temperature')
         if temp is not None and float(temp) > THRESHOLDS['dht_temperature']:
             standardized_item['is_outlier'] = True
@@ -92,6 +105,7 @@ def handler(event, context=None):
 
         return {'statusCode': 200, 'body': 'ok'}
 
+    # Catch-all for runtime errors
     except Exception as e:
         logger.error(f"Critical error: {str(e)}")
         return {'statusCode': 500, 'body': str(e)}

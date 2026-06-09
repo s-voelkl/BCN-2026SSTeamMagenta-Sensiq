@@ -12,6 +12,13 @@ import path from 'path';
 export class SensiqLiveStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+    
+    
+// Creates a DynamoDB table ('LiveDataDB') for ESP32 sensor data.
+// Partition Key: 'device_id' (String) to identify each device.
+// Billing: Provisioned with minimal capacity (1 read / 1 write) 
+// Removal Policy: DESTROY (table and data are deleted on stack teardown)
+
 
     const liveTable = new dynamodb.Table(this,'LiveDataDB',{
       tableName: 'LiveDataDB',
@@ -26,7 +33,10 @@ export class SensiqLiveStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     } );
 
-    
+    // Creates a Python-based Lambda function for data validation.
+    // Runtime & Timeout: Uses Python 3.12 with a 15-second execution timeout.
+    // The code reads the database name from the environment to dynamically connect and save the sensor data to the correct DynamoDB table.
+
     const lambdaHandleValidation = new PythonFunction(this, 'HandleValidation', {
         entry: path.join(__dirname, '..', 'src', 'lambda', 'validation'), // points to the directory containing the lambda function code
         index: 'handle_validation.py', // the file containing the lambda handler
@@ -46,6 +56,9 @@ export class SensiqLiveStack extends cdk.Stack {
       actions: [ new actions.LambdaFunctionAction(lambdaHandleValidation) ],
     });
 
+      // Function to return live data
+      // Runtime & Timeout: Uses Python 3.12 with a 15-second execution timeout.
+      //This code retrieves the latest data for a specific device from the DynamoDB table and checks if the device is offline by verifying if its last timestamp is older than 6 minutes.
        const lambdaHandleLiveData = new PythonFunction(this, 'HandleLiveData', {
       entry: path.join(__dirname, '..', 'src', 'lambda', 'live'),
       index: 'handle_live_data.py',
