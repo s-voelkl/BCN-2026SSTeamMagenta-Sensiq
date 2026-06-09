@@ -1,0 +1,127 @@
+% ----------------------------------------------------------------------
+% Section 2 — Related Work
+% ----------------------------------------------------------------------
+\section{Related Work}\label{sec:related_work}
+% TODO: remove section information
+% Position Sensiq against existing academic and commercial solutions.
+% Discuss two reference works in depth (IoT lab-safety monitoring;
+% performance of serverless IoT pipelines) and contrast them with the
+% design decisions of this project. Close the section with a comparison
+% table summarising key differentiators (real-time alerts, long-term
+% audit capability, custom API/UI, cost efficiency, laboratory focus).
+% Template available at end of document: tab:comparison.
+
+Several IoT-based platforms for indoor environmental monitoring have
+been proposed in recent years. This section discusses two
+representative academic systems --- the on-premises monitoring and
+prediction platform by Mumtaz et al.~\cite{mumtaz2021internet} and the
+iAQ+ laboratory supervision system by Marques and
+Pitarma~\cite{marques2019internet} --- and contrasts their backend
+architecture, sampling strategy, and notification design with the
+design decisions taken for Sensiq.
+
+\subsection{On-Premises IoT Air Quality Monitoring with Predictive Analytics}\label{sec:rw_mumtaz}
+
+Mumtaz et al.~\cite{mumtaz2021internet} present an IoT-based indoor
+air quality monitoring and prediction platform motivated by the
+COVID-19 pandemic. Their sensor node combines an ATmega328P
+microcontroller with a NodeMCU Wi\=/Fi module and a broad set of
+sensors covering eight pollutants
+(NH\textsubscript{3}, CO, NO\textsubscript{2}, CH\textsubscript{4},
+CO\textsubscript{2}, PM\,2.5) as well as ambient temperature and
+humidity. The node, deployed in a research laboratory, transmits
+readings via GSM or Wi\=/Fi to a web portal and mobile app, and
+generates alerts when sensor values exceed predefined thresholds.
+Beyond pure monitoring, the authors additionally apply machine
+learning to the recorded data to predict future pollutant
+concentrations.
+
+The work shares Sensiq's general topology of a multi-sensor edge node,
+a cloud-side analytics layer, and a web-based user interface, and the
+ATmega328P with NodeMCU is functionally comparable to the ESP32 used
+in Sensiq (\cref{sec:hardware}). Beyond this surface similarity,
+however, the two systems pursue fundamentally different goals, and it
+is precisely these differences that motivate Sensiq.
+
+First, Mumtaz et al. rely on a local web server and database. This
+ties the platform to continuous on-premises operation, complicates
+remote access, and makes horizontal scaling to additional sites or
+users an explicit infrastructure project. Sensiq instead targets a
+fully serverless cloud backend (\cref{sec:aws_services}), which scales
+on demand, removes the need to operate dedicated server hardware, and
+keeps idle cost close to zero --- a key requirement for routine use in
+academic and small industrial laboratories.
+
+Second, their sampling interval of five minutes is geared towards
+trend analysis and pollutant forecasting rather than immediate
+reaction. For safety-relevant events such as fire exposure or sudden
+gas concentration spikes, this granularity is too coarse. It is
+likewise insufficient for product quality assurance, where
+maintaining steady environmental parameters such as temperature and
+humidity is essential and short-lived deviations must be detected
+before they compromise samples or production batches. Sensiq's
+MQTT-over-TLS pipeline is designed for low-latency live monitoring and
+threshold-driven email alerts, so that critical conditions surface
+within seconds rather than minutes.
+
+Third, the reported battery autonomy of around twenty hours limits
+the node to scenarios with permanent power or frequent recharging.
+While both the ATmega328P/NodeMCU combination and the ESP32 in
+principle support deep-sleep operation, Mumtaz et al. do not exploit
+it. Sensiq does not yet implement deep sleep either, but its modular
+ESP32-based node is explicitly prepared for this extension, which is
+identified as future work in \cref{sec:summary} to enable
+substantially longer unattended operation.
+
+In summary, Mumtaz et al.~\cite{mumtaz2021internet}
+demonstrate that a multi-sensor IoT node
+combined with cloud-side analytics is a viable approach to indoor
+environmental monitoring, and their predictive layer illustrates how
+such a platform can be enriched with forecasting. Sensiq adopts the
+same overall topology but deliberately shifts the emphasis: away from
+an on-premises stack with coarse, forecast-oriented sampling, towards
+a serverless backend with low-latency live monitoring, threshold
+alerts, and durable historical storage accessible via open REST
+endpoints.
+
+\subsection{iAQ+ Laboratory Environment Supervision System}\label{sec:rw_marques}
+Marques and Pitarma~\cite{marques2019internet} present iAQ+, an IoT
+based environmental quality management system for laboratory
+conditions. An ESP8266 node equipped with a Bosch BME680 sensor
+captures temperature, relative humidity, barometric pressure, and a
+qualitative air quality index, and forwards them to a web management
+system and an iOS smartphone application that supports configurable
+thresholds and push notifications. The sensor selection and the
+Wi\=/Fi-based node topology resemble Sensiq's hardware
+(\cref{sec:hardware}), but the differences in backend, frontend, and
+timing behaviour are what matter for Sensiq's positioning.
+
+On the backend side, iAQ+ is built on a SQL Server database accessed
+through the .NET framework, i.e. a classical server-based stack with
+the same operational drawbacks already discussed for Mumtaz et al.:
+the platform requires a continuously running server, and scaling to
+additional sites or tenants is an explicit infrastructure activity.
+Sensiq instead delegates persistence and request handling to managed
+serverless AWS services (\cref{sec:aws_services}), so that scaling and
+availability are handled by the cloud provider and idle cost remains
+negligible.
+
+The frontend design of iAQ+ is also more restrictive than Sensiq's.
+The smartphone application is limited to iOS\,12 and above, with no
+Android counterpart, which excludes a significant portion of potential
+users. The accompanying web dashboard exposes historical data only at
+hourly, daily, and monthly aggregations and does not provide a true
+live view or short-term (e.g. minute-level) history. Sensiq targets
+platform-independent access through a React-based web frontend served
+over open REST endpoints and explicitly distinguishes a low-latency
+live route from a long-term history route
+(\cref{sec:user_interaction}).
+
+Finally, iAQ+ does not state a measurement and transmission frequency,
+nor does it quantify the latency between a threshold violation and the
+delivered push notification. For safety-relevant events such as fire
+exposure or sudden gas concentration spikes, this lack of guaranteed
+timing is a substantive limitation. Sensiq is designed around an
+explicit low-latency MQTT-over-TLS pipeline and threshold-driven email
+alerts so that critical conditions surface within seconds, and its
+notification path is part of the evaluation in \cref{sec:evaluation}.
