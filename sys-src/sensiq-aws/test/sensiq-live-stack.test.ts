@@ -31,7 +31,7 @@ test('Validation Lambda created correctly', () => {
     template.hasResourceProperties('AWS::Lambda::Function', {
         Handler: 'handle_validation.handler',
         Runtime: Match.stringLikeRegexp('python3.*'),
-        Timeout: 15,
+        Timeout: 29,
         Environment: {
             Variables: Match.objectLike({
                 TABLE_NAME: Match.anyValue()
@@ -44,7 +44,7 @@ test('Live Data Lambda Function created correctly', () => {
     template.hasResourceProperties('AWS::Lambda::Function', {
         Handler: 'handle_live_data.handler',
         Runtime: Match.stringLikeRegexp('python3.*'),
-        Timeout: 15,
+        Timeout: 29,
         Environment: {
             Variables: Match.objectLike({
                 TABLE_NAME: Match.anyValue()
