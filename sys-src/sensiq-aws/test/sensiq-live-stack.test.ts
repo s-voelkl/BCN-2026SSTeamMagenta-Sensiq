@@ -10,7 +10,7 @@ beforeAll(() => {
     template = Template.fromStack(stack);
 });
 
-test('Table created corectly', () => {
+test('Table created correctly', () => {
     template.hasResourceProperties('AWS::DynamoDB::Table', {
         TableName: 'LiveDataDB',
         ProvisionedThroughput: {
@@ -27,7 +27,7 @@ test('Table created corectly', () => {
     });
 });
 
-test('Validation Lambda created corectly', () => {
+test('Validation Lambda created correctly', () => {
     template.hasResourceProperties('AWS::Lambda::Function', {
         Handler: 'handle_validation.handler',
         Runtime: Match.stringLikeRegexp('python3.*'),
@@ -40,7 +40,7 @@ test('Validation Lambda created corectly', () => {
     });
 });
 
-test('Live Data Lambda Function created corectly', () => {
+test('Live Data Lambda Function created correctly', () => {
     template.hasResourceProperties('AWS::Lambda::Function', {
         Handler: 'handle_live_data.handler',
         Runtime: Match.stringLikeRegexp('python3.*'),
