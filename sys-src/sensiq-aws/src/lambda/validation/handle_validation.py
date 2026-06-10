@@ -133,51 +133,56 @@ def handler(event, context):
     IoT Core live rule Lambda handler.
     Validates incoming IoT messages and writes to DynamoDB with TTL for automatic expiration.
     """
-    logger.info("Received IoT message: %s", json.dumps(event))
+    logger.info(f"Received event: {json.dumps(event)}")
 
-    device_id = event.get("device_id")
-    current_timestamp = int(time.time())
+    try:
+        device_id = event.get("device_id")
+        current_timestamp = int(time.time())
 
-    # Collect alert reasons
-    alert_reasons = get_alert_reasons(event)
+        # Collect alert reasons
+        alert_reasons = get_alert_reasons(event)
 
-    # Only send alerts if not blocked by cooldown
-    reasons_to_send = [
-        reason
-        for reason in alert_reasons
-        if should_send_alert(device_id, reason, current_timestamp)
-    ]
+        # Only send alerts if not blocked by cooldown
+        reasons_to_send = [
+            reason
+            for reason in alert_reasons
+            if should_send_alert(device_id, reason, current_timestamp)
+        ]
 
-    if reasons_to_send:
-        publish_alert(event, reasons_to_send)
+        if reasons_to_send:
+            publish_alert(event, reasons_to_send)
 
-        # Store the send time after publishing the email.
-        for reason in reasons_to_send:
-            mark_alert_as_sent(device_id, reason, current_timestamp)
-    else:
-        logger.debug("All alert reasons are currently in cooldown for device %s", device_id)
+            # Store the send time after publishing the email.
+            for reason in reasons_to_send:
+                mark_alert_as_sent(device_id, reason, current_timestamp)
+        else:
+            logger.debug("All alert reasons are currently in cooldown for device %s", device_id)
 
-    raw_item = json.loads(json.dumps(event), parse_float=Decimal)
-    device_id = raw_item.get("device_id")
-    timestamp = raw_item.get("timestamp")
+        raw_item = json.loads(json.dumps(event), parse_float=Decimal)
+        device_id = raw_item.get("device_id")
+        timestamp = raw_item.get("timestamp")
 
-    if not device_id or not timestamp:
-        logger.error("Missing timestamp or device_id")
-        return {"statusCode": 400, "body": "device_id or timestamp is missing"}
+        if not device_id or not timestamp:
+            logger.error("Missing timestamp or device_id")
+            return {"statusCode": 400, "body": "device_id or timestamp is missing"}
 
-    item = {"device_id": device_id, "timestamp": timestamp}
-    for field in ALLOWED_FIELDS:
-        value = raw_item.get(field)
-        if value is not None:
-            item[field] = value
+        item = {"device_id": device_id, "timestamp": timestamp}
+        for field in ALLOWED_FIELDS:
+            value = raw_item.get(field)
+            if value is not None:
+                item[field] = value
 
-    dynamodb.Table(TABLE_NAME).put_item(Item=item)
-    logger.info(f"Data successfully saved to DynamoDB for: {device_id}")
+        dynamodb.Table(TABLE_NAME).put_item(Item=item)
+        logger.info(f"Data successfully saved to DynamoDB for: {device_id}")
 
-    return {
-        "statusCode": 200,
-        "body": json.dumps({
-            "message": "Validation completed",
-            "alert_reasons": alert_reasons,
-        }),
-    }
+        return {
+            "statusCode": 200,
+            "body": json.dumps({
+                "message": "Validation completed",
+                "alert_reasons": alert_reasons,
+            }),
+        }
+
+    except Exception as e:
+        logger.error(f"Critical error: {str(e)}")
+        return {"statusCode": 500, "body": str(e)}
