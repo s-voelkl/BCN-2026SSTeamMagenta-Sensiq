@@ -91,3 +91,61 @@ test('API URL output is created', () => {
         Value: Match.anyValue(),
     });
 });
+
+test('API Gateway has permissions to invoke Lambda functions', () => {
+    template.hasResourceProperties('AWS::Lambda::Permission', {
+        Action: 'lambda:InvokeFunction',
+        Principal: 'apigateway.amazonaws.com',
+    });
+});
+
+test('API key secret is created in Secrets Manager', () => {
+    template.hasResourceProperties('AWS::SecretsManager::Secret', {
+        Name: 'sensiq-api-key',
+        GenerateSecretString: {
+            SecretStringTemplate: '{}',
+            GenerateStringKey: 'apiKey',
+            ExcludePunctuation: true,
+            PasswordLength: 40,
+        },
+    });
+});
+
+test('API Gateway API key is created', () => {
+    template.hasResourceProperties('AWS::ApiGateway::ApiKey', {
+        Name: 'sensiq-api-key',
+    });
+});
+
+test('API Gateway usage plan is created', () => {
+    template.hasResourceProperties('AWS::ApiGateway::UsagePlan', {
+        UsagePlanName: 'sensiq-usage-plan',
+        Throttle: {
+            RateLimit: 10,
+            BurstLimit: 20,
+        },
+    });
+});
+
+test('API Gateway usage plan is linked to an API key', () => {
+    template.resourceCountIs('AWS::ApiGateway::UsagePlanKey', 1);
+});
+
+test('both GET methods require an API key', () => {
+    template.resourcePropertiesCountIs('AWS::ApiGateway::Method', {
+        HttpMethod: 'GET',
+        ApiKeyRequired: true,
+    }, 2);
+});
+
+test('API key secret name output is created', () => {
+    template.hasOutput('SensiqApiKeySecretName', {
+        Value: Match.anyValue(),
+    });
+});
+
+test('API URL output is created', () => {
+    template.hasOutput('SensiqApiUrl', {
+        Value: Match.anyValue(),
+    });
+});
