@@ -179,7 +179,8 @@ class TestHandleValidation(unittest.TestCase):
             }
         )
 
-    def test_handler_publishes_alert_and_marks_as_sent(self):
+    @patch("validation.handle_validation.dynamodb")
+    def test_handler_publishes_alert_and_marks_as_sent(self, mock_dynamodb):
         event = self._make_event({"dht_temperature": 31})
 
         with patch.object(handle_validation, "should_send_alert", return_value=True), \
@@ -192,11 +193,13 @@ class TestHandleValidation(unittest.TestCase):
             ["DHT temperature too high"],
         )
         mock_mark_alert_as_sent.assert_called_once()
+        mock_dynamodb.Table.return_value.put_item.assert_called_once()
 
         body = json.loads(response["body"])
         self.assertIn("DHT temperature too high", body["alert_reasons"])
 
-    def test_handler_does_not_publish_when_alert_is_in_cooldown(self):
+    @patch("validation.handle_validation.dynamodb")
+    def test_handler_does_not_publish_when_alert_is_in_cooldown(self, mock_dynamodb):
         event = self._make_event({"dht_temperature": 31})
 
         with patch.object(handle_validation, "should_send_alert", return_value=False), \
@@ -206,6 +209,7 @@ class TestHandleValidation(unittest.TestCase):
 
         mock_publish_alert.assert_not_called()
         mock_mark_alert_as_sent.assert_not_called()
+        mock_dynamodb.Table.return_value.put_item.assert_called_once()
 
         body = json.loads(response["body"])
         self.assertIn("DHT temperature too high", body["alert_reasons"])
