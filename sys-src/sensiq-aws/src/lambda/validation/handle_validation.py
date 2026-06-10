@@ -140,32 +140,6 @@ def handler(event, context):
     else:
         logger.debug("All alert reasons are currently in cooldown for device %s", device_id)
 
-
-    #if alert_reasons:
-    #    publish_alert(event, alert_reasons)
-
-
-    # TODO: extract fields once message schema is defined, e.g.:
-    # device_id = event.get('device_id')
-    # timestamp = event.get('timestamp')
-    # payload   = event.get('payload')
-
-    # TTL_SECONDS = 30 # Example TTL for DynamoDB items (30 seconds)
-
-    # --- DynamoDB write (placeholder) ---
-    # item = {
-    #     'pk': event.get('device_id', 'unknown'),   # TODO: define partition key
-    #     'sk': event.get('timestamp', 'unknown'),   # TODO: define sort key
-    #     'expires_at': int(time.time()) + TTL_SECONDS,   
-    #     **event                                    # writes all fields from the message
-    # }
-    # try:
-    #     table.put_item(Item=item)
-    #     logger.info("Written to DynamoDB: %s", json.dumps(item))
-    # except Exception as e:
-    #     logger.error("Failed to write to DynamoDB: %s", str(e))
-    #     raise
-
     return {
         "statusCode": 200,
         "body": json.dumps({

@@ -61,7 +61,7 @@ export class SensiqLiveStack extends cdk.Stack {
 
     // permissions for the lambda function
     alertTopic.grants.publish(lambdaHandleValidation);
-    sentEmailsTable.grants.readWriteData(lambdaHandleValidation);
+      sentEmailsTable.grantReadWriteData(lambdaHandleValidation);
 
     // IoT rule to trigger the lambda function on incoming data
     new iot.TopicRule(this, 'LiveRule', {
