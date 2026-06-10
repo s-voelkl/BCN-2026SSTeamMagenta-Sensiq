@@ -9,7 +9,7 @@ class TestHandleLiveData(unittest.TestCase):
     
     @patch('live.handle_live_data.dynamodb')
     def test_get_item_with_device_id_online(self, mock_db):
-        recent_timestamp = (datetime.now(timezone.utc) - timedelta(minutes=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        recent_timestamp = (datetime.now(timezone.utc) - timedelta(seconds=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
         
         mock_table = MagicMock()
         mock_table.get_item.return_value = {

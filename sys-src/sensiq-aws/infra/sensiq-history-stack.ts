@@ -14,7 +14,24 @@ import * as eventschemas from 'aws-cdk-lib/aws-eventschemas';
 import * as fs from 'fs';
 import path from 'path';
 
-
+/**
+ * SensiqHistoryStack: CDK Stack for historical sensor data storage and querying.
+ * 
+ * This stack sets up the infrastructure for storing historical sensor data in S3,
+ * defining a Glue schema for Athena querying, and configuring a Firehose delivery stream
+ * to ingest data from IoT Core. It also includes a Lambda function for handling API Gateway
+ * requests to query historical data via Athena.
+ * 
+ * Key components:
+ * - S3 Buckets: One for raw IoT data (with Parquet conversion) and one for Athena query results.
+ * - Glue Database and Table: Defines the schema for the historical sensor data with partitioning.
+ * - Firehose Delivery Stream: Ingests JSON data from IoT Core, converts it to Parquet, and 
+ *      stores it in S3 with dynamic partitioning.
+ * - IAM Roles and Policies: Grants necessary permissions for Firehose to access Glue and 
+ *      S3, and for Lambda to query Athena.
+ * - Lambda Function: Handles API Gateway requests to execute Athena queries and return results.
+ * - EventBridge Schemas: Defines shareable test events for the Lambda function, visible in the AWS Console.
+ */
 export class SensiqHistoryStack extends cdk.Stack {
     public readonly lambdaHandleHistoryData: lambda.Function;
 
