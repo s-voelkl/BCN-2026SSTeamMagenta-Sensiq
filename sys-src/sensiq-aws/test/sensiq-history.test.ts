@@ -3,6 +3,7 @@ import { Template, Match } from 'aws-cdk-lib/assertions';
 import { SensiqHistoryStack } from '../infra/sensiq-history-stack';
 
 let template: Template;
+
 beforeAll(() => {
     const app = new cdk.App();
     const stack = new SensiqHistoryStack(app, 'TestHistoryStack');
