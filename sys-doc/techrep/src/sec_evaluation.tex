@@ -40,8 +40,63 @@ health and publish functionality.
 % and Post Free Tier costs across all involved AWS services.
 % Template available at end of document: tab:aws-costs.
 
-\subsubsection{AWS Service Costs}
-% TODO!
+\subsubsection{AWS Service Costs}\label{sec:aws-costs}
+The figures in \cref{tab:aws-costs} reflect a monthly cost estimate
+based on the following usage assumptions: the ESP-32 publishes one message
+every five seconds, yielding roughly 518\,000 messages per month. Each
+message is evaluated against two IoT Core rules, and AWS bills the inbound
+message plus one unit per rule, resulting in 1\,554\,000 billed message
+units at \$1.00 per million, making IoT Core the dominant cost driver at
+\$1.62 per month. Both rules trigger on every message: one forwards the
+payload to Kinesis Data Firehose for long-term storage, the other invokes
+the \texttt{handleTransformValidate} Lambda function. Firehose applies a
+5\,KB minimum billing unit per record, inflating the effective ingested
+volume from \textasciitilde197\,MB to \textasciitilde2.59\,GB and
+resulting in a flat \$0.08 per month regardless of account age, as
+Firehose carries no free tier. The React frontend is served from a plain
+S3 bucket, incurring no meaningful storage cost. History queries are
+assumed to occur ten times per day across all users, totalling around 660
+monthly Athena queries; the scanned data volume is estimated at 50\,MB per
+query, reflecting a mid-range time window against the Parquet-partitioned
+S3 bucket (partitioned by year, month, and day), with partition pruning
+keeping scan sizes stable as data accumulates. The Glue Data Catalog is
+maintained via a handwritten schema definition, incurring no crawler cost.
+SNS alerts are treated as negligible, firing approximately three times per
+week.
+
+The table is split into two cost columns: \emph{Free Tier} reflects the
+first twelve months of a new AWS account, during which Lambda, API
+Gateway, and SNS remain within their monthly free allowances.
+\emph{Post Free Tier} represents the ongoing monthly cost once those
+allowances expire. Both estimates are recurring on a monthly basis and
+total approximately \$1.88 and \$2.13 respectively, with IoT Core alone
+accounting for over 75\% of the total cost in both scenarios.
+
+\begin{table*}[!htb]
+    \centering
+    \caption{Cost Estimation for AWS Services}
+    \label{tab:aws-costs}
+    \begin{tabularx}{0.8\textwidth}{>{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}r >{\raggedright\arraybackslash}r}
+        \toprule
+        \textbf{Service Details} & \textbf{Usage/Quantity} & \textbf{Free Tier} & \textbf{Post Free Tier} \\
+        \midrule
+        IoT Core~\cite{awsIotCore} & 518k msgs, 1554k billed & \(\sim\)\$1.62 & \(\sim\)\$1.62 \\ 
+        Lambda – handleTransformValidate~\cite{aws-lambda} & 518k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.06 \\ 
+        Lambda – handleLiveData~\cite{aws-lambda} & 228k inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.04 \\ 
+        Lambda – handleHistoryData~\cite{aws-lambda} & 660 inv, 128 MB / 200 ms & \$0.00 & \(\sim\)\$0.00 \\ 
+        DynamoDB~\cite{aws-dynamodb} & 518k WCU, 228k RCU, storage & \(\sim\)\$0.01 & \(\sim\)\$0.08 \\ 
+        S3 (Parquet + Query Results)~\cite{aws-s3} & \(\sim\)0.5 GB stored & \(\sim\)\$0.01 & \(\sim\)\$0.02 \\ 
+        S3 (React Frontend)~\cite{aws-s3} & Minimal storage used & \$0.00 & \$0.00 \\ 
+        Firehose~\cite{aws-firehose} & 518k msgs, 2.59GB billed & \(\sim\)\$0.08 & \(\sim\)\$0.08 \\ 
+        Athena~\cite{aws-athena} & 660 queries \(\times\) 50 MB = 33 GB scanned & \(\sim\)\$0.16 & \(\sim\)\$0.16 \\ 
+        API Gateway~\cite{aws-api-gateway} & 229k requests & \$0.00 & \(\sim\)\$0.08 \\ 
+        SNS~\cite{aws-sns} & Minimal alert volume & \$0.00 & \(\sim\)\$0.01 \\ 
+        % Glue Crawler~\cite{aws-glue} & One-time run & \(\sim\)\$0.00 & \(\sim\)\$0.00 \\ 
+        \midrule
+        \textbf{Total} & & \textbf{\(\sim\)\$1.88} & \textbf{\(\sim\)\$2.13} \\ 
+        \bottomrule
+    \end{tabularx}
+\end{table*}
 
 \subsubsection{Hardware Cost}
 The one-time hardware cost per sensor node is based on the components used for prototyping.
