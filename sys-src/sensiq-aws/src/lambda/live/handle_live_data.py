@@ -25,9 +25,12 @@ RESPONSE_HEADERS = {
 }
 
 # A device is considered offline if its most recent sample is older than this
-# threshold. Sensors are expected to publish at least once per minute, so five
-# minutes provides a comfortable margin for transient network delays.
-OFFLINE_THRESHOLD_SECONDS = 300
+# threshold. Sensors are expected to publish multiple times a minute, so one
+# minute is a reasonable threshold to detect offline devices while allowing for
+# some network delay or missed samples.
+# See related work: Other studies only publish every 5 minutes or more, which
+# imposes a much higher risk for human worker and product safety.
+OFFLINE_THRESHOLD_SECONDS = 60
 TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 class DecimalEncoder(json.JSONEncoder):
