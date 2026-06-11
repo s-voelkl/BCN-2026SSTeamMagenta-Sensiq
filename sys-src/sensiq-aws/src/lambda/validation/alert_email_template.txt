@@ -1,0 +1,16 @@
+The local Sensiq measuring station noticed a problem:
+{reasons_summary}
+
+Location:    {location}
+Device ID:   {device_id}
+Detected at: {human_timestamp}
+
+Currently measured values:
+{measured_values}
+
+Threshold breaches:
+{threshold_breaches}
+
+Suggestion: Please investigate and resolve this issue as fast as possible.
+
+This message was generated and sent automatically by Sensiq. Do not reply to this email.
