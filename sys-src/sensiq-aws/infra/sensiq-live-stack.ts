@@ -46,14 +46,34 @@ export class SensiqLiveStack extends cdk.Stack {
     }
 
     // lambda function for validation of incoming data an dynamo imputation
+    // Creates a DynamoDB table for live sensor data
+    // read/write only newest sample, so keep minimal capacity
+    // provisioned billing mode as the traffic is predictable and low, with 1 read and 1 write capacity unit.
+    // destroy on cdk removal as no long term data retention is needed
+    const liveTable = new dynamodb.Table(this, 'LiveDataDB', {
+      tableName: 'LiveDataDB',
+      partitionKey: {
+        name: 'device_id',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PROVISIONED,
+      readCapacity: 1,
+      writeCapacity: 1,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    // Creates a Python-based Lambda function for data validation.
+    // The code reads the database name from the environment to dynamically
+    // connect and save the sensor data to the correct DynamoDB table.
     const lambdaHandleValidation = new PythonFunction(this, 'HandleValidation', {
       entry: path.join(__dirname, '..', 'src', 'lambda', 'validation'), // points to the directory containing the lambda function code
       index: 'handle_validation.py', // the file containing the lambda handler
       handler: 'handler',
       runtime: lambda.Runtime.PYTHON_3_12,
-      timeout: cdk.Duration.seconds(15),
+      timeout: cdk.Duration.seconds(29),
       environment: {
-        ALERT_TOPIC_ARN: alertTopic.topicArn,
+          TABLE_NAME: liveTable.tableName,
+          ALERT_TOPIC_ARN: alertTopic.topicArn,
         SENT_EMAILS_TABLE_NAME: sentEmailsTable.tableName,
       }
     }
@@ -61,13 +81,33 @@ export class SensiqLiveStack extends cdk.Stack {
 
     // permissions for the lambda function
     alertTopic.grants.publish(lambdaHandleValidation);
-    sentEmailsTable.grants.readWriteData(lambdaHandleValidation);
+      sentEmailsTable.grantReadWriteData(lambdaHandleValidation);
 
     // IoT rule to trigger the lambda function on incoming data
+    liveTable.grantReadWriteData(lambdaHandleValidation);
+
+    // When new data is published to the 'sensiq/+/data' topic, the IoT Topic Rule triggers
+    // the Lambda function to validate and process the incoming sensor data before saving it to the DynamoDB table.
     new iot.TopicRule(this, 'LiveRule', {
       sql: iot.IotSql.fromStringAsVer20160323("SELECT * FROM 'sensiq/+/data'"),
       actions: [new actions.LambdaFunctionAction(lambdaHandleValidation)],
     });
 
+    // Function to return live data
+    // This code retrieves the latest data for a specific device from the DynamoDB table and
+    // checks if the device is offline.
+    // timeout: aligned with API Gateway max timeout to accommodate Athena cold starts, see history stack.
+    const lambdaHandleLiveData = new PythonFunction(this, 'HandleLiveData', {
+      entry: path.join(__dirname, '..', 'src', 'lambda', 'live'),
+      index: 'handle_live_data.py',
+      handler: 'handler',
+      runtime: lambda.Runtime.PYTHON_3_12,
+      timeout: cdk.Duration.seconds(29),
+      environment: {
+        TABLE_NAME: liveTable.tableName
+      }
+    });
+
+    liveTable.grantReadData(lambdaHandleLiveData);
   }
 }

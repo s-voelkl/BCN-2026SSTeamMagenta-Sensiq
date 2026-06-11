@@ -2,8 +2,10 @@ import json
 import logging
 import os
 import time
+from decimal import Decimal
 
 import boto3
+
 
 logger = logging.getLogger(__name__)
 # Can be set to DEBUG via Console to mitigate re-deployments for debugging purposes.
@@ -19,6 +21,21 @@ SENT_EMAILS_TABLE_NAME = os.environ.get("SENT_EMAILS_TABLE_NAME")
 
 # Do not send the same alert email for the same device and reason within this time window
 EMAIL_COOLDOWN_SECONDS = 5 * 60
+
+# TABLE_NAME is injected by the CDK stack (see sensiq-live-stack.ts).
+TABLE_NAME = os.environ.get("TABLE_NAME", "LiveDataDB")
+dynamodb = boto3.resource("dynamodb")
+
+# Fields forwarded from the raw IoT payload to DynamoDB.
+# Any field not listed here is dropped, which keeps unexpected payload keys out of the table.
+ALLOWED_FIELDS = (
+    "location",
+    "dht_temperature",
+    "dht_humidity",
+    "dht_heat_index",
+    "flame_analog",
+    "thermistor_temp",
+)
 
 sent_emails_table = (
     dynamodb.Table(SENT_EMAILS_TABLE_NAME)
@@ -116,60 +133,56 @@ def handler(event, context):
     IoT Core live rule Lambda handler.
     Validates incoming IoT messages and writes to DynamoDB with TTL for automatic expiration.
     """
-    logger.info("Received IoT message: %s", json.dumps(event))
+    logger.info(f"Received event: {json.dumps(event)}")
 
-    device_id = event.get("device_id")
-    current_timestamp = int(time.time())
+    try:
+        device_id = event.get("device_id")
+        current_timestamp = int(time.time())
 
-    # Collect alert reasons
-    alert_reasons = get_alert_reasons(event)
+        # Collect alert reasons
+        alert_reasons = get_alert_reasons(event)
 
-    # Only send alerts if not blocked by cooldown
-    reasons_to_send = [
-        reason
-        for reason in alert_reasons
-        if should_send_alert(device_id, reason, current_timestamp)
-    ]
+        # Only send alerts if not blocked by cooldown
+        reasons_to_send = [
+            reason
+            for reason in alert_reasons
+            if should_send_alert(device_id, reason, current_timestamp)
+        ]
 
-    if reasons_to_send:
-        publish_alert(event, reasons_to_send)
+        if reasons_to_send:
+            publish_alert(event, reasons_to_send)
 
-        # Store the send time after publishing the email.
-        for reason in reasons_to_send:
-            mark_alert_as_sent(device_id, reason, current_timestamp)
-    else:
-        logger.debug("All alert reasons are currently in cooldown for device %s", device_id)
+            # Store the send time after publishing the email.
+            for reason in reasons_to_send:
+                mark_alert_as_sent(device_id, reason, current_timestamp)
+        else:
+            logger.debug("All alert reasons are currently in cooldown for device %s", device_id)
 
+        raw_item = json.loads(json.dumps(event), parse_float=Decimal)
+        device_id = raw_item.get("device_id")
+        timestamp = raw_item.get("timestamp")
 
-    #if alert_reasons:
-    #    publish_alert(event, alert_reasons)
+        if not device_id or not timestamp:
+            logger.error("Missing timestamp or device_id")
+            return {"statusCode": 400, "body": "device_id or timestamp is missing"}
 
+        item = {"device_id": device_id, "timestamp": timestamp}
+        for field in ALLOWED_FIELDS:
+            value = raw_item.get(field)
+            if value is not None:
+                item[field] = value
 
-    # TODO: extract fields once message schema is defined, e.g.:
-    # device_id = event.get('device_id')
-    # timestamp = event.get('timestamp')
-    # payload   = event.get('payload')
+        dynamodb.Table(TABLE_NAME).put_item(Item=item)
+        logger.info(f"Data successfully saved to DynamoDB for: {device_id}")
 
-    # TTL_SECONDS = 30 # Example TTL for DynamoDB items (30 seconds)
+        return {
+            "statusCode": 200,
+            "body": json.dumps({
+                "message": "Validation completed",
+                "alert_reasons": alert_reasons,
+            }),
+        }
 
-    # --- DynamoDB write (placeholder) ---
-    # item = {
-    #     'pk': event.get('device_id', 'unknown'),   # TODO: define partition key
-    #     'sk': event.get('timestamp', 'unknown'),   # TODO: define sort key
-    #     'expires_at': int(time.time()) + TTL_SECONDS,   
-    #     **event                                    # writes all fields from the message
-    # }
-    # try:
-    #     table.put_item(Item=item)
-    #     logger.info("Written to DynamoDB: %s", json.dumps(item))
-    # except Exception as e:
-    #     logger.error("Failed to write to DynamoDB: %s", str(e))
-    #     raise
-
-    return {
-        "statusCode": 200,
-        "body": json.dumps({
-            "message": "Validation completed",
-            "alert_reasons": alert_reasons,
-        }),
-    }
+    except Exception as e:
+        logger.error(f"Critical error: {str(e)}")
+        return {"statusCode": 500, "body": str(e)}
