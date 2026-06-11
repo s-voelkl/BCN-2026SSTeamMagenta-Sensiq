@@ -9,10 +9,32 @@ route and a long-term history route. Each is described in its own
 subsection together with the AWS services it relies on.
 
 \subsection{Live Route}\label{sec:live_route}
-% TODO: remove section information
-Path from IoT Core rule -> validation Lambda -> DynamoDB (latest
-reading per device) -> API Gateway -> GET /live. Discuss latency
-targets, payload shape, and error handling.
+The live route provides a low-latency data delivery mechanism, exposing a
+\texttt{GET /live} endpoint via API Gateway. It returns the most recent
+sensor reading as a structured JSON payload. The pipeline spans from hardware
+ingestion through serverless transformation to a managed NoSQL store.
+
+\subsubsection{Data Ingestion and Transformation}
+Sensor readings are assembled on the ESP-32 microcontroller and published
+via MQTT to AWS IoT Core~\cite{awsIotCore}. An IoT topic rule 
+forwards each incoming message to the
+\texttt{handleTransformValidate} Lambda function. This function is
+responsible for validating and transforming the payload to the internal data format,
+and classifies outlier readings against predefined thresholds, as described in
+\cref{sec:sns_notifications}. Regardless of classification,
+the validated record is written to a DynamoDB
+table~\cite{aws-dynamodb} (\texttt{LiveDataDB}) via a \texttt{PutItem}
+operation, which always reflects the latest device state.
+
+\subsubsection{Live Data Retrieval}
+Incoming \texttt{GET /live} requests are routed through the API Gateway to the
+\texttt{handleLiveData} Lambda function. This function performs a read
+against \texttt{LiveDataDB} and returns the latest sensor record as a
+JSON response. Because the data is served directly from DynamoDB with
+single-digit millisecond read latency, the live route consistently
+responds well within the 29-second API Gateway timeout, typically in
+under one second. The handler returns an error response when the entry in
+\texttt{LiveDataDB} is older than 300 seconds.
 
 \subsection{History Route}\label{sec:history_route}
 The history route provides a long-term data retrieval mechanism, exposing a
