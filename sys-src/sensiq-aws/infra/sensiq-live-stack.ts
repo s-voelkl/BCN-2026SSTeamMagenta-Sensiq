@@ -16,6 +16,7 @@ export class SensiqLiveStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    // SNS topic for alerts
     const alertTopic = new sns.Topic(this, 'SensiqAlertTopic', {
       topicName: 'sensiq-alerts',
       displayName: 'Sensiq Alerts',
@@ -33,16 +34,21 @@ export class SensiqLiveStack extends cdk.Stack {
         name: 'reason',
         type: dynamodb.AttributeType.STRING,
       },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST, // relatively low traffic and unpredictable
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // no long term data retention needed 
     });
 
     const alertEmail = this.node.tryGetContext('alertEmail') as string | undefined;
 
+    // Try to get the alert email from context, else log a warning.
     if (alertEmail) {
       alertTopic.addSubscription(
         new subscriptions.EmailSubscription(alertEmail)
       );
+    } else {
+      new cdk.CfnOutput(this, 'AlertEmailOutput', {
+        value: 'No alert email configured. Set the "alertEmail" context variable to receive alerts.',
+      });
     }
 
     // lambda function for validation of incoming data an dynamo imputation
@@ -72,8 +78,8 @@ export class SensiqLiveStack extends cdk.Stack {
       runtime: lambda.Runtime.PYTHON_3_12,
       timeout: cdk.Duration.seconds(29),
       environment: {
-          TABLE_NAME: liveTable.tableName,
-          ALERT_TOPIC_ARN: alertTopic.topicArn,
+        TABLE_NAME: liveTable.tableName,
+        ALERT_TOPIC_ARN: alertTopic.topicArn,
         SENT_EMAILS_TABLE_NAME: sentEmailsTable.tableName,
       }
     }
@@ -81,7 +87,7 @@ export class SensiqLiveStack extends cdk.Stack {
 
     // permissions for the lambda function
     alertTopic.grants.publish(lambdaHandleValidation);
-      sentEmailsTable.grantReadWriteData(lambdaHandleValidation);
+    sentEmailsTable.grantReadWriteData(lambdaHandleValidation);
 
     // IoT rule to trigger the lambda function on incoming data
     liveTable.grantReadWriteData(lambdaHandleValidation);
