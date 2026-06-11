@@ -73,21 +73,21 @@ class TestHandleValidation(unittest.TestCase):
 
         reasons = handle_validation.get_alert_reasons(event)
 
-        self.assertIn("DHT temperature too high", reasons)
+        self.assertIn("Temperature too high", reasons)
 
     def test_get_alert_reasons_temperature_30_has_no_alert(self):
         event = self._make_event({"dht_temperature": 30})
 
         reasons = handle_validation.get_alert_reasons(event)
 
-        self.assertNotIn("DHT temperature too high", reasons)
+        self.assertNotIn("Temperature too high", reasons)
 
     def test_get_alert_reasons_thermistor_over_30(self):
         event = self._make_event({"thermistor_temp": 31})
 
         reasons = handle_validation.get_alert_reasons(event)
 
-        self.assertIn("Thermistor temperature too high", reasons)
+        self.assertIn("Temperature too high", reasons)
 
     def test_get_alert_reasons_humidity_over_80(self):
         event = self._make_event({"dht_humidity": 81})
@@ -117,7 +117,7 @@ class TestHandleValidation(unittest.TestCase):
         with patch.object(handle_validation, "sent_emails_table", mock_table):
             result = handle_validation.should_send_alert(
                 "esp32-lab-001",
-                "DHT temperature too high",
+                "Temperature too high",
                 1000,
             )
 
@@ -128,7 +128,7 @@ class TestHandleValidation(unittest.TestCase):
         mock_table.get_item.return_value = {
             "Item": {
                 "device_id": "esp32-lab-001",
-                "reason": "DHT temperature too high",
+                "reason": "Temperature too high",
                 "timestamp": 900,
             }
         }
@@ -136,7 +136,7 @@ class TestHandleValidation(unittest.TestCase):
         with patch.object(handle_validation, "sent_emails_table", mock_table):
             result = handle_validation.should_send_alert(
                 "esp32-lab-001",
-                "DHT temperature too high",
+                "Temperature too high",
                 1000,
             )
 
@@ -147,7 +147,7 @@ class TestHandleValidation(unittest.TestCase):
         mock_table.get_item.return_value = {
             "Item": {
                 "device_id": "esp32-lab-001",
-                "reason": "DHT temperature too high",
+                "reason": "Temperature too high",
                 "timestamp": 600,
             }
         }
@@ -155,7 +155,7 @@ class TestHandleValidation(unittest.TestCase):
         with patch.object(handle_validation, "sent_emails_table", mock_table):
             result = handle_validation.should_send_alert(
                 "esp32-lab-001",
-                "DHT temperature too high",
+                "Temperature too high",
                 1000,
             )
 
@@ -167,14 +167,14 @@ class TestHandleValidation(unittest.TestCase):
         with patch.object(handle_validation, "sent_emails_table", mock_table):
             handle_validation.mark_alert_as_sent(
                 "esp32-lab-001",
-                "DHT temperature too high",
+                "Temperature too high",
                 1000,
             )
 
         mock_table.put_item.assert_called_once_with(
             Item={
                 "device_id": "esp32-lab-001",
-                "reason": "DHT temperature too high",
+                "reason": "Temperature too high",
                 "timestamp": 1000,
             }
         )
@@ -190,13 +190,13 @@ class TestHandleValidation(unittest.TestCase):
 
         mock_publish_alert.assert_called_once_with(
             event,
-            ["DHT temperature too high"],
+            ["Temperature too high"],
         )
         mock_mark_alert_as_sent.assert_called_once()
         mock_dynamodb.Table.return_value.put_item.assert_called_once()
 
         body = json.loads(response["body"])
-        self.assertIn("DHT temperature too high", body["alert_reasons"])
+        self.assertIn("Temperature too high", body["alert_reasons"])
 
     @patch("validation.handle_validation.dynamodb")
     def test_handler_does_not_publish_when_alert_is_in_cooldown(self, mock_dynamodb):
@@ -212,7 +212,33 @@ class TestHandleValidation(unittest.TestCase):
         mock_dynamodb.Table.return_value.put_item.assert_called_once()
 
         body = json.loads(response["body"])
-        self.assertIn("DHT temperature too high", body["alert_reasons"])
+        self.assertIn("Temperature too high", body["alert_reasons"])
+
+    def test_publish_alert_sends_rendered_email_to_sns(self):
+        event = self._make_event({"dht_temperature": 31})
+        reasons = ["Temperature too high"]
+
+        with patch.object(handle_validation, "ALERT_TOPIC_ARN", "arn:aws:sns:test"), \
+                patch.object(handle_validation, "sns_client") as mock_sns, \
+                patch.object(
+                    handle_validation,
+                    "render_alert_email",
+                    return_value=("subject", "body"),
+                ) as mock_render:
+            handle_validation.publish_alert(event, reasons)
+
+        mock_render.assert_called_once_with(
+            event,
+            reasons,
+            handle_validation.SENSOR_RULES,
+            handle_validation.evaluate_rule,
+        )
+        mock_sns.publish.assert_called_once_with(
+            TopicArn="arn:aws:sns:test",
+            Subject="subject",
+            Message="body",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
