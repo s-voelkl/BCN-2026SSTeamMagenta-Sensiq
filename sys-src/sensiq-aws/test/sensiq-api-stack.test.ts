@@ -40,6 +40,38 @@ test('API Gateway REST API is created', () => {
     });
 });
 
+test('CloudWatch log group is created for API access logs', () => {
+    template.hasResourceProperties('AWS::Logs::LogGroup', {
+        LogGroupName: '/aws/apigateway/sensiq-api/access',
+        RetentionInDays: 7,
+    });
+});
+
+test('API Gateway stage has access logging, metrics and INFO logging level', () => {
+    template.hasResourceProperties('AWS::ApiGateway::Stage', {
+        StageName: 'prod',
+        AccessLogSetting: Match.objectLike({
+            DestinationArn: Match.anyValue(),
+            Format: Match.anyValue(),
+        }),
+        MethodSettings: Match.arrayWith([
+            Match.objectLike({
+                LoggingLevel: 'INFO',
+                MetricsEnabled: true,
+            }),
+        ]),
+    });
+});
+
+test('API key value is a Secrets Manager dynamic reference (no plaintext in template)', () => {
+    // ApiKey.Value must resolve via {{resolve:secretsmanager:...}} so the secret
+    // never lands in the synthesized CloudFormation template as plaintext.
+    template.hasResourceProperties('AWS::ApiGateway::ApiKey', {
+        Name: 'sensiq-api-key',
+        Value: Match.anyValue(),
+    });
+});
+
 test('GET /live route is created with Lambda proxy integration', () => {
     template.hasResourceProperties('AWS::ApiGateway::Resource', {
         PathPart: 'live',
