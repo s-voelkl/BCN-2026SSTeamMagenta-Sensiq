@@ -62,10 +62,10 @@ Automatic Deployment *on Pull Request* using GitHub Actions.
 
 - Recommended Python Version: 3.14
 - Install Venv: ``sudo apt install python3.14-venv``
-- Environment Creation: ``cd ./sys-src/sensiq-aws/`` and then ``python3 -m venv .venv``
-- Activate Environment: ``source .venv/bin/activate`` in a new terminal
-- Dependencies: see ``pyproject.toml`` > ``[project].dependencies`` and ``[project.optional-dependencies]`` for dev dependencies
-- Install dependencies: ``pip install .`` in the activated environment
+- Environment Creation: ``yarn setup:python`` in ``sensiq/aws`` folder
+- Activate Environment: ``source ./src/lambda/.venv/bin/activate`` in a new terminal
+- Dependencies: see ``./src/lambda/requirements-dev.txt`` for dev dependencies
+- Install dependencies: ``pip install .`` in the activated environment (``yarn setup:python`` does that automatically)
 
 > Recommended VS Code Extensions: Python, Python Environments.
 
@@ -133,4 +133,40 @@ Run ``aws iot describe-endpoint --endpoint-type iot:Data-ATS`` to get the AWS Io
 
 ## Frontend
 
-tbd
+We are using tailwind as our Design Plugin, in combination with recharts as central dependency to display our data.
+
+Our desired test coverage is >60%
+
+### Dependency Installation
+
+We are using yarnv1 (just like the aws cdk).
+
+``yarn -v`` (1.22.22)
+
+``yarn install`` (in sensiq-frontend folder with ``cd ./sys-src/sensiq-frontend/``)
+
+### Testing
+
+Run ``yarn test`` to run all vitest tests (specified in ``./src/test``)
+Or ``yarn test:coverage`` to also get your test coverage
+
+For visual testing run ``yarn dev`` to open a socket on your machine
+
+### Linting
+
+For linting run ``yarn lint``
+
+To automatically fix your linting issues (when possible) run ``yarn lint:fix``
+
+### Docker Containerization
+
+The docker container is built using the following files: ``.dockerignore``, ``Dockerfile``, ``docker-compose.yaml`` and ``nginx.conf``. The container can be built and run using the following commands:
+
+- Build the Docker image: ``docker build --tag sensiq-frontend-001 .`` (the "001" can be replaced with any version number)
+- View Docker images: ``docker images`` (should show "sensiq-frontend-001" in the list)
+- Run the Docker container: ``docker compose up --build`` (runs on port 8080)
+- Optional background run: ``docker compose up --build -d`` (runs in the background)
+- Show running containers: ``docker ps``
+- Stopping container: ``docker compose down``
+
+Open the frontend in your browser at ``http://localhost:8080``.
