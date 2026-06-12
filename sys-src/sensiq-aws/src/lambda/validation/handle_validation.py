@@ -6,8 +6,11 @@ from decimal import Decimal
 
 import boto3
 
-from alert_email import render_alert_email
-
+try:
+    from .alert_email import render_alert_email
+except ImportError:
+    from alert_email import render_alert_email
+    
 # The log level can be changed at runtime without redeploying by setting the
 # LOG_LEVEL environment variable on the Lambda function (e.g. to "DEBUG").
 # Logs are available in CloudWatch under "SensiqLiveStack-HandleValidation...".
