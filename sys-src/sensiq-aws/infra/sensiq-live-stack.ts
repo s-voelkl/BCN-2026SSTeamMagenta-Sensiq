@@ -11,13 +11,22 @@ import path from 'path';
 
 /**
  * Stack for the live data processing of Sensiq.
+ * 
+ * This stack includes:
+ * - An SNS topic for alerts, with email subscription.
+ * - A DynamoDB table for live sensor data, with a simple schema optimized for storing only the latest data per device.
+ * - A DynamoDB table to track sent alert emails and prevent spamming.
+ * - A Lambda function that validates incoming sensor data, saves it to the DynamoDB table, 
+ *    and publishes alerts to SNS if needed.
+ * - An IoT Topic Rule that triggers the Lambda function on incoming MQTT messages from devices.
+ * - A Lambda function that serves live data for the API Gateway, reading from the DynamoDB table.
  */
 export class SensiqLiveStack extends cdk.Stack {
-    // Exposed so the API Gateway stack can route GET /live to this existing
-    // Lambda instead of creating a second live-data Lambda without DynamoDB permissions.
-    public readonly lambdaHandleLiveData: lambda.IFunction;
+  // Exposed so the API Gateway stack can route GET /live to this existing
+  // Lambda instead of creating a second live-data Lambda without DynamoDB permissions.
+  public readonly lambdaHandleLiveData: lambda.IFunction;
 
-    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     // SNS topic for alerts

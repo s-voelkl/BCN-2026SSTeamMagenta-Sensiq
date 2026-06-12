@@ -4,14 +4,28 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 
-// The API stack only defines the REST API and routes.
-// The Lambda functions are created in their domain stacks so they keep their
-// required permissions close to the resources they access.
+/**
+ * Interface for the properties of the SensiqApiStack, which includes references to the Lambda
+ * functions from the live and history stacks that will handle the GET /live and GET /history routes, respectively.
+ */
 export interface SensiqApiStackProps extends cdk.StackProps {
     liveFunction: lambda.IFunction;
     historyFunction: lambda.IFunction;
 }
 
+/**
+ * Stack for the Sensiq API Gateway, serving live and historical sensor data.
+ * 
+ * This stack includes:
+ * - An API Gateway REST API with two routes: GET /live and GET /history.
+ * - An API key for authentication, stored securely in Secrets Manager.
+ * - A usage plan to limit the number of requests and prevent abuse.
+ * - CORS configuration to allow requests from any origin (adjustable as needed).
+ * - The GET /live route is integrated with a Lambda function from the live stack, 
+ *      which has permissions to read from the live DynamoDB table.
+ * - The GET /history route is integrated with a Lambda function from the history stack, 
+ *      which has permissions to query Athena and read from S3.
+ */
 export class SensiqApiStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: SensiqApiStackProps) {
         super(scope, id, props);

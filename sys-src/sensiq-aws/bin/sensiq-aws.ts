@@ -9,7 +9,7 @@ const app = new cdk.App();
 
 const deviceStack = new SensiqIotDeviceStack(app, 'SensiqIotDeviceStack');
 
-const historyStack = new SensiqHistoryStack(app, 'SensiqHistoryStack'); // eslint-disable-line
+const historyStack = new SensiqHistoryStack(app, 'SensiqHistoryStack');
 
 const liveStack = new SensiqLiveStack(app, 'SensiqLiveStack');
 
