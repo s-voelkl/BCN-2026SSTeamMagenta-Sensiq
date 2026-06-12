@@ -99,6 +99,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      # Ensures the config header is available for the compiler,
+      # even if the real credentials are not checked into the repo
+      - name: Provide config.h from template
+        run: |
+          if [ ! -f sys-src/sensiq-hardware/src/config.h ]; then
+            cp sys-src/sensiq-hardware/src/template_config_h.txt sys-src/sensiq-hardware/src/config.h
+          fi
+
       - name: Compile Arduino Sketch (${{ matrix.name }})
         uses: arduino/compile-sketches@v1.1.2
         with:
