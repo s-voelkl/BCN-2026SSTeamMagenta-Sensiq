@@ -142,11 +142,11 @@ def _partition_predicate(start: datetime, end: datetime) -> str:
 	return f"year BETWEEN '{start.year:04d}' AND '{end.year:04d}'"
 
 
-def build_query(query_params: Dict[str, str]) -> Tuple[str, List[str]]:
+def build_query(query_params: Dict[str, Any]) -> Tuple[str, List[str]]:
 	"""Build the parameterised Athena SQL query for a history request.
 
 	Combines a partition-pruning predicate (always present) with optional
-	timestamp-range predicates supplied via API Gateway query string parameters.
+	timestamp-range predicates supplied via API Gateway JSON body parameters.
 	The ``limit`` parameter is clamped to ``[1, MAX_RESULT_LIMIT]`` and falls back
 	to :data:`DEFAULT_RESULT_LIMIT` on invalid input. When neither ``startDate``
 	nor ``endDate`` is supplied, a :data:`DEFAULT_LOOKBACK_DAYS`-day window ending
@@ -154,9 +154,9 @@ def build_query(query_params: Dict[str, str]) -> Tuple[str, List[str]]:
 	emitted in that case.
 
 	Args:
-		query_params (Dict[str, str]): Raw query string parameters. Recognised keys:
+		query_params (Dict[str, Any]): Raw JSON body parameters. Recognised keys:
 
-			* ``limit`` (str, optional): Maximum rows to return.
+			* ``limit`` (int or str, optional): Maximum rows to return.
 			* ``startDate`` (str, optional): Inclusive lower bound, ISO 8601.
 			* ``endDate`` (str, optional): Inclusive upper bound, ISO 8601.
 
@@ -326,14 +326,14 @@ def fetch_and_format_results(query_execution_id: str) -> List[Dict[str, Any]]:
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 	"""Lambda entry point: query historical IoT sensor data via Athena.
 
-	Wired behind an API Gateway proxy integration on ``GET /history``. Builds a
-	parameterised Athena query from the request's ``queryStringParameters``,
+	Wired behind an API Gateway proxy integration on ``POST /history``. Builds a
+	parameterised Athena query from the request's JSON ``body``,
 	executes it against the workgroup/database supplied via environment variables,
 	waits for completion, and returns the result rows as JSON.
 
 	Args:
 		event (Dict[str, Any]): API Gateway proxy event. Recognised
-			``queryStringParameters`` keys:
+			keys in the JSON ``body``:
 
 			* ``limit`` (str, optional): Maximum number of records to return
 			  (default ``100``, capped at :data:`MAX_RESULT_LIMIT`).
@@ -346,6 +346,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 		Dict[str, Any]: API Gateway proxy response.
 
 			* ``200``: ``body`` is JSON ``{"data": [...rows]}`` on success.
+			* ``400``: ``body`` is JSON ``{"error": "Invalid JSON body"}`` if the request body is not valid JSON.
 			* ``500``: ``body`` is JSON ``{"error": "..."}`` on any failure
 			  (query failed, cancelled, timed out, or an unexpected exception).
 	"""
@@ -353,7 +354,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 	athena_workgroup = os.environ.get("ATHENA_WORKGROUP", "")
 	database_name = os.environ.get("DATABASE_NAME", "")
 
-	query_params: Dict[str, str] = event.get("queryStringParameters") or {}
+	body_str = event.get("body")
+	query_params: Dict[str, Any] = {}
+	if body_str:
+		try:
+			query_params = json.loads(body_str)
+		except json.JSONDecodeError:
+			return {
+				"statusCode": 400,
+				"headers": {"Content-Type": "application/json"},
+				"body": json.dumps({"error": "Invalid JSON body"}),
+			}
+
 	logger.info("Received request: query_params=%s", query_params)
 
 	try:

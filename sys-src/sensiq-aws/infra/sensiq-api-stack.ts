@@ -7,7 +7,7 @@ import { Construct } from 'constructs';
 
 /**
  * Interface for the properties of the SensiqApiStack, which includes references to the Lambda
- * functions from the live and history stacks that will handle the GET /live and GET /history routes, respectively.
+ * functions from the live and history stacks that will handle the POST /live and POST /history routes, respectively.
  */
 export interface SensiqApiStackProps extends cdk.StackProps {
     liveFunction: lambda.IFunction;
@@ -18,13 +18,13 @@ export interface SensiqApiStackProps extends cdk.StackProps {
  * Stack for the Sensiq API Gateway, serving live and historical sensor data.
  * 
  * This stack includes:
- * - An API Gateway REST API with two routes: GET /live and GET /history.
+ * - An API Gateway REST API with two routes: POST /live and POST /history.
  * - An API key for authentication, stored securely in Secrets Manager.
  * - A usage plan to limit the number of requests and prevent abuse.
  * - CORS configuration to allow requests from any origin.
- * - The GET /live route is integrated with a Lambda function from the live stack, 
+ * - The POST /live route is integrated with a Lambda function from the live stack, 
  *      which has permissions to read from the live DynamoDB table.
- * - The GET /history route is integrated with a Lambda function from the history stack, 
+ * - The POST /history route is integrated with a Lambda function from the history stack, 
  *      which has permissions to query Athena and read from S3.
  */
 export class SensiqApiStack extends cdk.Stack {
@@ -53,7 +53,7 @@ export class SensiqApiStack extends cdk.Stack {
             cloudWatchRole: true,
             defaultCorsPreflightOptions: {
                 allowOrigins: apigateway.Cors.ALL_ORIGINS,
-                allowMethods: ['GET', 'OPTIONS'],
+                allowMethods: ['POST', 'OPTIONS'],
                 allowHeaders: ['Content-Type', 'x-api-key'],
             },
             deployOptions: {
@@ -98,17 +98,17 @@ export class SensiqApiStack extends cdk.Stack {
 
         usagePlan.addApiKey(apiKey);
 
-        // GET /live is handled by the live stack Lambda, which already has
+        // POST /live is handled by the live stack Lambda, which already has
         // read access to the LiveDataDB DynamoDB table.
         const live = api.root.addResource('live');
-        live.addMethod('GET', new apigateway.LambdaIntegration(props.liveFunction), {
+        live.addMethod('POST', new apigateway.LambdaIntegration(props.liveFunction), {
             apiKeyRequired: true,
         });
 
-        // GET /history is handled by the history stack Lambda, which already has
+        // POST /history is handled by the history stack Lambda, which already has
         // the required Athena, Glue and S3 permissions.
         const history = api.root.addResource('history');
-        history.addMethod('GET', new apigateway.LambdaIntegration(props.historyFunction), {
+        history.addMethod('POST', new apigateway.LambdaIntegration(props.historyFunction), {
             apiKeyRequired: true,
         });
 

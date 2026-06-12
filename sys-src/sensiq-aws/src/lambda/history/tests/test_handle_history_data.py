@@ -218,7 +218,7 @@ class TestHandleHistoryData(unittest.TestCase):
 		mock_fetch.return_value = [{"temp": "20"}]
 
 		# Create an empty API Gateway proxy event structure that lambda receives.
-		event = {"queryStringParameters": {}}
+		event = {"body": "{}"}
 
 		# Mock the Lambda context object with MagicMock, since the handler does not utilize it.
 		context = MagicMock()

@@ -20,7 +20,7 @@ class TestHandleLiveData(unittest.TestCase):
             }
         }
         mock_db.Table.return_value = mock_table
-        event = {'queryStringParameters': {'device_id': 'esp32-lab-001'}}
+        event = {'body': json.dumps({'device_id': 'esp32-lab-001'})}
         result = handle_live_data.handler(event)
         self.assertEqual(result['statusCode'], 200)
         body = json.loads(result['body'])
@@ -37,7 +37,7 @@ class TestHandleLiveData(unittest.TestCase):
             }
         }
         mock_db.Table.return_value = mock_table
-        event = {'queryStringParameters': {'device_id': 'esp32-lab-001'}}
+        event = {'body': json.dumps({'device_id': 'esp32-lab-001'})}
         result = handle_live_data.handler(event)
         self.assertEqual(result['statusCode'], 200)    
 
@@ -52,7 +52,7 @@ class TestHandleLiveData(unittest.TestCase):
             }
         }
         mock_db.Table.return_value = mock_table
-        event = {'queryStringParameters': {'device_id': 'esp32-lab-001'}}
+        event = {'body': json.dumps({'device_id': 'esp32-lab-001'})}
         result = handle_live_data.handler(event)
         self.assertEqual(result['statusCode'], 200)
         body = json.loads(result['body'])
@@ -63,13 +63,13 @@ class TestHandleLiveData(unittest.TestCase):
         mock_table = MagicMock()
         mock_table.get_item.return_value = {}
         mock_db.Table.return_value = mock_table
-        event = {'queryStringParameters': {'device_id': 'esp32-unknown'}}
+        event = {'body': json.dumps({'device_id': 'esp32-unknown'})}
         result = handle_live_data.handler(event)
         self.assertEqual(result['statusCode'], 404)
 
     @patch('live.handle_live_data.dynamodb')
     def test_missing_device_id_returns_400(self, mock_db):
-        event = {'queryStringParameters': None}
+        event = {'body': None}
         result = handle_live_data.handler(event)
         self.assertEqual(result['statusCode'], 400)
         body = json.loads(result['body'])
@@ -80,7 +80,7 @@ class TestHandleLiveData(unittest.TestCase):
         mock_table = MagicMock()
         mock_table.get_item.side_effect = Exception("Connection error")
         mock_db.Table.return_value = mock_table
-        event = {'queryStringParameters': {'device_id': 'esp32-lab-001'}}
+        event = {'body': json.dumps({'device_id': 'esp32-lab-001'})}
         result = handle_live_data.handler(event)
         self.assertEqual(result['statusCode'], 500)
     
@@ -101,7 +101,7 @@ class TestHandleLiveData(unittest.TestCase):
         }
         mock_db.Table.return_value = mock_table
         
-        event = {'queryStringParameters': {'device_id': 'esp32-lab-002'}}
+        event = {'body': json.dumps({'device_id': 'esp32-lab-002'})}
         result = handle_live_data.handler(event)
         
         self.assertEqual(result['statusCode'], 437)
@@ -121,7 +121,7 @@ class TestHandleLiveData(unittest.TestCase):
             }
         }
         mock_db.Table.return_value = mock_table
-        event = {'queryStringParameters': {'device_id': 'esp32-lab-001'}}
+        event = {'body': json.dumps({'device_id': 'esp32-lab-001'})}
         result = handle_live_data.handler(event)
         
         self.assertEqual(result['statusCode'], 200)
@@ -139,7 +139,7 @@ class TestHandleLiveData(unittest.TestCase):
             }
         }
         mock_db.Table.return_value = mock_table
-        event = {'queryStringParameters': {'device_id': 'esp32-lab-001'}}
+        event = {'body': json.dumps({'device_id': 'esp32-lab-001'})}
         result = handle_live_data.handler(event)
         
         self.assertEqual(result['statusCode'], 200)

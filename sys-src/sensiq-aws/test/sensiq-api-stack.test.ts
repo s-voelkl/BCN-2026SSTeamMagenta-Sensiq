@@ -72,13 +72,13 @@ test('API key value is a Secrets Manager dynamic reference (no plaintext in temp
     });
 });
 
-test('GET /live route is created with Lambda proxy integration', () => {
+test('POST /live route is created with Lambda proxy integration', () => {
     template.hasResourceProperties('AWS::ApiGateway::Resource', {
         PathPart: 'live',
     });
 
     template.hasResourceProperties('AWS::ApiGateway::Method', {
-        HttpMethod: 'GET',
+        HttpMethod: 'POST',
         AuthorizationType: 'NONE',
         Integration: Match.objectLike({
             Type: 'AWS_PROXY',
@@ -87,13 +87,13 @@ test('GET /live route is created with Lambda proxy integration', () => {
     });
 });
 
-test('GET /history route is created with Lambda proxy integration', () => {
+test('POST /history route is created with Lambda proxy integration', () => {
     template.hasResourceProperties('AWS::ApiGateway::Resource', {
         PathPart: 'history',
     });
 
     template.hasResourceProperties('AWS::ApiGateway::Method', {
-        HttpMethod: 'GET',
+        HttpMethod: 'POST',
         AuthorizationType: 'NONE',
         Integration: Match.objectLike({
             Type: 'AWS_PROXY',
@@ -163,9 +163,9 @@ test('API Gateway usage plan is linked to an API key', () => {
     template.resourceCountIs('AWS::ApiGateway::UsagePlanKey', 1);
 });
 
-test('both GET methods require an API key', () => {
+test('both POST methods require an API key', () => {
     template.resourcePropertiesCountIs('AWS::ApiGateway::Method', {
-        HttpMethod: 'GET',
+        HttpMethod: 'POST',
         ApiKeyRequired: true,
     }, 2);
 });
