@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
-import { SensiqLiveStack } from '../infra/sensiq-live-stack'; 
-import { Template} from 'aws-cdk-lib/assertions';
+import { SensiqLiveStack } from '../infra/sensiq-live-stack';
+import { Template } from 'aws-cdk-lib/assertions';
 
 let template: Template;
 
@@ -13,7 +13,7 @@ beforeAll(() => {
 test('Lambda has correct runtime and timeout', () => {
     template.hasResourceProperties('AWS::Lambda::Function', {
         Runtime: 'python3.12',
-        Timeout: 15,
+        Timeout: 29,
     });
 });
 

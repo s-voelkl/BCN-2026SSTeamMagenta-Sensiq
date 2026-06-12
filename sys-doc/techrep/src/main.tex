@@ -1,0 +1,187 @@
+\documentclass[conference,a4paper,flushend]{cs-techrep} % (based on IEEEtran.cls)
+
+% The class iaria.cls loads biblatex/biber with correct IARIA settings
+% as well as a set of common packages (times, inputenc[utf8], fontenc[T1],
+% graphicx, xcolor, url, orcidlink, hyperref, extdash[shortcuts])
+
+% Packages (self-added, not included in cs-techrep.cls):
+\usepackage[shortlabels]{enumitem} % Verbesserte Einstellungsmöglichkeiten von Listen. Nicht bei Beamer anwendbar
+% \setlist{itemsep=1ex, topsep=1em}
+% \usepackage{graphicx} % Required for inserting images
+\usepackage{csquotes} % Korrekte Anführungszeichen setzen. Sprachspezifisch möglich. mit \setquotestyle{style} und \enquote{}.
+% \usepackage[american]{babel} % Ändert die Darstellung des Datums in amerikanische Darstellung.
+\usepackage{hyperref}
+\usepackage[capitalise,nameinlink,noabbrev]{cleveref} % Referenzen besser machen. z.B. mit \cref{}. needs hyperref defined before it.
+% \usepackage[backend=biber, style=ieee, alldates=iso]{biblatex} % Zitieren
+% \usepackage{array} % Tabellen mit \begin{tabular}
+\usepackage{multirow} % Mehrere Zeilen in eine zusammenfassen. für Spalten einfach \multicolumn benutzen
+\usepackage{booktabs} % Hübschere Tabellen mit \top/mid/cmid/bottomrule
+\usepackage{minted} % Neuere Bibliothek für Code-Blöcke, mit \begin{listing oder minted}
+\usepackage{amsmath} % American Mathematical Society für mathematische Formeln, z.B. mit \begin{equation}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{siunitx}
+\usepackage{array}
+\usepackage{tabularx}
+
+\addbibresource{references.bib}
+% \addbibresource{xampl.bib} % (xampl file provided by the BibTEX base files)
+% ======================================================================
+% EDIT THESE:
+\cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0000-0002-1175-2668}}
+\cstechrepAuthorListBib{Simon Völkl and Johannes Schieder and Sebastian Rosner and Andre Tien Vu}
+% Capitalization: https://capitalizemytitle.com/style/Chicago/
+\cstechrepTitleTex{Sensiq} 
+% TODO: New title with Hardware, IoT, AWS, Environmental Monitoring, ...
+ % IF you need manual linebreaks in the title, then clone the title without linebreaks for BibTeX:
+\cstechrepTitleBib{{\cstechrepTitleTex}}
+\cstechrepDepartment{Department of Electrical Engineering, Media, and Computer Science}
+\cstechrepInstitution{Ostbayerische Technische Hochschule Amberg\-/Weiden}
+\cstechrepAddress{Amberg, Germany}
+\cstechrepSeries{Technical Reports}
+\cstechrepYear{2026}
+\cstechrepMonth{7}
+\cstechrepNumber{CL-\cstechrepYear{}-42}
+\cstechrepLang{english}  % en-US
+% ======================================================================
+% DO NOT DELETE AND DO NOT MODIFY THIS:
+\filecontentsForceExpansion|[] % force command expansion inside a filecontents* environment
+\begin{filecontents*}[overwrite]{selfref.bib}
+    @TECHREPORT{selfref,
+        author = {|cstechrepAuthorListBib},
+        title  = {\cstechrepTitleBib},
+        institution = {\cstechrepInstitution, \cstechrepDepartment},
+        series = {\cstechrepSeries},
+        number = {\cstechrepNumber},
+        year   = {|cstechrepYear},
+        month  = {|cstechrepMonth},
+        langid  = {|cstechrepLang},
+    }
+\end{filecontents*}
+
+\begin{document}
+\selectlanguage{\cstechrepLang}
+\maketitle
+
+\begin{abstract}
+	% TODO: Abstract
+\end{abstract}
+\begin{IEEEkeywords}
+	% TODO: Keywords
+\end{IEEEkeywords}
+
+% ======================================================================
+% Content sections — each kept in a separate .tex file to simplify
+% version control and parallel editing.
+% ======================================================================
+\input{sec_introduction.tex}
+\input{sec_related_work.tex}
+\input{sec_technical_concept.tex}
+\input{sec_hardware.tex}
+\input{sec_aws_services.tex}
+\input{sec_user_interaction.tex}
+\input{sec_evaluation.tex}
+\input{sec_summary.tex}
+
+% ======== References =========
+\sloppy
+\printbibliography[notcategory=selfref]
+
+\end{document}
+
+% ======================================================================
+% TEMPLATES
+% The following snippets are preserved as reference templates for tables,
+% figures, listings, and other recurring constructs. They are kept here
+% (after \end{document}) so they are not compiled but remain available
+% for copy-and-paste into the new section files.
+% ======================================================================
+
+% ---------- Template: Comparison Table (tabularx, booktabs) ------------
+% \begin{table}[htb]
+%     \centering
+%     \caption{Comparative Analysis of Monitoring Architectures}
+%     \label{tab:comparison}
+%     \small
+%     \begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}X c c c}
+%         \toprule
+%         \textbf{Feature} & \textbf{Col A} & \textbf{Col B} & \textbf{Col C} \\
+%         \midrule
+%         Row 1 & Yes & Yes & Yes \\
+%         Row 2 & Limited & High & High \\
+%         \midrule
+%         \textbf{Suitability} & \textbf{Medium} & \textbf{Medium} & \textbf{High} \\
+%         \bottomrule
+%     \end{tabularx}
+% \end{table}
+
+% ---------- Template: MoSCoW-style Table --------------------------------
+% \begin{table}[!h]
+%     \centering
+%     \caption{MoSCoW Prioritization of User Stories}
+%     \label{tab:moscow_prioritization}
+%     \begin{tabularx}{0.9\linewidth}{>{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}X}
+%         \toprule
+%         \textbf{Category} & \textbf{User Stories} \\
+%         \midrule
+%         Must Have   & \hyperref[sec:us_01]{Story A}, \hyperref[sec:us_02]{Story B} \\
+%         Should Have & \hyperref[sec:us_03]{Story C} \\
+%         Could Have  & \hyperref[sec:us_04]{Story D} \\
+%         Won't Have  & \hyperref[sec:us_05]{Story E} \\
+%         \bottomrule
+%     \end{tabularx}
+% \end{table}
+
+% ---------- Template: Wide Cost-Estimation Table (table*) ---------------
+% \begin{table*}[!htb]
+%     \centering
+%     \caption{Cost Estimation for AWS Services}
+%     \label{tab:aws-costs}
+%     \begin{tabularx}{0.8\textwidth}{>{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}r >{\raggedright\arraybackslash}r}
+%         \toprule
+%         \textbf{Service Details} & \textbf{Usage/Quantity} & \textbf{Free Tier} & \textbf{Post Free Tier} \\
+%         \midrule
+%         Service A & Usage A & \$0.00 & \(\sim\)\$0.06 \\
+%         Service B & Usage B & \(\sim\)\$0.01 & \(\sim\)\$0.08 \\
+%         \midrule
+%         \textbf{Total} & & \textbf{\(\sim\)\$0.46} & \textbf{\(\sim\)\$0.73} \\
+%         \bottomrule
+%     \end{tabularx}
+% \end{table*}
+
+% ---------- Template: Full-width Figure (figure*) -----------------------
+% \begin{figure*}[!tb]
+%   \centering
+%   \includegraphics[width=\textwidth]{architecture.pdf}
+%   \caption{Cloud Processing Architecture}
+%   \label{fig:cloud-architecture}
+% \end{figure*}
+
+% ---------- Template: JSON Code Listing ---------------------------------
+% \begin{lstlisting}[language=json, float, caption={Example JSON data model.}, label={lst:data_model_json}]
+% {
+%   "deviceId": "esp32-lab-01",
+%   "measurements": {
+%     "dht11_temperature": { "value": 20, "unit": "degree C" }
+%   }
+% }
+% \end{lstlisting}
+
+% ---------- Template: Description List (Personas etc.) ------------------
+% \begin{description}
+%     \item[Persona Name] Short description of role, goals, and interests.
+% \end{description}
+
+% ---------- Template: Itemized Acceptance Criteria ----------------------
+% \begin{itemize}
+%     \item Criterion 1: measurable expectation with input/output.
+%     \item Criterion 2: timing requirement (e.g., update within 10\,s).
+% \end{itemize}
+
+% ---------- Template: Block Quote (User Story) --------------------------
+% \begin{quote}
+%     \textit{As <Persona>, I want <goal>, so that <benefit>.}
+% \end{quote}
