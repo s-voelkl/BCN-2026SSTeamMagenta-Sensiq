@@ -50,6 +50,7 @@ export class SensiqApiStack extends cdk.Stack {
         const api = new apigateway.RestApi(this, 'SensiqRestApi', {
             restApiName: 'sensiq-api',
             description: 'REST API for Sensiq live and historical sensor data.',
+            cloudWatchRole: true,
             defaultCorsPreflightOptions: {
                 allowOrigins: apigateway.Cors.ALL_ORIGINS,
                 allowMethods: ['GET', 'OPTIONS'],
