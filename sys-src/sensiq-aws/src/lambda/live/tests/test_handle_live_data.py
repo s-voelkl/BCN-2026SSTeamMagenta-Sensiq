@@ -157,7 +157,7 @@ class TestHandleLiveData(unittest.TestCase):
         
         self.assertEqual(headers.get('Access-Control-Allow-Origin'), '*')
         self.assertEqual(headers.get('Content-Type'), 'application/json')
-        self.assertIn('GET', headers.get('Access-Control-Allow-Methods', ''))        
+        self.assertIn('POST', headers.get('Access-Control-Allow-Methods', ''))        
         
 
 

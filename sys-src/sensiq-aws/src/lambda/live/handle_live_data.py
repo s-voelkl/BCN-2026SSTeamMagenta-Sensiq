@@ -21,7 +21,7 @@ dynamodb = boto3.resource("dynamodb")
 RESPONSE_HEADERS = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
 
 # A device is considered offline if its most recent sample is older than this
