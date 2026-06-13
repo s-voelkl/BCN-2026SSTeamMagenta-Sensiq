@@ -56,13 +56,13 @@ def handler(event, context=None):
     """Return the latest sample for a device and report its online status.
 
     The function expects an API Gateway proxy event containing a ``device_id``
-    query string parameter, looks up the matching item in the ``LiveDataDB``
+    parameter in the JSON body, looks up the matching item in the ``LiveDataDB``
     DynamoDB table, and decides whether the device is still considered online
     based on the age of its most recent timestamp.
 
     Response status codes:
         200: Device found and the latest sample is recent.
-        400: The ``device_id`` query parameter is missing.
+        400: The ``device_id`` parameter is missing, or the body is invalid.
         404: No entry exists for the given device.
         437: Device is offline (last sample older than the threshold).
         500: Unexpected server-side or database error.
@@ -70,14 +70,21 @@ def handler(event, context=None):
     logger.info(f"Received request: {json.dumps(event)}")
 
     try:
-        params = event.get("queryStringParameters") or {}
+        body_str = event.get("body")
+        params = {}
+        if body_str:
+            try:
+                params = json.loads(body_str)
+            except json.JSONDecodeError:
+                return _response(400, {"error": "Invalid JSON body"})
+                
         device_id = params.get("device_id")
 
         if not device_id:
             logger.error("Missing device_id")
             return _response(400, {"error": "Missing required parameter: device_id"})
 
-        # Retrieve the latest (only) item for the device from DynamoDB. 
+        # Retrieve the latest (only) item for the device from DynamoDB.
         # Requires the table to have a device_id (partition key) and timestamp.
         table = dynamodb.Table(TABLE_NAME)
         item = table.get_item(Key={"device_id": device_id}).get("Item")

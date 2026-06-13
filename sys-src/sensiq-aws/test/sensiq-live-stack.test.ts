@@ -10,6 +10,36 @@ beforeAll(() => {
     template = Template.fromStack(stack);
 });
 
+test('Email subscription is created when alertEmail context is provided', () => {
+    const app = new cdk.App({
+        context: { alertEmail: 'test@example.com' },
+    });
+    const stack = new SensiqLiveStack(app, 'TestLiveStackWithEmail');
+    const t = Template.fromStack(stack);
+
+    t.hasResourceProperties('AWS::SNS::Subscription', {
+        Protocol: 'email',
+        Endpoint: 'test@example.com',
+    });
+
+    // No CfnOutput about missing alert email should be created
+    const outputs = t.findOutputs('AlertEmailOutput');
+    expect(Object.keys(outputs)).toHaveLength(0);
+});
+
+test('CfnOutput is created when alertEmail context is not provided', () => {
+    const app = new cdk.App();
+    const stack = new SensiqLiveStack(app, 'TestLiveStackNoEmail');
+    const t = Template.fromStack(stack);
+
+    t.hasOutput('AlertEmailOutput', {
+        Value: Match.stringLikeRegexp('No alert email configured.*'),
+    });
+
+    // No email subscription should exist
+    t.resourceCountIs('AWS::SNS::Subscription', 0);
+});
+
 test('Table created correctly', () => {
     template.hasResourceProperties('AWS::DynamoDB::Table', {
         TableName: 'LiveDataDB',
