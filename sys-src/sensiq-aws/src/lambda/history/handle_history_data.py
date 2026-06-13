@@ -362,7 +362,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 		except json.JSONDecodeError:
 			return {
 				"statusCode": 400,
-				"headers": {"Content-Type": "application/json"},
+				"headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
 				"body": json.dumps({"error": "Invalid JSON body"}),
 			}
 
@@ -407,6 +407,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 		logger.exception("Unhandled error while processing request")
 		return {
 			"statusCode": 500,
-			"headers": {"Content-Type": "application/json"},
+			"headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
 			"body": json.dumps({"error": str(e)}),
 		}
