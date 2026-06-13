@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { /* SensorSchema,*/ type SensorData, type SensorHistory, type TimeRanges } from '../types/dashboard'
+import { SensorSchema, type SensorData, type SensorHistory, type TimeRanges } from '../types/dashboard'
+
+const api_key = import.meta.env.VITE_API_KEY;
+const api_url = import.meta.env.VITE_API_URL;
 
 export const mockLiveDataActiveDevice: SensorData = {
   running_time: 111164587,
@@ -94,15 +97,17 @@ export const mockHistoryData: SensorHistory = [
 
 // this function fetches the live data from API Gateway and parses it using the SensorSchema
 const fetchLiveData = async (): Promise<SensorData> => {
-  // const res = await fetch('https://jsonplaceholder.typicode.com/todos/1', {
-  //   // headers: {
-  //   //   'x-api-key':    "<Replace API Key here>",
-  //   //   'Content-Type': 'application/json',
-  //   // },
-  // })
-  // if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard data`)
-  // return SensorSchema.parse(await res.json())
-  return mockLiveDataActiveDevice // replace this line with the above code to fetch real data from the API
+  const res = await fetch(`${api_url}/live`, {
+    method: "POST",
+    headers: {
+      'x-api-key': api_key,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ device_id: "esp32-lab-001" }),
+  })
+  console.log(api_key)
+  if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard data`)
+  return SensorSchema.parse(await res.json())
 }
 
 // fetches data every 5 seconds for live updates
@@ -110,6 +115,7 @@ export function useLiveData() {
   return useQuery<SensorData>({
     queryKey: ['liveData'],
     queryFn: fetchLiveData,
+    placeholderData: mockLiveData,
     refetchInterval: 5000, // Refetch every 5 seconds for live updates
     staleTime: 0,
   })
@@ -130,21 +136,23 @@ export function useLiveData() {
 //   "endDate": "2028-12-31T23:59:59Z"
 // }
 const fetchHistoryData = async (): Promise<SensorHistory> => {
-  // const res = await fetch('<REPLACE_WITH_API_ENDPOINT>?range={range}', {
-  //   // headers: {
-  //   //   'x-api-key':    "<Replace API Key here>",
-  //   //   'Content-Type': 'application/json',
-  //   // },
-  // })
-  // if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard data`)
-  // return res.json()
-  return mockHistoryData // replace this line with the above code to fetch real data from the API
+  const res = await fetch(`${api_url}/history`, {
+    method: "POST",
+    headers: {
+      'x-api-key': api_key,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ device_id: 'esp32-lab-001' })
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard data`)
+  return res.json()
 }
 
 // not in use yet
 export function useHistoryData(range: TimeRanges) {
   return useQuery<SensorHistory>({
     queryKey: ['historyData', range],
+    placeholderData: mockHistoryData,
     queryFn: () => fetchHistoryData(), // pass range as prop to fetch different time ranges from the API (remove for linting)
     staleTime: 0,
   })
