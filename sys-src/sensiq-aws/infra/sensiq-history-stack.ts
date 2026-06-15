@@ -131,6 +131,13 @@ export class SensiqHistoryStack extends cdk.Stack {
                         { name: 'thermistor_analog', type: 'int' },
                         { name: 'thermistor_digital', type: 'boolean' },
                         { name: 'thermistor_temp', type: 'double' },
+                        { name: 'bme_heated_up', type: 'boolean' },
+                        { name: 'bme_temperature', type: 'double' },
+                        { name: 'bme_humidity', type: 'double' },
+                        { name: 'bme_pressure', type: 'double' },
+                        { name: 'bme_altitude', type: 'double' },
+                        { name: 'bme_voc', type: 'double' },
+                        { name: 'tsl_lux', type: 'double' },
                         { name: 'is_outlier', type: 'boolean' },
                         { name: 'collect_training', type: 'boolean' }
                     ],
