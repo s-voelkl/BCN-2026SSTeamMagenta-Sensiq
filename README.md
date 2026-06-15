@@ -1,19 +1,25 @@
 # BCN-2026SSTeamMagenta-Sensiq
 
+Sensiq: Serverless IoT Environmental Monitoring
+
+Sensiq is an end-to-end microcontroller-based Internet of Things (IoT) architecture designed to monitor critical indoor environment quality (IEQ) parameters such as temperature, humidity, light intensity, gas concentration, and flame exposure in real time.
+
+By combining inexpensive ESP32 sensor edge devices with a serverless Amazon Web Services (AWS) cloud backend, Sensiq delivers reliable, low-latency live monitoring alongside cost-efficient historical analytics.
+
+**Key Features:**
+
+- **Edge Node:** ESP32-based multi-sensor array transmitting data via TLS-secured MQTT.
+- **Serverless Cloud:** AWS backend for data validation, long-term persistence, and REST API exposure.
+- **Web Frontend:** React-based dashboard for visualizing live and historical data without vendor lock-in.
+- **Alerting:** Threshold-driven email notifications for critical, safety-relevant events.
+
 ## Usage
 
-For usage instructions, please refer to the the [usage.md file](usage.md) in the root directory of this repository.
+For usage instructions, please refer to the [usage.md file](USAGE.md) in the root directory of this repository.
 
 ## License
 
 The source files are licensed under the MIT License; the documentation is licensed under the Creative Commons Attribution 4.0 International License.
-
-<!-- This repository is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
-The [documentation](doc/) is licensed under the Creative Commons Attribution 4.0 International License. See the [LICENSE](doc/LICENSE) file for more details. -->
-
-## Project structure
-
-<!-- For the recommended project structure, see the given [slides](https://moodle.oth-aw.de/pluginfile.php/480813/mod_resource/content/0/BCN_SU01_50_Benotung.pdf) on page 51. -->
 
 ## Code Coverage
 
@@ -21,77 +27,14 @@ The hardware code coverage results can be obtained from ``sys-src/sensiq-hardwar
 
 The AWS code coverage can be splitted into Python lambda handlers and the AWS infrastructure code.
 The Python code coverage results can be obtained from ``sys-src/sensiq-aws/coverage/pytest-lambda-coverage.md``; the Typescript code coverage results using Jest can be found in the ``sys-src/sensiq-aws/coverage/jest-aws-coverage`` directory.
+Frontend code coverage results can be found in the ``sys-src/sensiq-frontend/coverage`` directory.
 
-<!-- TODO: Frontend code coverage -->
+## Hardware Unit
 
-## Hardware
+Assembled hardware unit with all sensors and components:
+![Assembled hardware unit with all sensors and components](sys-doc/techrep/src/hardware-picture.png)
 
-### Example JSON Payload
-
-```json
-{
-    "running_time":9881892,
-    "timestamp":"2026-05-25T22:56:12Z",
-    "device_id":"esp32-lab-001",
-    "location":"Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany",
-    "dht_humidity":61,
-    "dht_temperature":23.8,
-    "dht_heat_index":23.82809,
-    "flame_analog":0,
-    "flame_digital":false,
-    "thermistor_analog":2005,
-    "thermistor_digital":false,
-    "thermistor_temp":24.05634,
-    "is_outlier":false, // tbd, not implemented yet!
-    "collect_training":false // tbd, not implemented yet!
-}
-```
-
-## User Interface
-
-### API Gateway
-
-The API Gateway is configured with a timeout of 29 seconds, which is the maximum allowed by AWS.
-If queries on the Athena database take longer than 29 seconds to execute, the API Gateway will return a 504 Timeout Error.
-If this problem consistently occurs, a switch from synchronous to asynchronous processing may be necessary.
-
-## AWS IoT Core
-
-Additional Information on topic declaration found in the [docs](https://docs.aws.amazon.com/iot/latest/developerguide/iot-action-resources.html).
-
-## AWS History Branch
-
-### S3 Bucket
-
-Partitioning: A too high granularity (e.g. by seconds) leads to a small file problem and
-leads to a very bad performance. So the buffering in Kinesis Firehose should be set to 5 to 15 minutes or
-until a file size of n MB is reached. The Partitioning with year/month/day would be enough.
-[Using Partition Projection with Amazon Athena](https://docs.aws.amazon.com/athena/latest/ug/partition-projection.html)
-
-File Format: Apache Parquet is being used as file format, guaranteeing minimal storage and good performance.
-
-As the type of S3 bucket, the standard storage class is used, as the data is accessed and changed frequently,
-the access must have low latency and high throughput, and the cost should be kept low (see [Docs](https://aws.amazon.com/de/s3/storage-classes/)).
-
-[Amazon S3 Lifecycle Configurations User Guide](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html)
-
-### Athena
-
-[AWS Athena Docs](https://docs.aws.amazon.com/athena/latest/ug/getting-started.html)
-
-[Managing Athena Workgroups to Control Costs](https://docs.aws.amazon.com/athena/latest/ug/workgroups-manage-queries-control-costs.html)
-
-### Lambda Handle History Data
-
-For a safe usage of Athena, the Lambda function uses prepared statements to prevent SQL injection and ensure that user input is properly sanitized before being included in the query execution. The query is built with parameters as limit, startDate and endDate for flexible filtering from the client side.
-[Querying with Prepared Statements in Athena](https://docs.aws.amazon.com/athena/latest/ug/querying-with-prepared-statements-querying.html)
-[Athena Query Execution States API Reference](https://docs.aws.amazon.com/athena/latest/APIReference/API_QueryExecutionStatus.html)
-
-During the wait for a response from Athena, the Lambda function implements a polling mechanism that periodically checks the status of the query execution. The query execution status can be one of the following: QUEUED, RUNNING, SUCCEEDED, FAILED, or CANCELLED. After a given timeout threshold (e.g., 25 seconds to stay within the API Gateway limit), if the query has not reached a terminal state (SUCCEEDED, FAILED, or CANCELLED), the Lambda function will return a timeout response to the client, indicating that the query is still processing and advising them to check back later for results.
-
-After receiving a successful response from Athena, the Lambda function retrieves the query results and transforms them into a JSON structure that can be easily consumed by the client application. Dependent on the success or failure of the query execution, the Lambda function returns an appropriate HTTP response code (e.g., 200 for success, 500 for server error) along with a JSON body containing either the query results or error details.
-
-The methods were fully tested with unit tests using the unittest framework and mocks.
+Logical architecture of the hardware unit, see [circuit diagram](sys-doc\kicad-hardware-schematic\circuit_diagram_pdf\kicad-project.pdf).
 
 ### Glue Data Catalog
 
@@ -190,12 +133,30 @@ State if you are open to contributions and what your requirements are for accept
 For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
 
 You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+## AWS Architecture
+
+AWS architecture diagram:
+
+![Architecture diagram](sys-doc/techrep/src/BCN_Archictecture.png)
+<!-- TODO: Check if this really exists -->
+
+## React Frontend
+
+Example of the React frontend dashboard:
+
+![Example of the React frontend dashboard](sys-doc/techrep/src/frontend-dashboard.png)
+<!-- TODO: Check if this really exists -->
+
+## Alerting System
+
+An example of an email alert triggered by the alerting system:
+
+![An example of an email alert triggered by the alerting system](sys-doc/techrep/src/email-alert.png)
+
+<!-- TODO: Update with alerting system details -->
 
 ## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
 
-## License
-For open source projects, say how it is licensed.
+Authors of this repository are Simon Völkl ([s.voelkl2@oth-aw.de](mailto:s.voelkl2@oth-aw.de)), Johannes Schieder ([j.schieder@oth-aw.de](mailto:j.schieder@oth-aw.de)), Sebastian Rosner ([s.rosner@oth-aw.de](mailto:s.rosner@oth-aw.de)), and Andre Tien Vu ([a.vu@oth-aw.de](mailto:a.vu@oth-aw.de)). We would like to thank our professor Dr.-Ing. Christoph Neumann for his support and guidance throughout the project.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers. -->
+Support available for this project is limited. Please feel free to reach out to us via email.
