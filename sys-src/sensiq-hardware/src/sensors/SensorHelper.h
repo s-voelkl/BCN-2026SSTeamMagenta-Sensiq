@@ -30,6 +30,8 @@ struct SensorData
     float bmeAltitude;
     float bmeVOC;
 
+    float tslLux;
+
     bool isOutlier;
     bool collectTraining;
 };

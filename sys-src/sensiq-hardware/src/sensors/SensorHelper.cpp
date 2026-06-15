@@ -2,6 +2,7 @@
 #include "../config.h"
 
 #include "Adafruit_BME680.h"
+#include <Adafruit_TSL2561_U.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_Sensor.h>
@@ -34,6 +35,7 @@
 // Sensor instances
 DHT dht11(DHT_PIN, DHTTYPE);
 Adafruit_BME680 bme(BME_CS, BME_SDA_MOSI, BME_SDO_MISO, BME_SCL);
+Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 2);
 
 /**
  * @brief Initialize all sensors.
@@ -65,6 +67,38 @@ void initSensors()
     bme.setPressureOversampling(BME680_OS_4X);
     bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
     bme.setGasHeater(320, 150); // 320*C for 150 ms
+
+    // Init TSL2561 sensor
+    if (!tsl.begin())
+    {
+        Serial.println("No TSL2561 detected!");
+    }
+    else
+    {
+        // Auto-gain: switches between 1x and 16x gain based on the light level
+        tsl.enableAutoRange(true);
+
+        // Integration time setting for tradeoff between sensor resolution and speed (402ms = 16-bit data)
+        // 13MS, 101MS, or 402MS (highest resolution, slower updates).
+        tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);
+    }
+
+    // TODO: remove after testing
+    Serial.print("Sensor:       ");
+    Serial.println(sensor.name);
+    Serial.print("Driver Ver:   ");
+    Serial.println(sensor.version);
+    Serial.print("Unique ID:    ");
+    Serial.println(sensor.sensor_id);
+    Serial.print("Max Value:    ");
+    Serial.print(sensor.max_value);
+    Serial.println(" lux");
+    Serial.print("Min Value:    ");
+    Serial.print(sensor.min_value);
+    Serial.println(" lux");
+    Serial.print("Resolution:   ");
+    Serial.print(sensor.resolution);
+    Serial.println(" lux");
 
     Serial.println("Sensors initialized.");
 }
@@ -144,6 +178,10 @@ SensorData readSensors()
         data.bmeVOC = NAN;
     }
 
+    sensors_event_t sensorEvent;
+    tsl.getEvent(&sensorEvent);
+    data.tslLux = sensorEvent.light ? sensorEvent.light : NAN;
+
     return data;
 }
 
@@ -212,6 +250,7 @@ SensorData getMeanSensorData(const SensorData *dataList, int count)
     long flameAnalogSum = 0, thermistorAnalogSum = 0;
     int flameDigitalSum = 0, thermistorDigitalSum = 0, isOutlierSum = 0, collectTrainingSum = 0;
     float bmeTempSum = 0, bmeHumSum = 0, bmePresSum = 0, bmeAltSum = 0, bmeVocSum = 0;
+    float tslLuxSum = 0;
     int bmeHeatedUpSum = 0;
 
     for (int i = 0; i < count; i++)
@@ -232,6 +271,7 @@ SensorData getMeanSensorData(const SensorData *dataList, int count)
         bmePresSum += isnan(dataList[i].bmePressure) ? 0 : dataList[i].bmePressure;
         bmeAltSum += isnan(dataList[i].bmeAltitude) ? 0 : dataList[i].bmeAltitude;
         bmeVocSum += isnan(dataList[i].bmeVOC) ? 0 : dataList[i].bmeVOC;
+        tslLuxSum += isnan(dataList[i].tslLux) ? 0 : dataList[i].tslLux;
         bmeHeatedUpSum += dataList[i].bmeHeatedUp ? 1 : 0;
     }
 
@@ -251,6 +291,7 @@ SensorData getMeanSensorData(const SensorData *dataList, int count)
     meanData.bmePressure = bmePresSum / count;
     meanData.bmeAltitude = bmeAltSum / count;
     meanData.bmeVOC = bmeVocSum / count;
+    meanData.tslLux = tslLuxSum / count;
     meanData.bmeHeatedUp = (bmeHeatedUpSum > count / 2);
 
     return meanData;
@@ -323,6 +364,8 @@ String buildJsonString(const SensorData &data)
     doc["bme_pressure"] = data.bmePressure;
     doc["bme_altitude"] = data.bmeAltitude;
     doc["bme_voc"] = data.bmeVOC;
+
+    doc["tsl_lux"] = data.tslLux;
 
     doc["is_outlier"] = data.isOutlier;
     doc["collect_training"] = data.collectTraining;
