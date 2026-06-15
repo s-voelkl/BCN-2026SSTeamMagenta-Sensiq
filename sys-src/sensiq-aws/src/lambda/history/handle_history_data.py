@@ -66,6 +66,18 @@ def _parse_iso(date_str: str) -> Optional[datetime]:
 		return None
 
 
+def _athena_timestamp_to_iso(value: Optional[str]) -> Optional[str]:
+    """Convert Athena's 'YYYY-MM-DD HH:MM:SS[.fff]' string to ISO 8601 UTC ('...Z')."""
+    if value is None:
+        return None
+    try:
+        dt = datetime.fromisoformat(value)  # space separator + optional .fff OK on 3.11+
+    except ValueError:
+        return value  # unexpected format: leave as-is rather than corrupt it
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)  # stored data is UTC
+    return dt.isoformat().replace("+00:00", "Z")
+
 def _partition_predicate(start: datetime, end: datetime) -> str:
 	"""Build a SQL ``WHERE`` fragment that lets Athena prune Glue partitions.
 
@@ -310,14 +322,20 @@ def fetch_and_format_results(query_execution_id: str) -> List[Dict[str, Any]]:
 	# once and zip them in via index rather than re-reading metadata per row.
 	column_info = results_response["ResultSet"]["ResultSetMetadata"]["ColumnInfo"]
 	columns: List[str] = [col["Name"] for col in column_info]
+	column_types: List[str] = [col["Type"] for col in column_info]
 
 	# Athena prepends a header row containing the column names; only the
 	# subsequent rows carry actual data.
-	data_rows = results_response["ResultSet"]["Rows"][1:]
-	rows: List[Dict[str, Any]] = [
-		{col: row["Data"][idx].get("VarCharValue") for idx, col in enumerate(columns)}
-		for row in data_rows
-	]
+	rows: List[Dict[str, Any]] = []
+	for row in results_response["ResultSet"]["Rows"][1:]:  # skip header row
+		data = row["Data"]
+		parsed_row: Dict[str, Any] = {}
+		for idx, col in enumerate(columns):
+			value = data[idx].get("VarCharValue")
+			if column_types[idx] in ("timestamp", "timestamp with time zone"):  # <-- add
+				value = _athena_timestamp_to_iso(value)
+			parsed_row[col] = value
+		rows.append(parsed_row)
 
 	logger.info("Fetched %d rows for query %s", len(rows), query_execution_id)
 	return rows
