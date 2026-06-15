@@ -68,22 +68,22 @@ class TestHandleValidation(unittest.TestCase):
         response = handle_validation.handler(self._make_event(), self.mock_context)
         self.assertEqual(response["statusCode"], 500)
 
-    def test_get_alert_reasons_temperature_over_30(self):
-        event = self._make_event({"dht_temperature": 31})
+    def test_get_alert_reasons_temperature_over_35(self):
+        event = self._make_event({"dht_temperature": 36})
 
         reasons = handle_validation.get_alert_reasons(event)
 
         self.assertIn("Temperature too high", reasons)
 
-    def test_get_alert_reasons_temperature_30_has_no_alert(self):
-        event = self._make_event({"dht_temperature": 30})
+    def test_get_alert_reasons_temperature_35_has_no_alert(self):
+        event = self._make_event({"dht_temperature": 35})
 
         reasons = handle_validation.get_alert_reasons(event)
 
         self.assertNotIn("Temperature too high", reasons)
 
-    def test_get_alert_reasons_thermistor_over_30(self):
-        event = self._make_event({"thermistor_temp": 31})
+    def test_get_alert_reasons_thermistor_over_35(self):
+        event = self._make_event({"thermistor_temp": 36})
 
         reasons = handle_validation.get_alert_reasons(event)
 
@@ -181,7 +181,7 @@ class TestHandleValidation(unittest.TestCase):
 
     @patch("validation.handle_validation.dynamodb")
     def test_handler_publishes_alert_and_marks_as_sent(self, mock_dynamodb):
-        event = self._make_event({"dht_temperature": 31})
+        event = self._make_event({"dht_temperature": 50})
 
         with patch.object(handle_validation, "should_send_alert", return_value=True), \
                 patch.object(handle_validation, "publish_alert") as mock_publish_alert, \
@@ -200,7 +200,7 @@ class TestHandleValidation(unittest.TestCase):
 
     @patch("validation.handle_validation.dynamodb")
     def test_handler_does_not_publish_when_alert_is_in_cooldown(self, mock_dynamodb):
-        event = self._make_event({"dht_temperature": 31})
+        event = self._make_event({"dht_temperature": 50})
 
         with patch.object(handle_validation, "should_send_alert", return_value=False), \
                 patch.object(handle_validation, "publish_alert") as mock_publish_alert, \
@@ -215,7 +215,7 @@ class TestHandleValidation(unittest.TestCase):
         self.assertIn("Temperature too high", body["alert_reasons"])
 
     def test_publish_alert_sends_rendered_email_to_sns(self):
-        event = self._make_event({"dht_temperature": 31})
+        event = self._make_event({"dht_temperature": 50})
         reasons = ["Temperature too high"]
 
         with patch.object(handle_validation, "ALERT_TOPIC_ARN", "arn:aws:sns:test"), \
