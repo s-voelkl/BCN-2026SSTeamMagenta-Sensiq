@@ -1,7 +1,7 @@
 {
     "resource": "/history",
     "path": "/history",
-    "httpMethod": "GET",
+    "httpMethod": "POST",
     "headers": {
         "Accept": "application/json",
         "Content-Type": "application/json",
@@ -19,7 +19,7 @@
     "requestContext": {
         "resourceId": "abc123",
         "resourcePath": "/history",
-        "httpMethod": "GET",
+        "httpMethod": "POST",
         "extendedRequestId": "TestRequestId=",
         "requestTime": "02/Jun/2026:12:00:00 +0000",
         "path": "/prod/history",
