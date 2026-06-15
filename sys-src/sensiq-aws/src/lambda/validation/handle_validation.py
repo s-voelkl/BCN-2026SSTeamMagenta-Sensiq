@@ -150,6 +150,7 @@ ALLOWED_FIELDS = (
     "dht_temperature",
     "dht_humidity",
     "dht_heat_index",
+    "flame_digital",
     "flame_analog",
     "thermistor_temp",
     "bme_temperature",
