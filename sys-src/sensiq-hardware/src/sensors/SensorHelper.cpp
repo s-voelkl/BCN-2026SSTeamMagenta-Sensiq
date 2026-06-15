@@ -1,10 +1,12 @@
 #include "SensorHelper.h"
 #include "../config.h"
 
+#include "Adafruit_BME680.h"
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_Sensor.h>
-#include "Adafruit_BME680.h"
+#include <DHT.h>
+#include <ArduinoJson.h>
 
 // Pins definieren (intern in dieser Datei)
 #define DHTTYPE DHT11
@@ -307,19 +309,23 @@ String buildJsonString(const SensorData &data)
     doc["dht_humidity"] = data.dhtHumidity;
     doc["dht_temperature"] = data.dhtTemperature;
     doc["dht_heat_index"] = data.dhtHeatIndex;
+
     doc["flame_analog"] = data.flameAnalog;
     doc["flame_digital"] = data.flameDigital;
+
     doc["thermistor_analog"] = data.thermistorAnalog;
     doc["thermistor_digital"] = data.thermistorDigital;
     doc["thermistor_temp"] = data.thermistorTemp;
-    doc["is_outlier"] = data.isOutlier;
-    doc["collect_training"] = data.collectTraining;
+
     doc["bme_heated_up"] = data.bmeHeatedUp;
     doc["bme_temperature"] = data.bmeTemperature;
     doc["bme_humidity"] = data.bmeHumidity;
     doc["bme_pressure"] = data.bmePressure;
     doc["bme_altitude"] = data.bmeAltitude;
     doc["bme_voc"] = data.bmeVOC;
+
+    doc["is_outlier"] = data.isOutlier;
+    doc["collect_training"] = data.collectTraining;
 
     // Serialize JSON to string
     String json_output;
