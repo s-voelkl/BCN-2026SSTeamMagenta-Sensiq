@@ -25,6 +25,44 @@ DEFAULT_RESULT_LIMIT = 100
 # partition, which turns trivial queries into multi-minute scans (observed in integration tests).
 DEFAULT_LOOKBACK_DAYS = 31
 
+# Defines the time bucketing intervals for data aggregation.
+PRECISIONS = {
+    "all": None,
+    "1_minute": "date_trunc('minute', timestamp)",
+    "10_minutes": "from_unixtime(floor(to_unixtime(timestamp) / 600.0) * 600.0)",
+    "1_hour": "date_trunc('hour', timestamp)",
+    "1_day": "date_trunc('day', timestamp)",
+    "1_week": "date_trunc('week', timestamp)",
+    "1_month": "date_trunc('month', timestamp)",
+    "1_year": "date_trunc('year', timestamp)",
+}
+
+# The SELECT clause used for aggregated queries. Applies averages to numerics,
+# majority voting to booleans, and keeps the latest value for strings/timestamps.
+AGGREGATIONS = """
+    max(timestamp) AS timestamp,
+    max_by(device_id, timestamp) AS device_id,
+    max_by(location, timestamp) AS location,
+    avg(running_time) AS running_time,
+    avg(dht_humidity) AS dht_humidity,
+    avg(dht_temperature) AS dht_temperature,
+    avg(dht_heat_index) AS dht_heat_index,
+    avg(flame_analog) AS flame_analog,
+    avg(case when flame_digital then 1.0 else 0.0 end) >= 0.5 AS flame_digital,
+    avg(thermistor_analog) AS thermistor_analog,
+    avg(case when thermistor_digital then 1.0 else 0.0 end) >= 0.5 AS thermistor_digital,
+    avg(thermistor_temp) AS thermistor_temp,
+    avg(case when bme_heated_up then 1.0 else 0.0 end) >= 0.5 AS bme_heated_up,
+    avg(bme_temperature) AS bme_temperature,
+    avg(bme_humidity) AS bme_humidity,
+    avg(bme_pressure) AS bme_pressure,
+    avg(bme_altitude) AS bme_altitude,
+    avg(bme_voc) AS bme_voc,
+    avg(tsl_lux) AS tsl_lux,
+    avg(case when is_outlier then 1.0 else 0.0 end) >= 0.5 AS is_outlier,
+    avg(case when collect_training then 1.0 else 0.0 end) >= 0.5 AS collect_training
+"""
+
 # Terminal states reported by Athena's GetQueryExecution.
 _TERMINAL_FAILURE_STATES = ("FAILED", "CANCELLED")
 _TERMINAL_RUNNING_STATES = ("RUNNING", "QUEUED")
@@ -163,22 +201,29 @@ def build_query(query_params: Dict[str, Any]) -> Tuple[str, List[str]]:
 	to :data:`DEFAULT_RESULT_LIMIT` on invalid input. When neither ``startDate``
 	nor ``endDate`` is supplied, a :data:`DEFAULT_LOOKBACK_DAYS`-day window ending
 	"now" is used purely to drive partition pruning — no timestamp predicate is
-	emitted in that case.
+	emitted in that case. Requires a ``device_id`` parameter.
 
 	Args:
 		query_params (Dict[str, Any]): Raw JSON body parameters. Recognised keys:
 
+			* ``device_id`` (str): Required device ID to filter by.
 			* ``limit`` (int or str, optional): Maximum rows to return.
 			* ``startDate`` (str, optional): Inclusive lower bound, ISO 8601.
 			* ``endDate`` (str, optional): Inclusive upper bound, ISO 8601.
+			* ``precision`` (str, optional): The interval for aggregation (e.g. ``10_minutes``).
 
 	Returns:
 		Tuple[str, List[str]]: The SQL query string and a list of execution
 			parameters to pass as ``ExecutionParameters`` (used in place of string
 			interpolation to prevent SQL injection).
 	"""
+	device_id: Optional[str] = query_params.get("device_id")
 	start_date: Optional[str] = query_params.get("startDate")
 	end_date: Optional[str] = query_params.get("endDate")
+	precision: str = query_params.get("precision", "10_minutes")
+
+	if precision not in PRECISIONS:
+		precision = "10_minutes"
 
 	# Defensive parsing: API Gateway forwards query strings as raw strings, and a
 	# non-integer ``limit`` would otherwise raise inside the Lambda and surface as
@@ -212,6 +257,10 @@ def build_query(query_params: Dict[str, Any]) -> Tuple[str, List[str]]:
 	conditions: List[str] = [_partition_predicate(start_dt, end_dt)]
 	execution_parameters: List[str] = []
 
+	if device_id:
+		conditions.append("device_id = ?")
+		execution_parameters.append(device_id)
+
 	# ExecutionParameters are used in place of string interpolation to prevent SQL injection.
 	# from_iso8601_timestamp accepts ISO 8601 strings with 'T' separator and 'Z'/offset,
 	# unlike CAST(... AS timestamp) which requires 'YYYY-MM-DD HH:MM:SS[.fff]' without a
@@ -223,11 +272,22 @@ def build_query(query_params: Dict[str, Any]) -> Tuple[str, List[str]]:
 		conditions.append("timestamp <= from_iso8601_timestamp(?)")
 		execution_parameters.append(end_date)
 
-	query = (
-		"SELECT * FROM sensor_data WHERE "
-		+ " AND ".join(conditions)
-		+ f" ORDER BY timestamp DESC LIMIT {limit_int}"
-	)
+	where_clause = " AND ".join(conditions)
+	precision_expr = PRECISIONS.get(precision)
+
+	if precision_expr is None:
+		# precision 'all'
+		query = f"SELECT * FROM sensor_data WHERE {where_clause} ORDER BY timestamp DESC LIMIT {limit_int}"
+	else:
+		query = (
+			f"SELECT {AGGREGATIONS} "
+			f"FROM sensor_data "
+			f"WHERE {where_clause} "
+			f"GROUP BY {precision_expr} "
+			f"ORDER BY timestamp DESC "
+			f"LIMIT {limit_int}"
+		)
+
 	logger.debug("Built Athena query: %s | params=%s", query, execution_parameters)
 	return query, execution_parameters
 
@@ -383,6 +443,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 				"headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
 				"body": json.dumps({"error": "Invalid JSON body"}),
 			}
+
+	device_id = query_params.get("device_id")
+	if not device_id:
+		return {
+			"statusCode": 400,
+			"headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+			"body": json.dumps({"error": "Missing required parameter: device_id"}),
+		}
 
 	logger.info("Received request: query_params=%s", query_params)
 

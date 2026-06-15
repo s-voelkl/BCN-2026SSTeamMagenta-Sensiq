@@ -20,18 +20,34 @@ sys.path.insert(0, os.path.join(current_dir, ".."))
 class TestHandleHistoryData(unittest.TestCase):
 	def test_build_query_defaults(self):
 		"""Test build_query with no parameters uses default lookback window for pruning"""
-		query, params = build_query({})
+		query, params = build_query({"device_id": "test-dev"})
 
 		# No explicit date predicates, but partition predicate must be present and prune by year/month/day
-		self.assertIn("SELECT * FROM sensor_data WHERE ", query)
+		self.assertIn("SELECT \n    max(timestamp) AS timestamp,", query)
 		self.assertIn("(year, month, day) IN (", query)
+		self.assertIn("device_id = ?", query)
+		self.assertIn("GROUP BY from_unixtime(floor(to_unixtime(timestamp) / 600.0) * 600.0)", query)
 		self.assertNotIn("from_iso8601_timestamp", query)
 		self.assertTrue(query.endswith("ORDER BY timestamp DESC LIMIT 100"))
-		self.assertEqual(params, [])
+		self.assertEqual(params, ["test-dev"])
+
+	def test_build_query_precision_all(self):
+		"""Test build_query with precision 'all' generates flat query"""
+		query, params = build_query({"device_id": "test-dev", "precision": "all"})
+		self.assertIn("SELECT * FROM sensor_data", query)
+		self.assertNotIn("GROUP BY", query)
+		self.assertTrue(query.endswith("ORDER BY timestamp DESC LIMIT 100"))
+
+	def test_build_query_precision_1_day(self):
+		"""Test build_query with precision '1_day'"""
+		query, params = build_query({"device_id": "test-dev", "precision": "1_day"})
+		self.assertIn("SELECT \n    max(timestamp) AS timestamp", query)
+		self.assertIn("GROUP BY date_trunc('day', timestamp)", query)
 
 	def test_build_query_with_limit_and_dates(self):
 		"""Test build_query with start/end dates and custom limit"""
 		query_params = {
+			"device_id": "test-dev",
 			"limit": "50",
 			"startDate": "2026-01-01T00:00:00Z",
 			"endDate": "2026-01-03T23:59:59Z",
@@ -47,35 +63,36 @@ class TestHandleHistoryData(unittest.TestCase):
 		self.assertIn("timestamp >= from_iso8601_timestamp(?)", query)
 		self.assertIn("timestamp <= from_iso8601_timestamp(?)", query)
 		self.assertTrue(query.endswith("ORDER BY timestamp DESC LIMIT 50"))
-		self.assertEqual(params, ["2026-01-01T00:00:00Z", "2026-01-03T23:59:59Z"])
+		self.assertEqual(params, ["test-dev", "2026-01-01T00:00:00Z", "2026-01-03T23:59:59Z"])
 
 	def test_build_query_wide_date_range_uses_year_bounds(self):
 		"""Ranges > 366 days fall back to a year  BETWEEN predicate"""
 		query, params = build_query({
+			"device_id": "test-dev",
 			"startDate": "2024-01-01T00:00:00Z",
 			"endDate": "2026-12-31T23:59:59Z",
 		})
 		self.assertIn("year BETWEEN '2024' AND '2026'", query)
 		self.assertNotIn("(year, month, day) IN (", query)
-		self.assertEqual(params, ["2024-01-01T00:00:00Z", "2026-12-31T23:59:59Z"])
+		self.assertEqual(params, ["test-dev", "2024-01-01T00:00:00Z", "2026-12-31T23:59:59Z"])
 
 	def test_build_query_invalid_limit(self):
 		"""Test build_query gracefully handles invalid limit parameter"""
-		query, params = build_query({"limit": "invalid_string"})
+		query, params = build_query({"device_id": "test-dev", "limit": "invalid_string"})
 
 		self.assertIn("(year, month, day) IN (", query)
 		self.assertTrue(query.endswith("ORDER BY timestamp DESC LIMIT 100"))
-		self.assertEqual(params, [])
+		self.assertEqual(params, ["test-dev"])
 
 	def test_build_query_limit_boundaries(self):
 		"""Test build_query gracefully handles limits outside allowed range"""
-		query, _ = build_query({"limit": "0"})
+		query, _ = build_query({"device_id": "test", "limit": "0"})
 		self.assertTrue(query.endswith("LIMIT 100"))
 
-		query, _ = build_query({"limit": "-5"})
+		query, _ = build_query({"device_id": "test", "limit": "-5"})
 		self.assertTrue(query.endswith("LIMIT 100"))
 
-		query, _ = build_query({"limit": "1001"})
+		query, _ = build_query({"device_id": "test", "limit": "1001"})
 		self.assertTrue(query.endswith("LIMIT 1000"))
 
 	# Mock time.sleep to run the test instantly without actually waiting
@@ -224,8 +241,8 @@ class TestHandleHistoryData(unittest.TestCase):
 		# Provide a dummy parsed data list directly, bypassing the fetch formatting logic.
 		mock_fetch.return_value = [{"temp": "20"}]
 
-		# Create an empty API Gateway proxy event structure that lambda receives.
-		event = {"body": "{}"}
+		# Create an API Gateway proxy event structure that lambda receives.
+		event = {"body": json.dumps({"device_id": "test-dev", "precision": "all"})}
 
 		# Mock the Lambda context object with MagicMock, since the handler does not utilize it.
 		context = MagicMock()
@@ -250,12 +267,23 @@ class TestHandleHistoryData(unittest.TestCase):
 
 	@patch("history.handle_history_data.os.environ.get")
 	@patch("history.handle_history_data.build_query")
+	def test_handler_missing_device_id(
+		self, mock_build, mock_env
+	):
+		"""Test handler fails on missing device_id"""
+		event = {"body": "{}"}
+		response = handler(event, None)
+		self.assertEqual(response["statusCode"], 400)
+		self.assertIn("Missing required parameter: device_id", response["body"])
+
+	@patch("history.handle_history_data.os.environ.get")
+	@patch("history.handle_history_data.build_query")
 	def test_handler_exception(self, mock_build, mock_env):
 		"""Test handler properly deals with exceptions by returning status 500"""
 		# Force the build_query step to raise an exception, preventing the rest of the execution
 		mock_build.side_effect = Exception("Manual error trigger")
 
-		event = {}
+		event = {"body": json.dumps({"device_id": "test"})}
 
 		# Call the handler with the forced exception
 		response = handler(event, None)

@@ -44,6 +44,6 @@
         "domainName": "example.execute-api.eu-central-1.amazonaws.com",
         "apiId": "abcdef1234"
     },
-    "body": null,
+    "body": "{\"device_id\":\"test-device\",\"startDate\":\"2026-06-01T00:00:00Z\",\"endDate\":\"2026-06-15T00:00:00Z\",\"precision\":\"1_hour\"}",
     "isBase64Encoded": false
 }
