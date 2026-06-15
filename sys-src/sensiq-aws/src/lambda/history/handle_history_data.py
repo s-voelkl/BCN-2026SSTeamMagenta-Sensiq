@@ -198,8 +198,8 @@ def build_query(query_params: Dict[str, Any]) -> Tuple[str, List[str]]:
 	Combines a partition-pruning predicate (always present) with optional
 	timestamp-range predicates supplied via API Gateway JSON body parameters.
 	The ``limit`` parameter is clamped to ``[1, MAX_RESULT_LIMIT]`` and falls back
-	to :data:`DEFAULT_RESULT_LIMIT` on invalid input. When neither ``startDate``
-	nor ``endDate`` is supplied, a :data:`DEFAULT_LOOKBACK_DAYS`-day window ending
+	to :data:`DEFAULT_RESULT_LIMIT` on invalid input. When neither ``start_date``
+	nor ``end_date`` is supplied, a :data:`DEFAULT_LOOKBACK_DAYS`-day window ending
 	"now" is used purely to drive partition pruning — no timestamp predicate is
 	emitted in that case. Requires a ``device_id`` parameter.
 
@@ -208,8 +208,8 @@ def build_query(query_params: Dict[str, Any]) -> Tuple[str, List[str]]:
 
 			* ``device_id`` (str): Required device ID to filter by.
 			* ``limit`` (int or str, optional): Maximum rows to return.
-			* ``startDate`` (str, optional): Inclusive lower bound, ISO 8601.
-			* ``endDate`` (str, optional): Inclusive upper bound, ISO 8601.
+			* ``start_date`` (str, optional): Inclusive lower bound, ISO 8601.
+			* ``end_date`` (str, optional): Inclusive upper bound, ISO 8601.
 			* ``precision`` (str, optional): The interval for aggregation (e.g. ``10_minutes``).
 
 	Returns:
@@ -218,8 +218,8 @@ def build_query(query_params: Dict[str, Any]) -> Tuple[str, List[str]]:
 			interpolation to prevent SQL injection).
 	"""
 	device_id: Optional[str] = query_params.get("device_id")
-	start_date: Optional[str] = query_params.get("startDate")
-	end_date: Optional[str] = query_params.get("endDate")
+	start_date: Optional[str] = query_params.get("start_date")
+	end_date: Optional[str] = query_params.get("end_date")
 	precision: str = query_params.get("precision", "10_minutes")
 
 	if precision not in PRECISIONS:
@@ -415,9 +415,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
 			* ``limit`` (str, optional): Maximum number of records to return
 			  (default ``100``, capped at :data:`MAX_RESULT_LIMIT`).
-			* ``startDate`` (str, optional): Inclusive start timestamp in ISO 8601
+			* ``start_date`` (str, optional): Inclusive start timestamp in ISO 8601
 			  format, e.g. ``"2026-05-25T00:00:00Z"``.
-			* ``endDate`` (str, optional): Inclusive end timestamp in ISO 8601 format.
+			* ``end_date`` (str, optional): Inclusive end timestamp in ISO 8601 format.
 		context (Any): AWS Lambda context object (unused).
 
 	Returns:
