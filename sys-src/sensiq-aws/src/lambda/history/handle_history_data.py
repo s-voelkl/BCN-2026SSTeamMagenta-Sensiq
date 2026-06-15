@@ -1,27 +1,37 @@
-import os
 import json
-import time
 import logging
+import os
+import time
 from datetime import datetime, timedelta, timezone
-import boto3
 from typing import Any, Dict, List, Optional, Tuple
 
+import boto3
+
+# Log level can be overridden at runtime via the Lambda environment variable
+# LOG_LEVEL (e.g. set to "DEBUG" in the AWS Console) without redeploying.
+# Logs are available in CloudWatch under the SensiqHistoryStack-HandleHistoryData log group.
 logger = logging.getLogger(__name__)
-# Can be set to DEBUG via Console to mitigate re-deployments for debugging purposes.
-# ENV: Lambda > Specific Lambda Function > Environment Variables > LOG_LEVEL = DEBUG / INFO
-# Logs: CloudWatch > Log management > SensiqHistoryStack-HandleHistoryData...
-logger.setLevel(os.environ.get("LOG_LEVEL", "INFO")) 
+logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
 athena_client = boto3.client("athena")
 
-# Maximum number of results to return from Athena. 
+# Athena GetQueryResults caps a single page at 1000 rows.
 # See: https://docs.aws.amazon.com/athena/latest/APIReference/API_GetQueryResults.html
 MAX_RESULT_LIMIT = 1000
 DEFAULT_RESULT_LIMIT = 100
+
 # When no date range is supplied, restrict scanning to the most recent N days so partition
-# pruning still applies and queries stay fast. 
-# Else Athena would scan every partition (root cause of multi-minute query times).
+# pruning still applies. Without this anchor, Athena enumerates every projected
+# partition, which turns trivial queries into multi-minute scans (observed in integration tests).
 DEFAULT_LOOKBACK_DAYS = 31
+
+# Terminal states reported by Athena's GetQueryExecution.
+_TERMINAL_FAILURE_STATES = ("FAILED", "CANCELLED")
+_TERMINAL_RUNNING_STATES = ("RUNNING", "QUEUED")
+
+
+class AthenaQueryError(RuntimeError):
+	"""Raised when an Athena query fails, is cancelled, or times out."""
 
 
 def _parse_iso(date_str: str) -> Optional[datetime]:
@@ -115,6 +125,9 @@ def _partition_predicate(start: datetime, end: datetime) -> str:
 	end_day = end.replace(hour=0, minute=0, second=0, microsecond=0)
 	days = (end_day - start_day).days
 
+	# 366 keeps the IN-list bounded (worst case ~366 tuples for a leap year) while
+	# still covering the most common API use cases. Beyond that the predicate
+	# itself starts to dominate query planning time, so coarsen to year-level.
 	if 0 <= days <= 366:
 		tuples: List[str] = []
 		current = start_day
@@ -123,15 +136,17 @@ def _partition_predicate(start: datetime, end: datetime) -> str:
 			current += timedelta(days=1)
 		return "(year, month, day) IN (" + ", ".join(tuples) + ")"
 
-	# Fallback for wide ranges: prune at least by year.
+	# Year-level pruning is a deliberate accuracy/cost trade-off: Maybe scanning a
+	# few extra months at the window edges, but therefore avoid building a giant IN-list
+	# for rarely-used multi-year requests.
 	return f"year BETWEEN '{start.year:04d}' AND '{end.year:04d}'"
 
 
-def build_query(query_params: Dict[str, str]) -> Tuple[str, List[str]]:
+def build_query(query_params: Dict[str, Any]) -> Tuple[str, List[str]]:
 	"""Build the parameterised Athena SQL query for a history request.
 
 	Combines a partition-pruning predicate (always present) with optional
-	timestamp-range predicates supplied via API Gateway query string parameters.
+	timestamp-range predicates supplied via API Gateway JSON body parameters.
 	The ``limit`` parameter is clamped to ``[1, MAX_RESULT_LIMIT]`` and falls back
 	to :data:`DEFAULT_RESULT_LIMIT` on invalid input. When neither ``startDate``
 	nor ``endDate`` is supplied, a :data:`DEFAULT_LOOKBACK_DAYS`-day window ending
@@ -139,9 +154,9 @@ def build_query(query_params: Dict[str, str]) -> Tuple[str, List[str]]:
 	emitted in that case.
 
 	Args:
-		query_params (Dict[str, str]): Raw query string parameters. Recognised keys:
+		query_params (Dict[str, Any]): Raw JSON body parameters. Recognised keys:
 
-			* ``limit`` (str, optional): Maximum rows to return.
+			* ``limit`` (int or str, optional): Maximum rows to return.
 			* ``startDate`` (str, optional): Inclusive lower bound, ISO 8601.
 			* ``endDate`` (str, optional): Inclusive upper bound, ISO 8601.
 
@@ -150,37 +165,45 @@ def build_query(query_params: Dict[str, str]) -> Tuple[str, List[str]]:
 			parameters to pass as ``ExecutionParameters`` (used in place of string
 			interpolation to prevent SQL injection).
 	"""
-	limit: str = query_params.get("limit", str(DEFAULT_RESULT_LIMIT))
 	start_date: Optional[str] = query_params.get("startDate")
 	end_date: Optional[str] = query_params.get("endDate")
 
-	# Validate and sanitize limit parameter
+	# Defensive parsing: API Gateway forwards query strings as raw strings, and a
+	# non-integer ``limit`` would otherwise raise inside the Lambda and surface as
+	# a generic 500. Fall back to the default instead so the request still succeeds.
 	try:
-		limit_int: int = int(limit)
-		if limit_int < 1:
-			limit_int = DEFAULT_RESULT_LIMIT
-		elif limit_int > MAX_RESULT_LIMIT:
-			limit_int = MAX_RESULT_LIMIT
-	except ValueError:
+		limit_int = int(query_params.get("limit", DEFAULT_RESULT_LIMIT))
+	except (TypeError, ValueError):
 		limit_int = DEFAULT_RESULT_LIMIT
+  
+	# Non-positive values are treated as "client sent nonsense" and reset to the
+	# default rather than clamped to 1, which would silently return a single row.
+	if limit_int < 1:
+		limit_int = DEFAULT_RESULT_LIMIT
+  
+	# Cap at the Athena single-page maximum to avoid silently truncated pages
+	# that would require pagination handling we do not implement.
+	limit_int = min(limit_int, MAX_RESULT_LIMIT)
 
-	# Resolve a concrete UTC window. If the caller omits one bound, anchor it so that
-	# partition pruning can still be applied (otherwise Athena would enumerate every
-	# projected partition, which is the root cause of multi-minute query times, 
- 	# that could be seen in integration tests).
+	# Resolve a concrete UTC window so that partition pruning always applies,
+	# even when the caller omits one or both bounds.
 	end_dt = _parse_iso(end_date) if end_date else datetime.now(tz=timezone.utc)
-	start_dt = _parse_iso(start_date) if start_date else end_dt - timedelta(days=DEFAULT_LOOKBACK_DAYS)
+	start_dt = (
+		_parse_iso(start_date) if start_date else end_dt - timedelta(days=DEFAULT_LOOKBACK_DAYS)
+	)
+ 
+	# Tolerate reversed bounds rather than rejecting the request: clients
+	# occasionally swap the two when wiring up the UI date pickers.
 	if start_dt > end_dt:
 		start_dt, end_dt = end_dt, start_dt
 
-	query: str = "SELECT * FROM sensor_data WHERE "
 	conditions: List[str] = [_partition_predicate(start_dt, end_dt)]
 	execution_parameters: List[str] = []
 
-	# Use ExecutionParameters for parameterized queries to prevent SQL Injection.
-	# from_iso8601_timestamp accepts ISO 8601 strings with 'T' separator and 'Z'/offset
-	# (e.g. 2026-01-01T00:00:00Z), unlike CAST(... AS timestamp) which requires
-	# 'YYYY-MM-DD HH:MM:SS[.fff]' without timezone designator.
+	# ExecutionParameters are used in place of string interpolation to prevent SQL injection.
+	# from_iso8601_timestamp accepts ISO 8601 strings with 'T' separator and 'Z'/offset,
+	# unlike CAST(... AS timestamp) which requires 'YYYY-MM-DD HH:MM:SS[.fff]' without a
+	# timezone designator.
 	if start_date:
 		conditions.append("timestamp >= from_iso8601_timestamp(?)")
 		execution_parameters.append(start_date)
@@ -188,9 +211,11 @@ def build_query(query_params: Dict[str, str]) -> Tuple[str, List[str]]:
 		conditions.append("timestamp <= from_iso8601_timestamp(?)")
 		execution_parameters.append(end_date)
 
-	query += " AND ".join(conditions)
-	query += " ORDER BY timestamp DESC"
-	query += f" LIMIT {limit_int}"
+	query = (
+		"SELECT * FROM sensor_data WHERE "
+		+ " AND ".join(conditions)
+		+ f" ORDER BY timestamp DESC LIMIT {limit_int}"
+	)
 	logger.debug("Built Athena query: %s | params=%s", query, execution_parameters)
 	return query, execution_parameters
 
@@ -217,37 +242,42 @@ def poll_query_status(query_execution_id: str, timeout_seconds: int = 25) -> Non
 			Defaults to ``25``.
 
 	Raises:
-		Exception: If the query ends in ``FAILED`` or ``CANCELLED`` state, or if
-			the timeout elapses before reaching a terminal state.
+		AthenaQueryError: If the query ends in ``FAILED`` or ``CANCELLED`` state,
+			or if the timeout elapses before reaching a terminal state.
 	"""
-	status: str = "RUNNING"
-	start_time = time.time()  # current time in seconds since epoch
+	start_time = time.time()
+	status = "RUNNING"
 
-	logger.debug("Polling Athena query %s for completion with timeout of %ss",
-            	query_execution_id, timeout_seconds)
+	logger.debug(
+		"Polling Athena query %s for completion (timeout=%ss)",
+		query_execution_id, timeout_seconds,
+	)
 
-	while status in ["RUNNING", "QUEUED"]:
-		logger.debug("Current status of query %s: %s, after %.2fs", 
-               	query_execution_id, status, time.time() - start_time)
-  
-		if time.time() - start_time > timeout_seconds:
+	while status in _TERMINAL_RUNNING_STATES:
+		elapsed = time.time() - start_time
+		if elapsed > timeout_seconds:
 			logger.error("Athena query %s timed out after %ss", query_execution_id, timeout_seconds)
-			raise Exception(f"Query timed out after {timeout_seconds} seconds")
+			raise AthenaQueryError(f"Query timed out after {timeout_seconds} seconds")
 
-		time.sleep(0.5)  # Sleep for 500ms before polling again
-		status_response = athena_client.get_query_execution(
-			QueryExecutionId=query_execution_id
-		)
+		# 250 ms balances responsiveness for fast cached queries against the
+		# per-request cost of GetQueryExecution; tighter polling burns API
+		# quota without meaningfully improving user-perceived latency.
+		time.sleep(0.25)
+		status_response = athena_client.get_query_execution(QueryExecutionId=query_execution_id)
 		status = status_response["QueryExecution"]["Status"]["State"]
+		logger.debug("Query %s status=%s after %.2fs", query_execution_id, status, elapsed)
 
-		if status in ["FAILED", "CANCELLED"]:
+		if status in _TERMINAL_FAILURE_STATES:
 			reason = status_response["QueryExecution"]["Status"].get(
 				"StateChangeReason", "Unknown reason"
 			)
 			logger.error("Athena query %s ended in state %s: %s", query_execution_id, status, reason)
-			raise Exception(f"Query failed or cancelled: {reason}")
+			raise AthenaQueryError(f"Query failed or cancelled: {reason}")
 
-	logger.info("Athena query %s succeeded in %.2fs", query_execution_id, time.time() - start_time)
+	logger.info(
+		"Athena query %s succeeded in %.2fs",
+		query_execution_id, time.time() - start_time,
+	)
 
 
 def fetch_and_format_results(query_execution_id: str) -> List[Dict[str, Any]]:
@@ -276,16 +306,18 @@ def fetch_and_format_results(query_execution_id: str) -> List[Dict[str, Any]]:
 		QueryExecutionId=query_execution_id, MaxResults=MAX_RESULT_LIMIT
 	)
 
+	# Column order in each Row matches ColumnInfo, so materialise the names
+	# once and zip them in via index rather than re-reading metadata per row.
 	column_info = results_response["ResultSet"]["ResultSetMetadata"]["ColumnInfo"]
 	columns: List[str] = [col["Name"] for col in column_info]
 
-	rows: List[Dict[str, Any]] = []
-	for row in results_response["ResultSet"]["Rows"][1:]:  # skip header row
-		data = row["Data"]
-		parsed_row: Dict[str, Any] = {}
-		for idx, col in enumerate(columns):
-			parsed_row[col] = data[idx].get("VarCharValue")
-		rows.append(parsed_row)
+	# Athena prepends a header row containing the column names; only the
+	# subsequent rows carry actual data.
+	data_rows = results_response["ResultSet"]["Rows"][1:]
+	rows: List[Dict[str, Any]] = [
+		{col: row["Data"][idx].get("VarCharValue") for idx, col in enumerate(columns)}
+		for row in data_rows
+	]
 
 	logger.info("Fetched %d rows for query %s", len(rows), query_execution_id)
 	return rows
@@ -294,14 +326,14 @@ def fetch_and_format_results(query_execution_id: str) -> List[Dict[str, Any]]:
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 	"""Lambda entry point: query historical IoT sensor data via Athena.
 
-	Wired behind an API Gateway proxy integration on ``GET /history``. Builds a
-	parameterised Athena query from the request's ``queryStringParameters``,
+	Wired behind an API Gateway proxy integration on ``POST /history``. Builds a
+	parameterised Athena query from the request's JSON ``body``,
 	executes it against the workgroup/database supplied via environment variables,
 	waits for completion, and returns the result rows as JSON.
 
 	Args:
 		event (Dict[str, Any]): API Gateway proxy event. Recognised
-			``queryStringParameters`` keys:
+			keys in the JSON ``body``:
 
 			* ``limit`` (str, optional): Maximum number of records to return
 			  (default ``100``, capped at :data:`MAX_RESULT_LIMIT`).
@@ -314,60 +346,67 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 		Dict[str, Any]: API Gateway proxy response.
 
 			* ``200``: ``body`` is JSON ``{"data": [...rows]}`` on success.
+			* ``400``: ``body`` is JSON ``{"error": "Invalid JSON body"}`` if the request body is not valid JSON.
 			* ``500``: ``body`` is JSON ``{"error": "..."}`` on any failure
 			  (query failed, cancelled, timed out, or an unexpected exception).
 	"""
-	# Athena workgroup name, defined in the CDK stack as environment variable for the Lambda function
-	athena_workgroup: str = os.environ.get("ATHENA_WORKGROUP", "")
+	# Workgroup and database are injected by the CDK stack as environment variables.
+	athena_workgroup = os.environ.get("ATHENA_WORKGROUP", "")
+	database_name = os.environ.get("DATABASE_NAME", "")
 
-	# Glue database name
-	database_name: str = os.environ.get("DATABASE_NAME", "")
+	body_str = event.get("body")
+	query_params: Dict[str, Any] = {}
+	if body_str:
+		try:
+			query_params = json.loads(body_str)
+		except json.JSONDecodeError:
+			return {
+				"statusCode": 400,
+				"headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+				"body": json.dumps({"error": "Invalid JSON body"}),
+			}
 
-	query_params: Dict[str, str] = event.get("queryStringParameters") or {}
 	logger.info("Received request: query_params=%s", query_params)
 
 	try:
-		# Build the SQL query and execution parameters (if any, used against SQL injection)
 		query, execution_parameters = build_query(query_params)
 
-		# Start the Athena Query
 		start_query_args: Dict[str, Any] = {
 			"QueryString": query,
 			"QueryExecutionContext": {"Database": database_name},
 			"WorkGroup": athena_workgroup,
 		}
+		# ExecutionParameters must be omitted (not passed as an empty list) when
+		# the query contains no placeholders; Athena rejects the call otherwise.
 		if execution_parameters:
 			start_query_args["ExecutionParameters"] = execution_parameters
 
-		# Execute the Athena query and get the execution ID for polling
-		response = athena_client.start_query_execution(**start_query_args)
-		query_execution_id: str = response["QueryExecutionId"]
+		query_execution_id = athena_client.start_query_execution(**start_query_args)[
+			"QueryExecutionId"
+		]
 		logger.info("Started Athena query %s", query_execution_id)
 
-		# Poll until query completes, fails, or is cancelled
 		poll_query_status(query_execution_id)
-  
-		logger.debug("Polling complete for query %s, fetching results", query_execution_id)
-
-		# Fetch and format the query results
 		rows = fetch_and_format_results(query_execution_id)
-
-		logger.debug("Successfully fetched and formatted results for query %s, returning %d rows", 
-               query_execution_id, len(rows))
 
 		return {
 			"statusCode": 200,
 			"headers": {
 				"Content-Type": "application/json",
-				"Access-Control-Allow-Origin": "*",  # CORS
+				# Wildcard CORS is acceptable here because the endpoint only
+				# returns historical sensor readings and requires no credentials.
+				"Access-Control-Allow-Origin": "*",
 			},
 			"body": json.dumps({"data": rows}),
 		}
 
 	except Exception as e:
+		# Catch-all so the API never returns an unhandled Lambda error to the
+		# frontend; the full stack trace is preserved in CloudWatch via
+		# logger.exception, while the client receives a sanitised message.
 		logger.exception("Unhandled error while processing request")
 		return {
 			"statusCode": 500,
-			"headers": {"Content-Type": "application/json"},
+			"headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
 			"body": json.dumps({"error": str(e)}),
 		}
