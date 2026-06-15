@@ -69,6 +69,21 @@ export class SensiqApiStack extends cdk.Stack {
             },
         });
 
+        api.addGatewayResponse('Default4xx', {
+            type: apigateway.ResponseType.DEFAULT_4XX,
+            responseHeaders: {
+                'Access-Control-Allow-Origin': "'*'",
+                'Access-Control-Allow-Headers': "'Content-Type,x-api-key'",
+            },
+        });
+        api.addGatewayResponse('Default5xx', {
+            type: apigateway.ResponseType.DEFAULT_5XX,
+            responseHeaders: {
+                'Access-Control-Allow-Origin': "'*'",
+                'Access-Control-Allow-Headers': "'Content-Type,x-api-key'",
+            },
+        });
+
         // unsafeUnwrap is safe here: secretValueFromJson produces a CloudFormation
         // dynamic reference ({{resolve:secretsmanager:...}}), not the plaintext key.
         // CloudFormation resolves it at deploy time, so the template never contains the secret.
