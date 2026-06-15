@@ -50,7 +50,6 @@ void initSensors()
     pinMode(FLAME_DIGITAL, INPUT);
     pinMode(THERMISTOR_ANALOG, INPUT);
     pinMode(THERMISTOR_DIGITAL, INPUT);
-    // pinMode(LED_BUILTIN, OUTPUT);
 
     // Switches with internal Pull-Up Resistor.
     // 1 if cables open, so switch not pressed.
@@ -60,6 +59,12 @@ void initSensors()
 
     // init DHT11 sensor
     dht11.begin();
+
+    // Initialize BME680 sensor
+    if (!bme.begin())
+    {
+        Serial.println("No BME680 detected!");
+    }
 
     // BME680 setup: oversampling and filter initialization
     bme.setTemperatureOversampling(BME680_OS_8X);
@@ -82,23 +87,6 @@ void initSensors()
         // 13MS, 101MS, or 402MS (highest resolution, slower updates).
         tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);
     }
-
-    // TODO: remove after testing
-    Serial.print("Sensor:       ");
-    Serial.println(sensor.name);
-    Serial.print("Driver Ver:   ");
-    Serial.println(sensor.version);
-    Serial.print("Unique ID:    ");
-    Serial.println(sensor.sensor_id);
-    Serial.print("Max Value:    ");
-    Serial.print(sensor.max_value);
-    Serial.println(" lux");
-    Serial.print("Min Value:    ");
-    Serial.print(sensor.min_value);
-    Serial.println(" lux");
-    Serial.print("Resolution:   ");
-    Serial.print(sensor.resolution);
-    Serial.println(" lux");
 
     Serial.println("Sensors initialized.");
 }
