@@ -123,7 +123,7 @@ jobs:
             - name: DHT sensor library
             - name: AUnit
           sketch-paths: |
-            - sys-src/sensiq-hardware/src/src.ino
+            - sys-src/sensiq-hardware/sensiq-hardware.ino
           cli-compile-flags: |
             - --build-property
             - compiler.cpp.extra_flags=${{ matrix.compile-flags }}
