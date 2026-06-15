@@ -1,5 +1,5 @@
 #include "SensorHelper.h"
-#include "config.h"
+#include "../config.h"
 
 // Pins definieren (intern in dieser Datei)
 #define DHTTYPE DHT11
