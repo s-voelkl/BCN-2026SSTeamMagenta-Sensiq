@@ -122,6 +122,8 @@ jobs:
             - name: ArduinoJson
             - name: DHT sensor library
             - name: AUnit
+            - name: Adafruit BME680 Library
+            - name: Adafruit TSL2561
           sketch-paths: |
             - sys-src/sensiq-hardware/sensiq-hardware.ino
           cli-compile-flags: |

@@ -2,8 +2,6 @@
 #define SENSOR_HELPER_H
 
 #include <Arduino.h>
-#include <DHT.h>
-#include <ArduinoJson.h>
 
 /**
  * @brief Struct to hold all sensor data together for easy access and transmission.
@@ -17,11 +15,23 @@ struct SensorData
     float dhtHumidity;
     float dhtTemperature;
     float dhtHeatIndex;
+
     int flameAnalog;
     bool flameDigital;
+
     int thermistorAnalog;
     bool thermistorDigital;
     float thermistorTemp;
+
+    bool bmeHeatedUp;
+    float bmeTemperature;
+    float bmeHumidity;
+    float bmePressure;
+    float bmeAltitude;
+    float bmeVOC;
+
+    float tslLux;
+
     bool isOutlier;
     bool collectTraining;
 };
