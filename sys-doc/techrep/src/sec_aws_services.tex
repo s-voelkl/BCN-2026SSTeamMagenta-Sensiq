@@ -10,13 +10,13 @@ subsection together with the AWS services it relies on.
 
 \subsection{Live Route}\label{sec:live_route}
 The live route provides a low-latency data delivery mechanism, exposing a
-\texttt{GET /live} endpoint via API Gateway. It returns the most recent
+\texttt{POST /live} endpoint via API Gateway. It returns the most recent
 sensor reading as a structured JSON payload. The pipeline spans from hardware
 ingestion through serverless transformation to a managed NoSQL store.
 
 \subsubsection{Data Ingestion and Transformation}
 Sensor readings are assembled on the ESP-32 microcontroller and published
-via MQTT to AWS IoT Core~\cite{awsIotCore}. An IoT topic rule 
+via MQTT to AWS IoT Core~\cite{awsIotCore}. An IoT topic rule
 forwards each incoming message to the
 \texttt{handleTransformValidate} Lambda function. This function is
 responsible for validating and transforming the payload to the internal data format,
@@ -27,21 +27,21 @@ table~\cite{aws-dynamodb} (\texttt{LiveDataDB}) via a \texttt{PutItem}
 operation, which always reflects the latest device state.
 
 \subsubsection{Live Data Retrieval}
-Incoming \texttt{GET /live} requests are routed through the API Gateway to the
+Incoming \texttt{POST /live} requests are routed through the API Gateway to the
 \texttt{handleLiveData} Lambda function. This function performs a read
 against \texttt{LiveDataDB} and returns the latest sensor record as a
 JSON response. Because the data is served directly from DynamoDB with
 single-digit millisecond read latency, the live route consistently
 responds well within the 29-second API Gateway timeout, typically in
 under one second. The handler returns an error response when the entry in
-\texttt{LiveDataDB} is older than 300 seconds.
+\texttt{LiveDataDB} is older than 60 seconds.
 
 \subsection{History Route}\label{sec:history_route}
 The history route provides a long-term data retrieval mechanism, exposing a
-\texttt{GET /history} endpoint via API Gateway. It accepts query parameters
-such as time ranges and limits, and returns historical sensor data as a
-structured JSON payload. The pipeline bridges data ingestion from AWS IoT
-Core to a highly optimized query backend.
+\texttt{POST /history} endpoint via API Gateway. It accepts query parameters
+such as time ranges, limits, aggregation precision and a device ID, and returns
+precision-adjusted aggregated historical sensor data as a structured JSON payload.
+The pipeline bridges data ingestion from AWS IoT Core to a highly optimized query backend.
 
 \subsubsection{Data Ingestion and Storage}
 Incoming JSON messages from AWS IoT Core are captured by an IoT rule and
