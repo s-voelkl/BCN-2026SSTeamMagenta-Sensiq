@@ -152,12 +152,17 @@ class TestHandleHistoryData(unittest.TestCase):
 
 	@patch("history.handle_history_data.athena_client.get_query_results")
 	def test_fetch_and_format_results(self, mock_get_query_results):
-		"""Test output formatting parses standard Athena result sets correctly"""
-		# Mock the complex nested JSON structure returned by AWS Athena API
+		"""Test output formatting parses Athena result sets and converts timestamps to ISO 8601"""
+		# Mock the complex nested JSON structure returned by AWS Athena API.
+		# NB: Athena returns a `timestamp` column as 'YYYY-MM-DD HH:MM:SS[.fff]'
+		# (space separator, no zone), which the formatter converts to ISO 8601 UTC.
 		mock_get_query_results.return_value = {
 			"ResultSet": {
 				"ResultSetMetadata": {
-					"ColumnInfo": [{"Name": "timestamp"}, {"Name": "dht_temperature"}]
+					"ColumnInfo": [
+						{"Name": "timestamp", "Type": "timestamp"},
+						{"Name": "dht_temperature", "Type": "double"},
+					]
 				},
 				"Rows": [
 					{
@@ -168,13 +173,13 @@ class TestHandleHistoryData(unittest.TestCase):
 					},  # Header row
 					{
 						"Data": [
-							{"VarCharValue": "2026-05-25T22:56:12Z"},
+							{"VarCharValue": "2026-05-25 22:56:12.000"},
 							{"VarCharValue": "23.8"},
 						]
 					},  # Data row 1
 					{
 						"Data": [
-							{"VarCharValue": "2026-05-25T23:56:12Z"},
+							{"VarCharValue": "2026-05-25 23:56:12.000"},
 							{"VarCharValue": "24.1"},
 						]
 					},  # Data row 2
@@ -187,8 +192,10 @@ class TestHandleHistoryData(unittest.TestCase):
 
 		# Verify the header row was skipped and exactly 2 data rows were parsed
 		self.assertEqual(len(results), 2)
-		# Verify the list elements were properly transformed into a key-value dictionary using the ColumnInfo layout
+		# Timestamp column is converted from Athena's native format to ISO 8601 UTC
 		self.assertEqual(results[0]["timestamp"], "2026-05-25T22:56:12Z")
+		self.assertEqual(results[1]["timestamp"], "2026-05-25T23:56:12Z")
+		# Non-timestamp columns pass through untouched
 		self.assertEqual(results[0]["dht_temperature"], "23.8")
 		self.assertEqual(results[1]["dht_temperature"], "24.1")
 
