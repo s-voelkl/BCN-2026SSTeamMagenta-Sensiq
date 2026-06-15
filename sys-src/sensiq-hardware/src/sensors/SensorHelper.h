@@ -24,6 +24,12 @@ struct SensorData
     float thermistorTemp;
     bool isOutlier;
     bool collectTraining;
+    bool bmeHeatedUp;
+    float bmeTemperature;
+    float bmeHumidity;
+    float bmePressure;
+    float bmeAltitude;
+    float bmeVOC;
 };
 
 /**
