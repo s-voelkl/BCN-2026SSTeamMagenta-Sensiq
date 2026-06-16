@@ -10,9 +10,9 @@ interface KPICardProps {
   error?: boolean   // any other failure -> generic error message
 }
 
-function transformFlame(value: number): string {
+function transformFlame(value: boolean): string {
   /** Transform the raw flame sensor value into a more user-friendly message. */
-  if (value == 0) return 'Negative'
+  if (!value) return 'Negative'
   else return 'Positive'
 }
 
@@ -34,9 +34,9 @@ function ValueDisplay({ kpi, data }: { kpi: KPI; data: SensorDataLive }) {
 
   return (
     <div className="mt-3 flex items-baseline justify-center gap-1.5">
-      <p className={kpi.measure === 'flame_analog' ? className : 'font-mono text-5xl font-bold tabular-nums text-slate-200'}
-        style={kpi.measure === 'flame_analog' ? { color: data.flame_analog === 0 ? '#2abe9bff' : '#EF4444' } : {}}>
-        {kpi.measure === 'flame_analog' ? transformFlame(value) : `${value}`}
+      <p className={kpi.measure === 'flame_digital' ? className : 'font-mono text-5xl font-bold tabular-nums text-slate-200'}
+        style={kpi.measure === 'flame_digital' ? { color: data.flame_digital ? '#EF4444' : '#2abe9bff' } : {}}>
+        {kpi.measure === 'flame_digital' ? transformFlame(value as boolean) : `${value}`}
       </p>
       {kpi.unit && (
         <p className="font-mono text-3xl font-semibold text-slate-400">

@@ -11,7 +11,7 @@ export type KPIs = KPI[]
 
 export type measuresExFlame = "dht_temperature" | "dht_humidity" | "bme_pressure" | "tsl_lux" | "bme_voc" // measurement that are selectable in the dropdown menue
 
-export type measures = measuresExFlame | "flame_analog"  // add more measures as needed, must match keys in SensorData
+export type measures = measuresExFlame | "flame_digital"  // add more measures as needed, must match keys in SensorData
 
 // Readable name and unit for each selectable measure. The chart's dropdown is
 // built straight from these entries.
@@ -71,6 +71,7 @@ export const SensorSchemaLive = z.object({
   dht_temperature: z.coerce.number(),
   dht_heat_index: z.coerce.number(),
   flame_analog: z.coerce.number(),
+  flame_digital: zStringBool,
   thermistor_temp: z.coerce.number(),
   bme_temperature: z.coerce.number(),
   bme_humidity: z.coerce.number(),

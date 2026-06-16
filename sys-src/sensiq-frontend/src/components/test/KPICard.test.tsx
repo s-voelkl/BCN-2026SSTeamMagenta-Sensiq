@@ -12,7 +12,8 @@ function makeSensor(overrides: Partial<SensorDataLive> = {}): SensorDataLive {
     dht_humidity: 51,
     dht_temperature: 25.11111,
     dht_heat_index: 24.99697,
-    flame_analog: 0,
+    flame_analog: 12,
+    flame_digital: false,
     thermistor_temp: 24.5484,
     bme_temperature: 22,
     bme_humidity: 44,
@@ -26,7 +27,7 @@ function makeSensor(overrides: Partial<SensorDataLive> = {}): SensorDataLive {
 
 const tempKpi: KPI = { id: '1', label: 'Temperature', unit: '°C', measure: 'dht_temperature' }
 const humidityKpi: KPI = { id: '2', label: 'Humidity', unit: '%', measure: 'dht_humidity' }
-const flameKpi: KPI = { id: '3', label: 'Flame', unit: '', measure: 'flame_analog' }
+const flameKpi: KPI = { id: '3', label: 'Flame', unit: '', measure: 'flame_digital' }
 
 describe('KPICard', () => {
   it('renders the KPI label', () => {
@@ -54,15 +55,15 @@ describe('KPICard', () => {
     expect(screen.getByText('%')).toBeInTheDocument()
   })
 
-  it('shows "Negative" for a flame value of 0 (transformFlame)', () => {
-    render(<KPICard kpi={flameKpi} data={makeSensor({ flame_analog: 0 })} />)
+  it('shows "Negative" for a flame value of false (transformFlame)', () => {
+    render(<KPICard kpi={flameKpi} data={makeSensor({ flame_digital: false })} />)
     const value = screen.getByText('Negative')
     expect(value).toBeInTheDocument()
     expect(value).toHaveStyle({ color: 'rgb(42, 190, 155)' }) // #2abe9b green
   })
 
-  it('shows "Positive" for a non-zero flame value (transformFlame)', () => {
-    render(<KPICard kpi={flameKpi} data={makeSensor({ flame_analog: 1 })} />)
+  it('shows "Positive" for a flame value of true (transformFlame)', () => {
+    render(<KPICard kpi={flameKpi} data={makeSensor({ flame_digital: true })} />)
     const value = screen.getByText('Positive')
     expect(value).toBeInTheDocument()
     expect(value).toHaveStyle({ color: 'rgb(239, 68, 68)' }) // #EF4444 red
