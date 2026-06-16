@@ -84,7 +84,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock)
   fetchMock.mockReset()
   // the history fetch logs to console.error on a bad payload; keep test output clean
-  vi.spyOn(console, 'error').mockImplementation(() => {})
+  vi.spyOn(console, 'error').mockImplementation(() => { })
 })
 
 afterEach(() => {
@@ -94,7 +94,7 @@ afterEach(() => {
 
 describe('useLiveData', () => {
   it('starts in a loading state before the request resolves', () => {
-    fetchMock.mockReturnValue(new Promise<Response>(() => {})) // never resolves
+    fetchMock.mockReturnValue(new Promise<Response>(() => { })) // never resolves
     const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
 
     expect(result.current.isLoading).toBe(true)
@@ -162,7 +162,7 @@ describe('isDeviceOffline', () => {
 
 describe('useHistoryData', () => {
   it('starts in a loading state before the request resolves', () => {
-    fetchMock.mockReturnValue(new Promise<Response>(() => {})) // never resolves
+    fetchMock.mockReturnValue(new Promise<Response>(() => { })) // never resolves
     const { result } = renderHook(() => useHistoryData('1D'), { wrapper: createWrapper() })
 
     expect(result.current.isLoading).toBe(true)

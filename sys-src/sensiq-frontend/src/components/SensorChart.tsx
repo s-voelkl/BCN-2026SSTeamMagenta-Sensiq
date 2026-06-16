@@ -14,12 +14,12 @@ const LINE_COLOR = '#2abe9b'
 
 // time range lookup table
 const TIME_RANGES = [
-  { label: '1H',  ms: 1000 * 60 * 60           },
-  { label: '6H',  ms: 1000 * 60 * 60 * 6       },
-  { label: '1D',  ms: 1000 * 60 * 60 * 24      },
-  { label: '1W',  ms: 1000 * 60 * 60 * 24 * 7  },
-  { label: '1M',  ms: 1000 * 60 * 60 * 24 * 30 },
-  { label: '1Y',  ms: 1000 * 60 * 60 * 24 * 365 }
+  { label: '1H', ms: 1000 * 60 * 60 },
+  { label: '6H', ms: 1000 * 60 * 60 * 6 },
+  { label: '1D', ms: 1000 * 60 * 60 * 24 },
+  { label: '1W', ms: 1000 * 60 * 60 * 24 * 7 },
+  { label: '1M', ms: 1000 * 60 * 60 * 24 * 30 },
+  { label: '1Y', ms: 1000 * 60 * 60 * 24 * 365 }
 ] as const
 
 type TooltipProps = {
@@ -37,8 +37,8 @@ function CustomTooltip({ active, payload, label, unit, showDate }: TooltipProps)
   const when =
     label != null
       ? new Date(label).toLocaleString('en-US', showDate
-          ? { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
-          : { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        ? { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
+        : { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       : ''
   return (
     <div className="rounded-xl border border-slate-700 bg-slate-800/95 px-4 py-3 text-sm shadow-xl backdrop-blur-sm">
@@ -95,10 +95,10 @@ export default function SensorChart({
 
   const chartData = useMemo(() =>
     filtered.map(d => ({
-      time:  new Date(d.timestamp).getTime(), // epoch ms — unique per sample
+      time: new Date(d.timestamp).getTime(), // epoch ms — unique per sample
       value: d[selected] as number,
     })),
-  [filtered, selected])
+    [filtered, selected])
 
   // For ranges wider than a day, label the X-axis (and tooltip) by date instead of time.
   const showDate = TIME_RANGES.find(r => r.label === range)!.ms > 1000 * 60 * 60 * 24
@@ -147,14 +147,14 @@ export default function SensorChart({
                   ? 'bg-amber-500 text-slate-950'
                   : 'text-slate-400 hover:text-slate-200',
               ].join(' ')}
-              style={{backgroundColor: range === r.label? "#2abe9bff": ""}}
+              style={{ backgroundColor: range === r.label ? "#2abe9bff" : "" }}
             >
               {r.label}
             </button>
           ))}
         </div>
       </div>
-      
+
       <div className="relative flex-1 min-h-0">
         {/* Background refetch (e.g. range switch): previous data stays visible. */}
         {fetching && !loading && !error && (
@@ -180,8 +180,8 @@ export default function SensorChart({
           <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor={LINE_COLOR} stopOpacity={0.25} />
-                <stop offset="95%" stopColor={LINE_COLOR} stopOpacity={0}    />
+                <stop offset="5%" stopColor={LINE_COLOR} stopOpacity={0.25} />
+                <stop offset="95%" stopColor={LINE_COLOR} stopOpacity={0} />
               </linearGradient>
             </defs>
 

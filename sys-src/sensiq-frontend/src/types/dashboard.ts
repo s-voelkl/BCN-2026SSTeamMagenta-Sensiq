@@ -17,10 +17,10 @@ export type measures = measuresExFlame | "flame_analog"  // add more measures as
 // built straight from these entries.
 export const MEASURE_META: Record<measuresExFlame, { label: string; unit: string }> = {
   dht_temperature: { label: 'Temperature', unit: '°C' },
-  dht_humidity:    { label: 'Humidity',    unit: '%' },
-  bme_pressure:    { label: 'Pressure',    unit: 'hPa' },
-  tsl_lux:         { label: 'Light',       unit: 'lux' },
-  bme_voc:         { label: 'Gases (VOC)', unit: 'ppb' },
+  dht_humidity: { label: 'Humidity', unit: '%' },
+  bme_pressure: { label: 'Pressure', unit: 'hPa' },
+  tsl_lux: { label: 'Light', unit: 'lux' },
+  bme_voc: { label: 'Gases (VOC)', unit: 'ppb' },
 }
 
 export type TimeRanges = '1H' | '6H' | '1D' | '1W' | '1M' | '1Y'

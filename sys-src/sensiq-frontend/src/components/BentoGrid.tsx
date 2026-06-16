@@ -47,7 +47,7 @@ export default function BentoGrid() {
     <div className="space-y-4">
       {/* Header — always visible, even while loading or on error */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-6 py-5 backdrop-blur-sm">
-        <Greeting deviceId={deviceId} timestamp={data?.timestamp}/>
+        <Greeting deviceId={deviceId} timestamp={data?.timestamp} />
       </div>
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:grid-cols-4" style={{ gridAutoRows: '80px' }}>
@@ -56,11 +56,11 @@ export default function BentoGrid() {
             className={[
               colSpanClass[kpi.colSpan ?? 1],
               rowSpanClass[kpi.rowSpan ?? 1],
-          ].join(' ')}
+            ].join(' ')}
             style={{
-            gridColumnStart: kpi.colStart,
-            gridRowStart:    kpi.rowStart,
-          }}>
+              gridColumnStart: kpi.colStart,
+              gridRowStart: kpi.rowStart,
+            }}>
             <KPICard key={kpi.id} kpi={kpi} data={data} loading={isLoading} offline={offline} error={failed} />
           </div>
         ))}
