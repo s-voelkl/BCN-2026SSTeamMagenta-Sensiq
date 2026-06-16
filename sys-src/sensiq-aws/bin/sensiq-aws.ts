@@ -4,6 +4,7 @@ import { SensiqIotDeviceStack } from '../infra/sensiq-iot-device-stack';
 import { SensiqLiveStack } from '../infra/sensiq-live-stack';
 import { SensiqHistoryStack } from '../infra/sensiq-history-stack';
 import { SensiqApiStack } from '../infra/sensiq-api-stack';
+import { SensiqFrontendStack } from '../infra/sensiq-frontend-stack';
 
 const app = new cdk.App();
 
@@ -19,6 +20,8 @@ const apiStack = new SensiqApiStack(app, 'SensiqApiStack', {
     liveFunction: liveStack.lambdaHandleLiveData,
     historyFunction: historyStack.lambdaHandleHistoryData,
 });
+
+const frontendStack = new SensiqFrontendStack(app, 'SensiqFrontendStack') // eslint-disable-line
 
 liveStack.addDependency(deviceStack);
 apiStack.addDependency(liveStack);

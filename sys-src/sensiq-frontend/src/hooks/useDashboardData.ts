@@ -1,95 +1,52 @@
-import { useQuery } from '@tanstack/react-query'
-import { /* SensorSchema,*/ type SensorData, type SensorHistory, type TimeRanges } from '../types/dashboard'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { HistoryResponseSchema, SensorSchemaLive, IntervalMapper, type AggregationInterval, type SensorDataLive, type SensorDataHistory, type TimeRanges } from '../types/dashboard'
 
-export const mockLiveData: SensorData = {
-  running_time: 111164587,
-  timestamp: "2026-05-28T00:43:00Z",
-  device_id: "esp32-lab-001",
-  location: "Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany",
-  dht_humidity: 51,
-  dht_temperature: 25.11111,
-  dht_heat_index: 24.99697,
-  flame_analog: 0,
-  flame_digital: false,
-  thermistor_analog: 2027,
-  thermistor_digital: false,
-  thermistor_temp: 24.5484,
-  is_outlier: false,
-  collect_training: false,
-  outlier_prediction: false
+const api_key = import.meta.env.VITE_API_KEY;
+const api_url = import.meta.env.VITE_API_URL;
+
+// Error thrown for a non-2xx response. Keeps the status code and any JSON body
+// (e.g. the 437 { message: "Device is offline", last_seen } payload) so the UI can
+// tell "offline" apart from other failures.
+export class ApiError extends Error {
+  status: number
+  info?: { message?: string; last_seen?: string }
+  constructor(status: number, info?: { message?: string; last_seen?: string }) {
+    super(info?.message ?? `HTTP ${status}`)
+    this.name = 'ApiError'
+    this.status = status
+    this.info = info
+  }
 }
 
-export const mockHistoryData: SensorHistory = [
-  {
-    running_time: 111164587,
-    timestamp: "2026-05-28T00:40:00Z", // 1 minute later
-    device_id: "esp32-lab-001",
-    location: "Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany",
-    dht_humidity: 51,
-    dht_temperature: 25.7,
-    dht_heat_index: 23.99697,
-    flame_analog: 0,
-    flame_digital: false,
-    thermistor_analog: 2025,
-    thermistor_digital: false,
-    thermistor_temp: 22.5484,
-    is_outlier: false,
-    collect_training: false,
-    outlier_prediction: false
-  },
-  {
-    running_time: 111164587,
-    timestamp: "2026-05-28T00:41:00Z", // 1 minute later
-    device_id: "esp32-lab-001",
-    location: "Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany",
-    dht_humidity: 43,
-    dht_temperature: 24.5,
-    dht_heat_index: 24.0,
-    flame_analog: 1,
-    flame_digital: false,
-    thermistor_analog: 4012,
-    thermistor_digital: false,
-    thermistor_temp: 23.93,
-    is_outlier: false,
-    collect_training: false,
-    outlier_prediction: false
-  },
-  {
-    running_time: 111164587,
-    timestamp: "2026-05-28T00:42:00Z", // 1 minute later
-    device_id: "esp32-lab-001",
-    location: "Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany",
-    dht_humidity: 51,
-    dht_temperature: 26.1,
-    dht_heat_index: 25.99697,
-    flame_analog: 0,
-    flame_digital: false,
-    thermistor_analog: 2026,
-    thermistor_digital: false,
-    thermistor_temp: 23.5484,
-    is_outlier: false,
-    collect_training: false,
-    outlier_prediction: false
-  },
-  mockLiveData
-]
-
-// this function fetches the live data from API Gateway and parses it using the SensorSchema
-const fetchLiveData = async (): Promise<SensorData> => {
-  // const res = await fetch('https://jsonplaceholder.typicode.com/todos/1', {
-  //   // headers: {
-  //   //   'x-api-key':    "<Replace API Key here>",
-  //   //   'Content-Type': 'application/json',
-  //   // },
-  // })
-  // if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard data`)
-  // return SensorSchema.parse(await res.json())
-  return mockLiveData // replace this line with the above code to fetch real data from the API
+/** True when the live endpoint reports the device as offline (HTTP 437 / "offline" message). */
+export function isDeviceOffline(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    (error.status === 437 || /offline/i.test(error.info?.message ?? ''))
+  )
 }
 
-// fetches data every 5 seconds for live updates
+/** Fetches the latest live reading from the API Gateway and validates it against the schema. */
+const fetchLiveData = async (): Promise<SensorDataLive> => {
+  const res = await fetch(`${api_url}/live`, {
+    method: "POST",
+    headers: {
+      'x-api-key': api_key,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ device_id: "esp32-lab-001" }),
+  })
+  if (!res.ok) {
+    // Surface the JSON error body so the dashboard can detect the offline case.
+    const info = await res.json().catch(() => undefined)
+    throw new ApiError(res.status, info)
+  }
+  return SensorSchemaLive.parse(await res.json())
+}
+
+/** React Query hook that loads the live data and refetches it every 5 seconds. */
 export function useLiveData() {
-  return useQuery<SensorData>({
+  return useQuery<SensorDataLive>({
     queryKey: ['liveData'],
     queryFn: fetchLiveData,
     refetchInterval: 5000, // Refetch every 5 seconds for live updates
@@ -97,37 +54,45 @@ export function useLiveData() {
   })
 }
 
-// not in use yet
-// excerpt from the history data fetching function, see sensiq-aws/src/lambda/history:
-// parameters:
-// 			* ``limit``(str, optional): Maximum number of records to return
-// (default ``100``, capped at: data: `MAX_RESULT_LIMIT`).
-// 			* ``startDate``(str, optional): Inclusive start timestamp in ISO 8601
-// format, e.g. ``"2026-05-25T00:00:00Z"``.
-// 			* ``endDate``(str, optional): Inclusive end timestamp in ISO 8601 format.
-// example: 
-// "queryStringParameters": {
-//   "limit": "10",
-//   "startDate": "2026-01-01T00:00:00Z",
-//   "endDate": "2028-12-31T23:59:59Z"
-// }
-const fetchHistoryData = async (): Promise<SensorHistory> => {
-  // const res = await fetch('<REPLACE_WITH_API_ENDPOINT>?range={range}', {
-  //   // headers: {
-  //   //   'x-api-key':    "<Replace API Key here>",
-  //   //   'Content-Type': 'application/json',
-  //   // },
-  // })
-  // if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard data`)
-  // return res.json()
-  return mockHistoryData // replace this line with the above code to fetch real data from the API
+/**
+ * Fetches historical readings for the device and unwraps the { data: [...] } response.
+ * @param interval how much the backend aggregates the data (defaults to 10 minutes)
+ */
+const fetchHistoryData = async (
+  interval: AggregationInterval = '10_minutes',
+): Promise<SensorDataHistory[]> => {
+  const res = await fetch(`${api_url}/history`, {
+    method: "POST",
+    headers: {
+      'x-api-key': api_key,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ device_id: 'esp32-lab-001', precision: interval })
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard data`)
+
+  // The Lambda responds with { "data": [ ...rows ] }, so unwrap before returning.
+  const parsed = HistoryResponseSchema.safeParse(await res.json())
+  if (!parsed.success) {
+    console.error('history schema mismatch:', parsed.error.issues)
+    throw parsed.error
+  }
+  return parsed.data.data
 }
 
-// not in use yet
+/**
+ * React Query hook for historical data of the given time range.
+ * Picks the matching aggregation interval and keeps the previous data while refetching.
+ * @param range the selected time window (e.g. '1D', '1W')
+ */
 export function useHistoryData(range: TimeRanges) {
-  return useQuery<SensorHistory>({
-    queryKey: ['historyData', range],
-    queryFn: () => fetchHistoryData(), // pass range as prop to fetch different time ranges from the API (remove for linting)
+  const interval = IntervalMapper[range]
+  return useQuery<SensorDataHistory[]>({
+    queryKey: ['historyData', range, interval],
+    queryFn: () => fetchHistoryData(interval),
     staleTime: 0,
+    // Keep the previous range's data on screen while the new range loads,
+    // so switching ranges doesn't blank the chart (isLoading only fires on first load).
+    placeholderData: keepPreviousData,
   })
 }
