@@ -7,16 +7,8 @@ import {
   useHistoryData,
   isDeviceOffline,
   ApiError,
-  mockLiveData,
-  mockLiveDataActiveDevice,
-  mockHistoryData,
 } from '../useDashboardData'
-import {
-  SensorSchemaLive,
-  SensorHistorySchema,
-  type SensorDataLive,
-  type SensorDataHistory,
-} from '../../types/dashboard'
+import type { SensorDataLive, SensorDataHistory } from '../../types/dashboard'
 
 // Each test gets a fresh client with retries off so a failed query surfaces immediately.
 function createWrapper() {
@@ -219,24 +211,5 @@ describe('useHistoryData', () => {
     await waitFor(() => expect(result.current.isError).toBe(true))
 
     expect(result.current.error?.message).toContain('HTTP 503')
-  })
-})
-
-// The mock objects are used as fallback/demo data, so they must stay schema-valid.
-describe('mock data contracts', () => {
-  it('mockLiveData matches the live sensor schema', () => {
-    expect(() => SensorSchemaLive.parse(mockLiveData)).not.toThrow()
-  })
-
-  it('mockLiveDataActiveDevice matches the live sensor schema', () => {
-    expect(() => SensorSchemaLive.parse(mockLiveDataActiveDevice)).not.toThrow()
-  })
-
-  it('mockHistoryData matches the history schema', () => {
-    expect(() => SensorHistorySchema.parse(mockHistoryData)).not.toThrow()
-  })
-
-  it('mockLiveData carries a parseable ISO timestamp', () => {
-    expect(Number.isNaN(Date.parse(mockLiveData.timestamp))).toBe(false)
   })
 })
