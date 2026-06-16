@@ -5,6 +5,7 @@ import type { KPIs, TimeRanges } from '../types/dashboard'
 import { useState } from 'react'
 import SensorChart from './SensorChart'
 
+/** Grey pulsing placeholder box shown while data is still loading. */
 function SkeletonCard({ className = '' }: { className?: string }) {
   return (
     <div className={['animate-pulse rounded-2xl border border-slate-800 bg-slate-900/80', className].join(' ')} />
@@ -23,19 +24,28 @@ const rowSpanClass = {
 } as const
 
 const KPI: KPIs = [
-  { id: '1', label: 'Temperature', unit: '°C', measure: 'dht_temperature', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 1 },
-  { id: '2', label: 'Humidity', unit: '%', measure: 'dht_humidity', colSpan: 1, rowSpan: 2, rowStart: 3, colStart: 1 },
-  { id: '3', label: 'Flame', unit: '', measure: 'flame_analog', colSpan: 1, rowSpan: 2, rowStart: 5, colStart: 1 },
+  { id: '1', label: 'Temperature', unit: ' °C', measure: 'dht_temperature', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 1 },
+  { id: '2', label: 'Humidity', unit: '%', measure: 'dht_humidity', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 2 },
+  { id: '3', label: 'Flame', unit: '', measure: 'flame_analog', colSpan: 1, rowSpan: 2, rowStart: 5, colStart: 4 },
+  { id: '4', label: 'Light Intensity', unit: ' lux', measure: 'tsl_lux', colSpan: 1, rowSpan: 2, rowStart: 3, colStart: 4 },
+  { id: '5', label: 'Pressure', unit: ' hPa', measure: 'bme_pressure', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 3 },
+  { id: '6', label: 'Gases', unit: ' ppb', measure: 'bme_voc', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 4 },
   // add more KPIs as needed
 ]
 
+/** Main dashboard: loads the live and history data and lays out the KPI cards and chart in a grid. */
 export default function BentoGrid() {
   const { data, isLoading, isError } = useLiveData()
 
   const deviceId = data?.device_id || "Unknown Device"
   
   const [range, setRange] = useState<TimeRanges>('1D')
-  const { data: historyData, isLoading: historyLoading } = useHistoryData(range)
+  const {
+    data: historyData,
+    isLoading: historyLoading,
+    isFetching: historyFetching,
+    isError: historyError,
+  } = useHistoryData(range)
 
 
   // Loading State
@@ -69,7 +79,7 @@ export default function BentoGrid() {
         <Greeting deviceId={deviceId} timestamp={data.timestamp}/>
       </div>
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:grid-cols-5" style={{ gridAutoRows: '80px' }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:grid-cols-4" style={{ gridAutoRows: '80px' }}>
         {KPI.map(kpi => (
           <div key={kpi.id} 
             className={[
@@ -84,20 +94,16 @@ export default function BentoGrid() {
           </div>
         ))}
         {/* Chart */}
-        <div className="col-span-5 row-span-6 col-start-2 row-start-1">
-          {historyLoading ? (
-            <SkeletonCard className="h-full" />
-          ):(
+        <div className="col-span-3 row-span-4 col-start-1 row-start-3">
           <SensorChart
             data={historyData ?? []}
             measure="dht_temperature"
-            label="Temperature"
-            unit="°C"
-            color="#2abe9bff"
             range={range}
             onRangeChange={setRange}
-            />
-          )}
+            loading={historyLoading}
+            fetching={historyFetching}
+            error={historyError}
+          />
         </div>
       </div>
     </div>

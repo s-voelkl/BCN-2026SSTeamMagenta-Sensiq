@@ -6,6 +6,7 @@ interface GreetingProps {
   timestamp?: string // optional timestamp for freshness check, future use
 }
 
+/** Returns a greeting label and matching emoji based on the current hour of the day. */
 function getGreeting(): { label: string; emoji: string } {
   const h = new Date().getHours()
   if (h < 5)  return { label: 'Good Night',      emoji: '🌙' }
@@ -14,6 +15,7 @@ function getGreeting(): { label: string; emoji: string } {
   return       { label: 'Good Evening',          emoji: '🌆' }
 }
 
+/** Returns true if the timestamp is less than 5 minutes old (used as the "online" check). */
 function isWithinFiveMinutes(timestamp: string): boolean {
   const given = new Date(timestamp).getTime();
   const now = Date.now();
@@ -21,6 +23,7 @@ function isWithinFiveMinutes(timestamp: string): boolean {
   return diffMs < 5 * 60 * 1000;
 }
 
+/** Header banner showing a time-based greeting, a live clock, and the device's online status. */
 export default function Greeting({ deviceId, timestamp }: GreetingProps) {
   const [now, setNow] = useState(new Date())
 

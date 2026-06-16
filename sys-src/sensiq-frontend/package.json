@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "test": "vitest --passWithNoTests",
-    "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import KPICard from '../KPICard'
-import type { KPI, SensorData } from '../../types/dashboard'
+import type { KPI, SensorDataLive } from '../../types/dashboard'
 
-function makeSensor(overrides: Partial<SensorData> = {}): SensorData {
+// A complete live reading; each test overrides just the field it cares about.
+function makeSensor(overrides: Partial<SensorDataLive> = {}): SensorDataLive {
   return {
-    running_time: 1,
     timestamp: '2026-05-28T00:43:00Z',
     device_id: 'esp32-lab-001',
     location: 'Lab A',
@@ -13,10 +13,13 @@ function makeSensor(overrides: Partial<SensorData> = {}): SensorData {
     dht_temperature: 25.11111,
     dht_heat_index: 24.99697,
     flame_analog: 0,
-    flame_digital: false,
-    thermistor_analog: 2027,
-    thermistor_digital: false,
     thermistor_temp: 24.5484,
+    bme_temperature: 22,
+    bme_humidity: 44,
+    bme_pressure: 964,
+    bme_altitude: 411,
+    bme_voc: 215,
+    tsl_lux: 361,
     ...overrides,
   }
 }
@@ -31,20 +34,24 @@ describe('KPICard', () => {
     expect(screen.getByText('Temperature')).toBeInTheDocument()
   })
 
-  it('rounds a decimal measure to two places and appends the unit (transformDecimal)', () => {
+  // Value and unit now live in two separate elements, so we check them individually.
+  it('rounds a decimal temperature to two places and shows the unit (transformDecimal)', () => {
     render(<KPICard kpi={tempKpi} data={makeSensor({ dht_temperature: 25.11111 })} />)
-    expect(screen.getByText('25.11°C')).toBeInTheDocument()
+    expect(screen.getByText('25.11')).toBeInTheDocument()
+    expect(screen.getByText('°C')).toBeInTheDocument()
   })
 
   it('drops trailing zeros produced by rounding', () => {
     // 25.999 -> toFixed(2) "26.00" -> parseFloat -> 26
     render(<KPICard kpi={tempKpi} data={makeSensor({ dht_temperature: 25.999 })} />)
-    expect(screen.getByText('26°C')).toBeInTheDocument()
+    expect(screen.getByText('26')).toBeInTheDocument()
   })
 
-  it('renders an integer measure unchanged with its unit', () => {
-    render(<KPICard kpi={humidityKpi} data={makeSensor({ dht_humidity: 51 })} />)
-    expect(screen.getByText('51%')).toBeInTheDocument()
+  // Non-temperature measures are truncated to an integer (transformInteger).
+  it('truncates a non-temperature measure to an integer and shows the unit', () => {
+    render(<KPICard kpi={humidityKpi} data={makeSensor({ dht_humidity: 51.8 })} />)
+    expect(screen.getByText('51')).toBeInTheDocument()
+    expect(screen.getByText('%')).toBeInTheDocument()
   })
 
   it('shows "Negative" for a flame value of 0 (transformFlame)', () => {
@@ -59,5 +66,12 @@ describe('KPICard', () => {
     const value = screen.getByText('Positive')
     expect(value).toBeInTheDocument()
     expect(value).toHaveStyle({ color: 'rgb(239, 68, 68)' }) // #EF4444 red
+  })
+
+  // The flame KPI has an empty unit, so only the label + value <p> should render
+  // (no third unit element).
+  it('does not render a unit element when the KPI unit is empty', () => {
+    const { container } = render(<KPICard kpi={flameKpi} data={makeSensor()} />)
+    expect(container.querySelectorAll('p')).toHaveLength(2)
   })
 })
