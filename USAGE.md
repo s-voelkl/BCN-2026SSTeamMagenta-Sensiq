@@ -188,13 +188,4 @@ To automatically fix your linting issues (when possible) run ``yarn lint:fix``
 
 ### Docker Containerization
 
-The docker container is built using the following files: ``.dockerignore``, ``Dockerfile``, ``docker-compose.yaml`` and ``nginx.conf``. The container can be built and run using the following commands:
-
-- Build the Docker image: ``docker build --tag sensiq-frontend-001 .`` (the "001" can be replaced with any version number)
-- View Docker images: ``docker images`` (should show "sensiq-frontend-001" in the list)
-- Run the Docker container: ``docker compose up --build`` (runs on port 8080)
-- Optional background run: ``docker compose up --build -d`` (runs in the background)
-- Show running containers: ``docker ps``
-- Stopping container: ``docker compose down``
-
-Open the frontend in your browser at ``http://localhost:8080``.
+Docker is not needed anymore, as the frontend is deployed on an AWS S3 bucket.
