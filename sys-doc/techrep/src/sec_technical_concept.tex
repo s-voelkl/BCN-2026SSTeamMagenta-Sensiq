@@ -18,9 +18,9 @@ interface. Briefly justify the chosen programming languages
 (C++ firmware, Python lambdas, TypeScript infrastructure, React UI).
 
 \subsection{System Architecture}\label{sec:architecture}
-% TODO: remove section information
-Present the architecture diagram (see template: fig:cloud-architecture)
-and walk the reader through the data flow: ESP32 -> MQTT/TLS ->
-AWS IoT Core -> validation Lambda -> dual persistence (DynamoDB for
-live, S3 + Athena for history) -> REST endpoints -> frontend / SNS.
-% Reference the diagram with \cref{fig:cloud-architecture}.
+\begin{figure*}[!tb]
+  \centering
+  \includegraphics[width=\textwidth]{architecture.pdf}
+  \caption{Cloud Processing Architecture}
+  \label{fig:cloud-architecture}
+\end{figure*}
