@@ -161,9 +161,15 @@ The hardware units send JSON payloads to AWS with the following structure:
 
 ## Frontend
 
-We are using tailwind as our Design Plugin, in combination with recharts as central dependency to display our data.
+We are using tailwind as our Design Plugin, in combination with recharts as central dependency to display our data. Our desired test coverage is >60%.
 
-Our desired test coverage is >60%
+For effectively running the frontend, a connection to the AWS backend is needed.
+The CDK deployment step outputs a file ``cdk-outputs.json`` with the S3 bucket name and website url for the frontend deployment step. In ``sys-src/sensiq-frontend/.env`` the following *variables* need to be set:
+
+    ```text
+    VITE_API_KEY=<your-api-key>
+    VITE_API_URL=<your-api-url>
+    ```
 
 ### Dependency Installation
 
@@ -171,14 +177,14 @@ We are using yarnv1 (just like the aws cdk).
 
 ``yarn -v`` (1.22.22)
 
-``yarn install`` (in sensiq-frontend folder with ``cd ./sys-src/sensiq-frontend/``)
+``yarn install`` (in sensiq-frontend folder with ``cd ./sys-src/sensiq-frontend/``).
 
 ### Testing
 
-Run ``yarn test`` to run all vitest tests (specified in ``./src/test``)
-Or ``yarn test:coverage`` to also get your test coverage
+Run ``yarn test`` to run all vitest tests (specified in ``./src/test``).
+Or ``yarn test:coverage`` to also get your test coverage.
 
-For visual testing run ``yarn dev`` to open a socket on your machine
+For visual testing run ``yarn dev`` to open a socket on your machine.
 
 ### Linting
 
