@@ -1,4 +1,5 @@
-#include "config.h"
+#include "../../config.h"
+
 #include <ArduinoJson.h>
 #include "MqttConnection.h"
 #include <MQTT.h>

@@ -1,5 +1,6 @@
 #include "WifiConnection.h"
-#include "config.h"
+#include "../../config.h"
+
 #include <AUnit.h>
 
 test(WifiConnection_connectToWiFi_connectsToWiFiAndReturnsTrue)

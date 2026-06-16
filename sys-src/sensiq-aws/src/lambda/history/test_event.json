@@ -1,7 +1,7 @@
 {
     "resource": "/history",
     "path": "/history",
-    "httpMethod": "GET",
+    "httpMethod": "POST",
     "headers": {
         "Accept": "application/json",
         "Content-Type": "application/json",
@@ -12,22 +12,14 @@
         "Accept": ["application/json"],
         "Content-Type": ["application/json"]
     },
-    "queryStringParameters": {
-        "limit": "10",
-        "startDate": "2026-01-01T00:00:00Z",
-        "endDate": "2028-12-31T23:59:59Z"
-    },
-    "multiValueQueryStringParameters": {
-        "limit": ["10"],
-        "startDate": ["2026-01-01T00:00:00Z"],
-        "endDate": ["2028-12-31T23:59:59Z"]
-    },
+    "queryStringParameters": null,
+    "multiValueQueryStringParameters": null,
     "pathParameters": null,
     "stageVariables": null,
     "requestContext": {
         "resourceId": "abc123",
         "resourcePath": "/history",
-        "httpMethod": "GET",
+        "httpMethod": "POST",
         "extendedRequestId": "TestRequestId=",
         "requestTime": "02/Jun/2026:12:00:00 +0000",
         "path": "/prod/history",
@@ -44,6 +36,6 @@
         "domainName": "example.execute-api.eu-central-1.amazonaws.com",
         "apiId": "abcdef1234"
     },
-    "body": null,
+    "body": "{\"device_id\":\"esp32-lab-001\",\"limit\":10,\"start_date\":\"2026-06-01T00:00:00Z\",\"end_date\":\"2026-08-15T00:00:00Z\",\"precision\":\"1_hour\"}",
     "isBase64Encoded": false
 }

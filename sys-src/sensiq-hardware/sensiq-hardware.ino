@@ -1,7 +1,8 @@
-#include "WifiConnection.h"
-#include "MqttConnection.h"
-#include "SensorHelper.h"
-#include "TimeHelper.h"
+#include "src/network/wifi/WifiConnection.h"
+#include "src/network/mqtt/MqttConnection.h"
+#include "src/network/time/TimeHelper.h"
+#include "src/sensors/SensorHelper.h"
+
 #include <AUnit.h>
 
 // Set to 1 to run AUnit tests; set 0 for main functionality.

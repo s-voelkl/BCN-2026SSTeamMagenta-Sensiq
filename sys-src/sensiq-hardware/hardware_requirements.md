@@ -27,6 +27,8 @@
 - WiFi (Arduino)
 - DHT sensor library (Adafruit)
 - AUnit (Brian T. Park)
+- Adafruit BME680 Library (Adafruit)
+- Adafruit TSL2561 (Adafruit)
 
 ## Arduino Boards Manager
 
