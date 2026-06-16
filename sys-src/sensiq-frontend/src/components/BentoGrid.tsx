@@ -1,16 +1,9 @@
 import Greeting from './Greeting'
-import { useHistoryData, useLiveData } from '../hooks/useDashboardData'
+import { useHistoryData, useLiveData, isDeviceOffline } from '../hooks/useDashboardData'
 import KPICard from './KPICard'
 import type { KPIs, TimeRanges } from '../types/dashboard'
 import { useState } from 'react'
 import SensorChart from './SensorChart'
-
-/** Grey pulsing placeholder box shown while data is still loading. */
-function SkeletonCard({ className = '' }: { className?: string }) {
-  return (
-    <div className={['animate-pulse rounded-2xl border border-slate-800 bg-slate-900/80', className].join(' ')} />
-  )
-}
 
 // Lookup tables => less writing effort
 const colSpanClass = {
@@ -35,10 +28,13 @@ const KPI: KPIs = [
 
 /** Main dashboard: loads the live and history data and lays out the KPI cards and chart in a grid. */
 export default function BentoGrid() {
-  const { data, isLoading, isError } = useLiveData()
+  const { data, isLoading, isError, error } = useLiveData()
 
-  const deviceId = data?.device_id || "Unknown Device"
-  
+  const deviceId = data?.device_id || "Device Offline"
+  // Translate the live query state into per-KPI flags.
+  const offline = isError && isDeviceOffline(error)
+  const failed = !isLoading && !offline && !data // generic error or unexpectedly missing data
+
   const [range, setRange] = useState<TimeRanges>('1D')
   const {
     data: historyData,
@@ -47,41 +43,16 @@ export default function BentoGrid() {
     isError: historyError,
   } = useHistoryData(range)
 
-
-  // Loading State
-  if (isLoading) {
-    return (
-      <div className="space-y-4" aria-label="Loading dashboard">
-        <SkeletonCard className="h-24" />
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} className="h-32" />)}
-        </div>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-          <SkeletonCard className="h-72 lg:col-span-3" />
-          <SkeletonCard className="h-72" />
-        </div>
-      </div>
-    )
-  }
-
-  if (isError || !data) {
-    return (
-      <div className="flex h-48 items-center justify-center rounded-2xl border border-rose-900/50 bg-rose-950/20 text-rose-400">
-        An error occurred while loading the dashboard data.
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-4">
-      {/* Greeting */}
+      {/* Header — always visible, even while loading or on error */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-6 py-5 backdrop-blur-sm">
-        <Greeting deviceId={deviceId} timestamp={data.timestamp}/>
+        <Greeting deviceId={deviceId} timestamp={data?.timestamp}/>
       </div>
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:grid-cols-4" style={{ gridAutoRows: '80px' }}>
         {KPI.map(kpi => (
-          <div key={kpi.id} 
+          <div key={kpi.id}
             className={[
               colSpanClass[kpi.colSpan ?? 1],
               rowSpanClass[kpi.rowSpan ?? 1],
@@ -90,7 +61,7 @@ export default function BentoGrid() {
             gridColumnStart: kpi.colStart,
             gridRowStart:    kpi.rowStart,
           }}>
-            <KPICard key={kpi.id} kpi={kpi} data={data} />
+            <KPICard key={kpi.id} kpi={kpi} data={data} loading={isLoading} offline={offline} error={failed} />
           </div>
         ))}
         {/* Chart */}

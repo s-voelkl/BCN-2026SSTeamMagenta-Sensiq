@@ -5,6 +5,8 @@ import { renderHook, waitFor } from '@testing-library/react'
 import {
   useLiveData,
   useHistoryData,
+  isDeviceOffline,
+  ApiError,
   mockLiveData,
   mockLiveDataActiveDevice,
   mockHistoryData,
@@ -135,6 +137,34 @@ describe('useLiveData', () => {
 
     const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isError).toBe(true))
+  })
+
+  // A 437 returns { message: "Device is offline", last_seen }; we flag it as offline.
+  it('throws an ApiError flagged as offline on a 437 response', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(
+        { message: 'Device is offline', last_seen: '2026-06-16T00:11:33Z' },
+        { ok: false, status: 437 },
+      ),
+    )
+
+    const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+
+    expect(result.current.error).toBeInstanceOf(ApiError)
+    expect((result.current.error as ApiError).status).toBe(437)
+    expect(isDeviceOffline(result.current.error)).toBe(true)
+  })
+})
+
+describe('isDeviceOffline', () => {
+  it('is true for a 437 ApiError', () => {
+    expect(isDeviceOffline(new ApiError(437, { message: 'Device is offline' }))).toBe(true)
+  })
+
+  it('is false for a generic error', () => {
+    expect(isDeviceOffline(new Error('HTTP 500'))).toBe(false)
+    expect(isDeviceOffline(new ApiError(500))).toBe(false)
   })
 })
 

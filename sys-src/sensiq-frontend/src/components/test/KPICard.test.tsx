@@ -74,4 +74,29 @@ describe('KPICard', () => {
     const { container } = render(<KPICard kpi={flameKpi} data={makeSensor()} />)
     expect(container.querySelectorAll('p')).toHaveLength(2)
   })
+
+  // Per-KPI states so one failing live request doesn't blank the whole dashboard.
+  describe('non-data states', () => {
+    it('shows a skeleton (and no value) while loading', () => {
+      render(<KPICard kpi={tempKpi} loading />)
+      expect(screen.getByTestId('kpi-skeleton')).toBeInTheDocument()
+      expect(screen.queryByText('°C')).not.toBeInTheDocument()
+    })
+
+    it('shows an offline message when the device is offline', () => {
+      render(<KPICard kpi={tempKpi} offline />)
+      expect(screen.getByText('No data')).toBeInTheDocument()
+      expect(screen.getByText('Device offline')).toBeInTheDocument()
+    })
+
+    it('shows a generic error message on a non-offline error', () => {
+      render(<KPICard kpi={tempKpi} error />)
+      expect(screen.getByText(/an error occurred/i)).toBeInTheDocument()
+    })
+
+    it('falls back to the error message when no data is provided', () => {
+      render(<KPICard kpi={tempKpi} />)
+      expect(screen.getByText('Unavailable')).toBeInTheDocument()
+    })
+  })
 })

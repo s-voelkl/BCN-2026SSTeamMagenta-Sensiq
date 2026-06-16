@@ -135,6 +135,28 @@ export const mockHistoryData: SensorDataHistory[] = [
 }
 ]
 
+// Error thrown for a non-2xx response. Keeps the status code and any JSON body
+// (e.g. the 437 { message: "Device is offline", last_seen } payload) so the UI can
+// tell "offline" apart from other failures.
+export class ApiError extends Error {
+  status: number
+  info?: { message?: string; last_seen?: string }
+  constructor(status: number, info?: { message?: string; last_seen?: string }) {
+    super(info?.message ?? `HTTP ${status}`)
+    this.name = 'ApiError'
+    this.status = status
+    this.info = info
+  }
+}
+
+/** True when the live endpoint reports the device as offline (HTTP 437 / "offline" message). */
+export function isDeviceOffline(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    (error.status === 437 || /offline/i.test(error.info?.message ?? ''))
+  )
+}
+
 /** Fetches the latest live reading from the API Gateway and validates it against the schema. */
 const fetchLiveData = async (): Promise<SensorDataLive> => {
   const res = await fetch(`${api_url}/live`, {
@@ -145,7 +167,11 @@ const fetchLiveData = async (): Promise<SensorDataLive> => {
     },
     body: JSON.stringify({ device_id: "esp32-lab-001" }),
   })
-  if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard data`)
+  if (!res.ok) {
+    // Surface the JSON error body so the dashboard can detect the offline case.
+    const info = await res.json().catch(() => undefined)
+    throw new ApiError(res.status, info)
+  }
   return SensorSchemaLive.parse(await res.json())
 }
 
