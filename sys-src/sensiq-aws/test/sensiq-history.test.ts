@@ -308,6 +308,6 @@ test('Shareable Lambda test event schema is created with OpenApi3 and contains t
         // schemaName is built from the generated function name (a CFN token) at synth time
         SchemaName: Match.anyValue(),
         // The content is a serialized JSON string; verify it contains the example marker
-        Content: Match.stringLikeRegexp('apiGatewayHistoryGet'),
+        Content: Match.stringLikeRegexp('apiGatewayHistoryPost'),
     });
 });

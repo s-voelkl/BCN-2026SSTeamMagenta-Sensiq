@@ -1,5 +1,6 @@
 #include "SensorHelper.h"
-#include "config.h"
+#include "../config.h"
+
 #include <ArduinoJson.h>
 #include <AUnit.h>
 
@@ -18,6 +19,13 @@ test(SensorHelper_buildJsonString_exportsCorrectJsonData)
     testData.thermistorTemp = 25.0f;
     testData.isOutlier = true;
     testData.collectTraining = false;
+    testData.bmeHeatedUp = true;
+    testData.bmeTemperature = 23.5f;
+    testData.bmeHumidity = 45.0f;
+    testData.bmePressure = 1010.5f;
+    testData.bmeAltitude = 120.0f;
+    testData.bmeVOC = 50.0f;
+    testData.tslLux = 350.5f;
 
     String jsonResult = buildJsonString(testData);
 
@@ -43,6 +51,14 @@ test(SensorHelper_buildJsonString_exportsCorrectJsonData)
     assertNear(doc["thermistor_temp"].as<float>(), 25.0f, 0.01f);
     assertTrue(doc["is_outlier"].as<bool>());
     assertFalse(doc["collect_training"].as<bool>());
+
+    assertTrue(doc["bme_heated_up"].as<bool>());
+    assertNear(doc["bme_temperature"].as<float>(), 23.5f, 0.01f);
+    assertNear(doc["bme_humidity"].as<float>(), 45.0f, 0.01f);
+    assertNear(doc["bme_pressure"].as<float>(), 1010.5f, 0.01f);
+    assertNear(doc["bme_altitude"].as<float>(), 120.0f, 0.01f);
+    assertNear(doc["bme_voc"].as<float>(), 50.0f, 0.01f);
+    assertNear(doc["tsl_lux"].as<float>(), 350.5f, 0.01f);
 
     // running_time should be present and valid
     assertTrue(doc.containsKey("running_time"));
@@ -78,6 +94,18 @@ test(SensorHelper_readSensorsMock_returnsValidData)
     // Verify outlier and training flags are boolean
     assertTrue(data.isOutlier == true || data.isOutlier == false);
     assertTrue(data.collectTraining == true || data.collectTraining == false);
+
+    // Verify BME680 values
+    bool bmeTempNan = isnan(data.bmeTemperature);
+    assertTrue(bmeTempNan || (data.bmeTemperature >= -40.0f && data.bmeTemperature <= 85.0f));
+    bool bmeHumNan = isnan(data.bmeHumidity);
+    assertTrue(bmeHumNan || (data.bmeHumidity >= 0.0f && data.bmeHumidity <= 100.0f));
+    bool bmePresNan = isnan(data.bmePressure);
+    assertTrue(bmePresNan || (data.bmePressure >= 300.0f && data.bmePressure <= 1100.0f));
+
+    // Verify TSL2561 value
+    bool tslLuxNan = isnan(data.tslLux);
+    assertTrue(tslLuxNan || data.tslLux >= 0.0f);
 }
 
 test(SensorHelper_getMeanSensorData_returnsCorrectMean)
@@ -89,13 +117,13 @@ test(SensorHelper_getMeanSensorData_returnsCorrectMean)
     dataList[0].dhtHumidity = 40.0f;
     dataList[0].dhtTemperature = 20.0f;
     dataList[0].dhtHeatIndex = 20.0f;
-    dataList[0].flameAnalog = 1000;
-    dataList[0].flameDigital = false;
-    dataList[0].thermistorAnalog = 2000;
-    dataList[0].thermistorDigital = true;
-    dataList[0].thermistorTemp = 20.0f;
-    dataList[0].isOutlier = false;
-    dataList[0].collectTraining = true;
+    dataList[0].bmeHeatedUp = true;
+    dataList[0].bmeTemperature = 20.0f;
+    dataList[0].bmeHumidity = 30.0f;
+    dataList[0].bmePressure = 1000.0f;
+    dataList[0].bmeAltitude = 100.0f;
+    dataList[0].bmeVOC = 10.0f;
+    dataList[0].tslLux = 100.0f;
 
     dataList[1].timestamp = "2026-05-14T12:00:01Z";
     dataList[1].dhtHumidity = 50.0f;
@@ -108,6 +136,13 @@ test(SensorHelper_getMeanSensorData_returnsCorrectMean)
     dataList[1].thermistorTemp = 25.0f;
     dataList[1].isOutlier = true;
     dataList[1].collectTraining = false;
+    dataList[1].bmeHeatedUp = true;
+    dataList[1].bmeTemperature = 22.0f;
+    dataList[1].bmeHumidity = 40.0f;
+    dataList[1].bmePressure = 1010.0f;
+    dataList[1].bmeAltitude = 110.0f;
+    dataList[1].bmeVOC = 20.0f;
+    dataList[1].tslLux = 200.0f;
 
     dataList[2].timestamp = "2026-05-14T12:00:02Z"; // Newest
     dataList[2].dhtHumidity = 60.0f;
@@ -120,6 +155,13 @@ test(SensorHelper_getMeanSensorData_returnsCorrectMean)
     dataList[2].thermistorTemp = 30.0f;
     dataList[2].isOutlier = true;
     dataList[2].collectTraining = true;
+    dataList[2].bmeHeatedUp = true;
+    dataList[2].bmeTemperature = 24.0f;
+    dataList[2].bmeHumidity = 50.0f;
+    dataList[2].bmePressure = 1020.0f;
+    dataList[2].bmeAltitude = 120.0f;
+    dataList[2].bmeVOC = 30.0f;
+    dataList[2].tslLux = 300.0f;
 
     // Act: call method
     SensorData meanData = getMeanSensorData(dataList, 3);
@@ -136,6 +178,14 @@ test(SensorHelper_getMeanSensorData_returnsCorrectMean)
     assertNear(meanData.thermistorTemp, 25.0f, 0.01f);
     assertTrue(meanData.isOutlier);       // 2 trues vs 1 false > majority
     assertTrue(meanData.collectTraining); // 2 trues vs 1 false > majority
+
+    assertTrue(meanData.bmeHeatedUp);
+    assertNear(meanData.bmeTemperature, 22.0f, 0.01f);
+    assertNear(meanData.bmeHumidity, 40.0f, 0.01f);
+    assertNear(meanData.bmePressure, 1010.0f, 0.01f);
+    assertNear(meanData.bmeAltitude, 110.0f, 0.01f);
+    assertNear(meanData.bmeVOC, 20.0f, 0.01f);
+    assertNear(meanData.tslLux, 200.0f, 0.01f);
 }
 
 test(SensorHelper_readSensorsAveraged_delaysCorrectly)

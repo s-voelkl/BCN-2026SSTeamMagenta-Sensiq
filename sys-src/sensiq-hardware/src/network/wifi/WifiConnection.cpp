@@ -1,6 +1,7 @@
 #include "WifiConnection.h"
+#include "../../config.h"
+
 #include <WiFi.h>
-#include "config.h"
 
 /**
  * @brief Connect to the WiFi network using credentials from config.h.

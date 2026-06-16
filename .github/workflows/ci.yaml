@@ -80,3 +80,54 @@ jobs:
 
       - name: Typecheck
         run: yarn tsc --noEmit
+
+  compile-sensiq-hardware:
+    name: Compile Sensiq Hardware Sketch
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # production build with no test code included
+          - name: production
+            compile-flags: ""
+          # test build with test code included
+          - name: tests
+            compile-flags: "-DRUN_TESTS=1"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # Ensures the config header is available for the compiler,
+      # even if the real credentials are not checked into the repo
+      - name: Provide config.h from template
+        run: |
+          if [ ! -f sys-src/sensiq-hardware/src/config.h ]; then
+            cp sys-src/sensiq-hardware/src/template_config_h.txt sys-src/sensiq-hardware/src/config.h
+          fi
+
+      - name: Compile Arduino Sketch (${{ matrix.name }})
+        uses: arduino/compile-sketches@v1.1.2
+        with:
+          # Standard ESP32 Dev Module FQBN
+          fqbn: "esp32:esp32:esp32"
+          platforms: |
+            - name: esp32:esp32
+              source-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+              version: 3.3.8
+          libraries: |
+            - name: ArduinoHttpClient
+            - name: MQTT
+            - name: ArduinoJson
+            - name: DHT sensor library
+            - name: AUnit
+            - name: Adafruit BME680 Library
+            - name: Adafruit TSL2561
+          sketch-paths: |
+            - sys-src/sensiq-hardware/sensiq-hardware.ino
+          cli-compile-flags: |
+            - --build-property
+            - compiler.cpp.extra_flags=${{ matrix.compile-flags }}
+          enable-deltas-report: false
+          verbose: false

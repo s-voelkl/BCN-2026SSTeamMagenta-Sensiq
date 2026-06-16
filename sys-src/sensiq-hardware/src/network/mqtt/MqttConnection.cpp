@@ -1,5 +1,6 @@
 #include "MqttConnection.h"
-#include "config.h"
+#include "../../config.h"
+
 #include <MQTT.h>
 #include <WiFiClientSecure.h>
 
