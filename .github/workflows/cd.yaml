@@ -65,6 +65,7 @@ jobs:
 
       - name: Build frontend
         working-directory: sys-src/sensiq-frontend
+        # needs a .env file in the sys-src/sensiq-frontend directory with VITE_API_KEY and VITE_API_URL set.
         env:
           VITE_API_KEY: ${{ secrets.VITE_API_KEY}}
           VITE_API_URL: ${{ secrets.VITE_API_URL}}
@@ -83,6 +84,7 @@ jobs:
         run: npx cdk diff --all
 
       - name: CDK Deploy
+        # output file used for the S3 bucket name to sync the frontend assets.
         run: npx cdk deploy --all --require-approval never --tags Environment=prod --outputs-file cdk-outputs.json
 
       - name: Sync frontend to S3

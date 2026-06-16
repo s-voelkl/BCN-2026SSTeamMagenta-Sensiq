@@ -6,10 +6,10 @@ export class SensiqFrontendStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // Public s3 hosted website -> might want to put a Cloudfront distro infront foe https
+    // Public s3 hosted website -> might want to put a Cloudfront distro infront for https
     const bucket = new s3.Bucket(this, 'FrontendBucket', {
       websiteIndexDocument: 'index.html',
-      // client router should handle the errors -> fallback to the index.html itseglf
+      // client router should handle the errors -> fallback to the index.html itself
       websiteErrorDocument: 'index.html',
 
       // Grant GetObject Permissions for everyone
@@ -23,7 +23,8 @@ export class SensiqFrontendStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
-    // Outputs for the cd pipeline
+    // Outputs for the cd pipeline, produces a cdk-outputs.json file 
+    // with the bucket name and website url for the frontend deployment step.
     new cdk.CfnOutput(this, 'BucketName', {
       value: bucket.bucketName,
       description: 'Target for `aws s3 sync ./dist s3://<this> --delete`',
