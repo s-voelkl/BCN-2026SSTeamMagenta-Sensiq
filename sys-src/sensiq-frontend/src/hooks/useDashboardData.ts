@@ -54,22 +54,6 @@ export function useLiveData() {
   })
 }
 
-// not in use yet
-// excerpt from the history data fetching function, see sensiq-aws/src/lambda/history:
-// parameters:
-// 			* ``limit``(str, optional): Maximum number of records to return
-// (default ``100``, capped at: data: `MAX_RESULT_LIMIT`).
-// 			* ``startDate``(str, optional): Inclusive start timestamp in ISO 8601
-// format, e.g. ``"2026-05-25T00:00:00Z"``.
-// 			* ``endDate``(str, optional): Inclusive end timestamp in ISO 8601 format.
-// 			* ``interval``(str, optional): Aggregation interval (variable precision).
-// One of: all, 1_minute, 10_minutes (default), 1_hour, 1_day, 1_week, 1_month, 1_year.
-// example:
-// "queryStringParameters": {
-//   "limit": "10",
-//   "startDate": "2026-01-01T00:00:00Z",
-//   "endDate": "2028-12-31T23:59:59Z"
-// }
 /**
  * Fetches historical readings for the device and unwraps the { data: [...] } response.
  * @param interval how much the backend aggregates the data (defaults to 10 minutes)
