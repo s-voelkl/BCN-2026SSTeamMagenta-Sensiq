@@ -29,7 +29,9 @@ jobs:
         with:
           node-version: 20
           cache: 'yarn'
-          cache-dependency-path: sys-src/sensiq-aws/yarn.lock
+          cache-dependency-path: |
+            sys-src/sensiq-aws/yarn.lock
+            sys-src/sensiq-frontend/yarn.lock
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -57,6 +59,14 @@ jobs:
       - name: Test Lambda
         run: yarn test:lambda
 
+      - name: Install frontend dependencies
+        working-directory: sys-src/sensiq-frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: sys-src/sensiq-frontend
+        run: yarn build
+
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v6
         with:
@@ -70,4 +80,16 @@ jobs:
         run: npx cdk diff --all
 
       - name: CDK Deploy
-        run: npx cdk deploy --all --require-approval never --tags Environment=prod
+        run: npx cdk deploy --all --require-approval never --tags Environment=prod --outputs-file cdk-outputs.json
+
+      - name: Sync frontend to S3
+        run: |
+          BUCKET=$(jq -r 'to_entries[] | .value.BucketName // empty' cdk-outputs.json | head -n1)
+          if [ -z "$BUCKET" ]; then
+            echo "::error::Could not find BucketName in cdk-outputs.json"
+            exit 1
+          fi
+          echo "Syncing frontend to bucket: $BUCKET"
+ 
+          # Hashed assets: cache forever (immutable filenames).
+          aws s3 sync ../sensiq-frontend/dist "s3://$BUCKET" --delete 
