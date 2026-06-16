@@ -128,7 +128,6 @@ export default function SensorChart({
                 key={m}
                 value={m}
                 // Inline styles so the opened option list keeps the dark theme + DM Mono
-                // (native <option> ignores most Tailwind classes).
                 style={{ backgroundColor: '#0f172a', color: '#f8fafc', fontFamily: '"DM Mono", monospace' }}
               >
                 {MEASURE_META[m].label} ({MEASURE_META[m].unit})
