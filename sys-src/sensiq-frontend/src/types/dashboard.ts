@@ -69,7 +69,6 @@ export const SensorSchemaLive = z.object({
   location: z.coerce.string(),
   flame_digital: zStringBool,
   flame_analog: z.coerce.number(),
-  flame_digital: zStringBool,
   thermistor_temp: z.coerce.number(),
   bme_temperature: z.coerce.number(),
   bme_humidity: z.coerce.number(),

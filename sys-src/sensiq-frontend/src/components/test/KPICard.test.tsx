@@ -9,14 +9,11 @@ function makeSensor(overrides: Partial<SensorDataLive> = {}): SensorDataLive {
     timestamp: '2026-05-28T00:43:00Z',
     device_id: 'esp32-lab-001',
     location: 'Lab A',
-    dht_humidity: 51,
-    dht_temperature: 25.11111,
-    dht_heat_index: 24.99697,
+    bme_humidity: 51,
+    bme_temperature: 25.11111,
     flame_analog: 12,
     flame_digital: false,
     thermistor_temp: 24.5484,
-    bme_temperature: 22,
-    bme_humidity: 44,
     bme_pressure: 964,
     bme_altitude: 411,
     bme_voc: 215,
@@ -25,8 +22,8 @@ function makeSensor(overrides: Partial<SensorDataLive> = {}): SensorDataLive {
   }
 }
 
-const tempKpi: KPI = { id: '1', label: 'Temperature', unit: '°C', measure: 'dht_temperature' }
-const humidityKpi: KPI = { id: '2', label: 'Humidity', unit: '%', measure: 'dht_humidity' }
+const tempKpi: KPI = { id: '1', label: 'Temperature', unit: '°C', measure: 'bme_temperature' }
+const humidityKpi: KPI = { id: '2', label: 'Humidity', unit: '%', measure: 'bme_humidity' }
 const flameKpi: KPI = { id: '3', label: 'Flame', unit: '', measure: 'flame_digital' }
 
 describe('KPICard', () => {
@@ -37,20 +34,20 @@ describe('KPICard', () => {
 
   // Value and unit now live in two separate elements, so we check them individually.
   it('rounds a decimal temperature to two places and shows the unit (transformDecimal)', () => {
-    render(<KPICard kpi={tempKpi} data={makeSensor({ dht_temperature: 25.11111 })} />)
+    render(<KPICard kpi={tempKpi} data={makeSensor({ bme_temperature: 25.11111 })} />)
     expect(screen.getByText('25.11')).toBeInTheDocument()
     expect(screen.getByText('°C')).toBeInTheDocument()
   })
 
   it('drops trailing zeros produced by rounding', () => {
     // 25.999 -> toFixed(2) "26.00" -> parseFloat -> 26
-    render(<KPICard kpi={tempKpi} data={makeSensor({ dht_temperature: 25.999 })} />)
+    render(<KPICard kpi={tempKpi} data={makeSensor({ bme_temperature: 25.999 })} />)
     expect(screen.getByText('26')).toBeInTheDocument()
   })
 
   // Non-temperature measures are truncated to an integer (transformInteger).
   it('truncates a non-temperature measure to an integer and shows the unit', () => {
-    render(<KPICard kpi={humidityKpi} data={makeSensor({ dht_humidity: 51.8 })} />)
+    render(<KPICard kpi={humidityKpi} data={makeSensor({ bme_humidity: 51.8 })} />)
     expect(screen.getByText('51')).toBeInTheDocument()
     expect(screen.getByText('%')).toBeInTheDocument()
   })

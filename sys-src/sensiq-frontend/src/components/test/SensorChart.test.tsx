@@ -21,14 +21,14 @@ vi.mock('recharts', () => ({
 }))
 
 // A complete history row; tests only care about timestamp + the measured values.
-function makePoint(timestamp: string, dht_temperature: number): SensorDataHistory {
+function makePoint(timestamp: string, bme_temperature: number): SensorDataHistory {
   return {
     running_time: 1,
     timestamp,
     device_id: 'esp32-lab-001',
     location: 'Lab A',
     dht_humidity: 50,
-    dht_temperature,
+    dht_temperature: 22,
     dht_heat_index: 24,
     flame_analog: 0,
     flame_digital: false,
@@ -36,8 +36,8 @@ function makePoint(timestamp: string, dht_temperature: number): SensorDataHistor
     thermistor_digital: false,
     thermistor_temp: 24,
     bme_heated_up: true,
-    bme_temperature: 22,
-    bme_humidity: 44,
+    bme_temperature,
+    bme_humidity: 50,
     bme_pressure: 964,
     bme_altitude: 411,
     bme_voc: 215,
@@ -62,9 +62,9 @@ function readChartValues(): number[] {
 
 describe('SensorChart', () => {
   it('renders the historical heading and defaults the dropdown to the given measure', () => {
-    render(<SensorChart data={history} measure="dht_temperature" range="1D" />)
+    render(<SensorChart data={history} measure="bme_temperature" range="1D" />)
     expect(screen.getByText('Historical')).toBeInTheDocument()
-    expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('dht_temperature')
+    expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('bme_temperature')
   })
 
   // The dropdown is built from MEASURE_META, which excludes the flame sensor.
@@ -85,18 +85,18 @@ describe('SensorChart', () => {
   })
 
   it('keeps only points within a 6H window of the latest sample', () => {
-    render(<SensorChart data={history} measure="dht_temperature" range="6H" />)
+    render(<SensorChart data={history} measure="bme_temperature" range="6H" />)
     // latest = 12:00, cutoff = 06:00 -> drops the 00:00 point
     expect(readChartValues()).toEqual([20, 30])
   })
 
   it('keeps only the latest point within a 1H window', () => {
-    render(<SensorChart data={history} measure="dht_temperature" range="1H" />)
+    render(<SensorChart data={history} measure="bme_temperature" range="1H" />)
     expect(readChartValues()).toEqual([30])
   })
 
   it('keeps every point within a 1D window', () => {
-    render(<SensorChart data={history} measure="dht_temperature" range="1D" />)
+    render(<SensorChart data={history} measure="bme_temperature" range="1D" />)
     expect(readChartValues()).toEqual([10, 20, 30])
   })
 
@@ -108,22 +108,22 @@ describe('SensorChart', () => {
       makePoint('2026-01-01T00:00:00Z', 10),
       makePoint('2026-01-01T10:00:00Z', 20),
     ]
-    render(<SensorChart data={unsorted} measure="dht_temperature" range="1D" />)
+    render(<SensorChart data={unsorted} measure="bme_temperature" range="1D" />)
     expect(readChartValues()).toEqual([10, 20, 30])
   })
 
   it('plots the measure given as the initial selection', () => {
-    render(<SensorChart data={history} measure="dht_humidity" range="1D" />)
+    render(<SensorChart data={history} measure="bme_humidity" range="1D" />)
     // all points share dht_humidity = 50
     expect(readChartValues()).toEqual([50, 50, 50])
   })
 
   // Changing the dropdown re-plots a different field without any extra wiring.
   it('re-plots the chart when a new measure is selected', () => {
-    render(<SensorChart data={history} measure="dht_temperature" range="1D" />)
+    render(<SensorChart data={history} measure="bme_temperature" range="1D" />)
     expect(readChartValues()).toEqual([10, 20, 30]) // dht_temperature
 
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'dht_humidity' } })
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'bme_humidity' } })
     expect(readChartValues()).toEqual([50, 50, 50]) // now dht_humidity
   })
 
