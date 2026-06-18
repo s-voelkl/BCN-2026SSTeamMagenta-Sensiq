@@ -131,11 +131,45 @@ The AWS Root CA certificate can be found [online at Amazon](https://www.amazontr
 
 Run ``aws iot describe-endpoint --endpoint-type iot:Data-ATS`` to get the AWS IoT endpoint for the MQTT connection and insert it into the config file as well. It should look like ``...-ats.iot.eu-central-1.amazonaws.com``.
 
+The hardware units send JSON payloads to AWS with the following structure:
+
+    ```json
+    {
+    "running_time":131147,
+    "timestamp":"2026-06-15T10:45:16Z",
+    "device_id":"esp32-lab-001",
+    "location":"Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany",
+    "dht_humidity":61.6,
+    "dht_temperature":22.6,
+    "dht_heat_index":22.52377,
+    "flame_analog":1089,
+    "flame_digital":false,
+    "thermistor_analog":2178,
+    "thermistor_digital":false,
+    "thermistor_temp":27.95632,
+    "bme_heated_up":false,
+    "bme_temperature":24.89887,
+    "bme_humidity":59.40022,
+    "bme_pressure":964.558,
+    "bme_altitude":413.5006,
+    "bme_voc":97.3798,
+    "tsl_lux":167.8,
+    "is_outlier":false,
+    "collect_training":false
+    }
+    ```
+
 ## Frontend
 
-We are using tailwind as our Design Plugin, in combination with recharts as central dependency to display our data.
+We are using tailwind as our Design Plugin, in combination with recharts as central dependency to display our data. Our desired test coverage is >60%.
 
-Our desired test coverage is >60%
+For effectively running the frontend, a connection to the AWS backend is needed.
+The CDK deployment step outputs a file ``cdk-outputs.json`` with the S3 bucket name and website url for the frontend deployment step. In ``sys-src/sensiq-frontend/.env`` the following *variables* need to be set:
+
+    ```text
+    VITE_API_KEY=<your-api-key>
+    VITE_API_URL=<your-api-url>
+    ```
 
 ### Dependency Installation
 
@@ -143,14 +177,14 @@ We are using yarnv1 (just like the aws cdk).
 
 ``yarn -v`` (1.22.22)
 
-``yarn install`` (in sensiq-frontend folder with ``cd ./sys-src/sensiq-frontend/``)
+``yarn install`` (in sensiq-frontend folder with ``cd ./sys-src/sensiq-frontend/``).
 
 ### Testing
 
-Run ``yarn test`` to run all vitest tests (specified in ``./src/test``)
-Or ``yarn test:coverage`` to also get your test coverage
+Run ``yarn test`` to run all vitest tests (specified in ``./src/test``).
+Or ``yarn test:coverage`` to also get your test coverage.
 
-For visual testing run ``yarn dev`` to open a socket on your machine
+For visual testing run ``yarn dev`` to open a socket on your machine.
 
 ### Linting
 
@@ -160,13 +194,4 @@ To automatically fix your linting issues (when possible) run ``yarn lint:fix``
 
 ### Docker Containerization
 
-The docker container is built using the following files: ``.dockerignore``, ``Dockerfile``, ``docker-compose.yaml`` and ``nginx.conf``. The container can be built and run using the following commands:
-
-- Build the Docker image: ``docker build --tag sensiq-frontend-001 .`` (the "001" can be replaced with any version number)
-- View Docker images: ``docker images`` (should show "sensiq-frontend-001" in the list)
-- Run the Docker container: ``docker compose up --build`` (runs on port 8080)
-- Optional background run: ``docker compose up --build -d`` (runs in the background)
-- Show running containers: ``docker ps``
-- Stopping container: ``docker compose down``
-
-Open the frontend in your browser at ``http://localhost:8080``.
+Docker is not needed anymore, as the frontend is deployed on an AWS S3 bucket.

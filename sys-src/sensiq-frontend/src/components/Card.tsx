@@ -6,6 +6,7 @@ interface CardProps {
   className?: string
 }
 
+/** Reusable card wrapper that gives its children the standard rounded, bordered panel look. */
 export default function Card({ children, className }: CardProps) {
   return (
     <div

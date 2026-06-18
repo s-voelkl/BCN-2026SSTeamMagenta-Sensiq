@@ -25,6 +25,44 @@ DEFAULT_RESULT_LIMIT = 100
 # partition, which turns trivial queries into multi-minute scans (observed in integration tests).
 DEFAULT_LOOKBACK_DAYS = 31
 
+# Defines the time bucketing intervals for data aggregation.
+PRECISIONS = {
+    "all": None,
+    "1_minute": "date_trunc('minute', timestamp)",
+    "10_minutes": "from_unixtime(floor(to_unixtime(timestamp) / 600.0) * 600.0)",
+    "1_hour": "date_trunc('hour', timestamp)",
+    "1_day": "date_trunc('day', timestamp)",
+    "1_week": "date_trunc('week', timestamp)",
+    "1_month": "date_trunc('month', timestamp)",
+    "1_year": "date_trunc('year', timestamp)",
+}
+
+# The SELECT clause used for aggregated queries. Applies averages to numerics,
+# majority voting to booleans, and keeps the latest value for strings/timestamps.
+AGGREGATIONS = """
+    max(timestamp) AS timestamp,
+    max_by(device_id, timestamp) AS device_id,
+    max_by(location, timestamp) AS location,
+    avg(running_time) AS running_time,
+    avg(dht_humidity) AS dht_humidity,
+    avg(dht_temperature) AS dht_temperature,
+    avg(dht_heat_index) AS dht_heat_index,
+    avg(flame_analog) AS flame_analog,
+    avg(case when flame_digital then 1.0 else 0.0 end) >= 0.5 AS flame_digital,
+    avg(thermistor_analog) AS thermistor_analog,
+    avg(case when thermistor_digital then 1.0 else 0.0 end) >= 0.5 AS thermistor_digital,
+    avg(thermistor_temp) AS thermistor_temp,
+    avg(case when bme_heated_up then 1.0 else 0.0 end) >= 0.5 AS bme_heated_up,
+    avg(bme_temperature) AS bme_temperature,
+    avg(bme_humidity) AS bme_humidity,
+    avg(bme_pressure) AS bme_pressure,
+    avg(bme_altitude) AS bme_altitude,
+    avg(bme_voc) AS bme_voc,
+    avg(tsl_lux) AS tsl_lux,
+    avg(case when is_outlier then 1.0 else 0.0 end) >= 0.5 AS is_outlier,
+    avg(case when collect_training then 1.0 else 0.0 end) >= 0.5 AS collect_training
+"""
+
 # Terminal states reported by Athena's GetQueryExecution.
 _TERMINAL_FAILURE_STATES = ("FAILED", "CANCELLED")
 _TERMINAL_RUNNING_STATES = ("RUNNING", "QUEUED")
@@ -65,6 +103,18 @@ def _parse_iso(date_str: str) -> Optional[datetime]:
 	except (ValueError, TypeError):
 		return None
 
+
+def _athena_timestamp_to_iso(value: Optional[str]) -> Optional[str]:
+    """Convert Athena's 'YYYY-MM-DD HH:MM:SS[.fff]' string to ISO 8601 UTC ('...Z')."""
+    if value is None:
+        return None
+    try:
+        dt = datetime.fromisoformat(value)  # space separator + optional .fff OK on 3.11+
+    except ValueError:
+        return value  # unexpected format: leave as-is rather than corrupt it
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)  # stored data is UTC
+    return dt.isoformat().replace("+00:00", "Z")
 
 def _partition_predicate(start: datetime, end: datetime) -> str:
 	"""Build a SQL ``WHERE`` fragment that lets Athena prune Glue partitions.
@@ -142,31 +192,38 @@ def _partition_predicate(start: datetime, end: datetime) -> str:
 	return f"year BETWEEN '{start.year:04d}' AND '{end.year:04d}'"
 
 
-def build_query(query_params: Dict[str, str]) -> Tuple[str, List[str]]:
+def build_query(query_params: Dict[str, Any]) -> Tuple[str, List[str]]:
 	"""Build the parameterised Athena SQL query for a history request.
 
 	Combines a partition-pruning predicate (always present) with optional
-	timestamp-range predicates supplied via API Gateway query string parameters.
+	timestamp-range predicates supplied via API Gateway JSON body parameters.
 	The ``limit`` parameter is clamped to ``[1, MAX_RESULT_LIMIT]`` and falls back
-	to :data:`DEFAULT_RESULT_LIMIT` on invalid input. When neither ``startDate``
-	nor ``endDate`` is supplied, a :data:`DEFAULT_LOOKBACK_DAYS`-day window ending
+	to :data:`DEFAULT_RESULT_LIMIT` on invalid input. When neither ``start_date``
+	nor ``end_date`` is supplied, a :data:`DEFAULT_LOOKBACK_DAYS`-day window ending
 	"now" is used purely to drive partition pruning — no timestamp predicate is
-	emitted in that case.
+	emitted in that case. Requires a ``device_id`` parameter.
 
 	Args:
-		query_params (Dict[str, str]): Raw query string parameters. Recognised keys:
+		query_params (Dict[str, Any]): Raw JSON body parameters. Recognised keys:
 
-			* ``limit`` (str, optional): Maximum rows to return.
-			* ``startDate`` (str, optional): Inclusive lower bound, ISO 8601.
-			* ``endDate`` (str, optional): Inclusive upper bound, ISO 8601.
+			* ``device_id`` (str): Required device ID to filter by.
+			* ``limit`` (int or str, optional): Maximum rows to return.
+			* ``start_date`` (str, optional): Inclusive lower bound, ISO 8601.
+			* ``end_date`` (str, optional): Inclusive upper bound, ISO 8601.
+			* ``precision`` (str, optional): The interval for aggregation (e.g. ``10_minutes``).
 
 	Returns:
 		Tuple[str, List[str]]: The SQL query string and a list of execution
 			parameters to pass as ``ExecutionParameters`` (used in place of string
 			interpolation to prevent SQL injection).
 	"""
-	start_date: Optional[str] = query_params.get("startDate")
-	end_date: Optional[str] = query_params.get("endDate")
+	device_id: Optional[str] = query_params.get("device_id")
+	start_date: Optional[str] = query_params.get("start_date")
+	end_date: Optional[str] = query_params.get("end_date")
+	precision: str = query_params.get("precision", "10_minutes")
+
+	if precision not in PRECISIONS:
+		precision = "10_minutes"
 
 	# Defensive parsing: API Gateway forwards query strings as raw strings, and a
 	# non-integer ``limit`` would otherwise raise inside the Lambda and surface as
@@ -200,6 +257,10 @@ def build_query(query_params: Dict[str, str]) -> Tuple[str, List[str]]:
 	conditions: List[str] = [_partition_predicate(start_dt, end_dt)]
 	execution_parameters: List[str] = []
 
+	if device_id:
+		conditions.append("device_id = ?")
+		execution_parameters.append(device_id)
+
 	# ExecutionParameters are used in place of string interpolation to prevent SQL injection.
 	# from_iso8601_timestamp accepts ISO 8601 strings with 'T' separator and 'Z'/offset,
 	# unlike CAST(... AS timestamp) which requires 'YYYY-MM-DD HH:MM:SS[.fff]' without a
@@ -211,11 +272,22 @@ def build_query(query_params: Dict[str, str]) -> Tuple[str, List[str]]:
 		conditions.append("timestamp <= from_iso8601_timestamp(?)")
 		execution_parameters.append(end_date)
 
-	query = (
-		"SELECT * FROM sensor_data WHERE "
-		+ " AND ".join(conditions)
-		+ f" ORDER BY timestamp DESC LIMIT {limit_int}"
-	)
+	where_clause = " AND ".join(conditions)
+	precision_expr = PRECISIONS.get(precision)
+
+	if precision_expr is None:
+		# precision 'all'
+		query = f"SELECT * FROM sensor_data WHERE {where_clause} ORDER BY timestamp DESC LIMIT {limit_int}"
+	else:
+		query = (
+			f"SELECT {AGGREGATIONS} "
+			f"FROM sensor_data "
+			f"WHERE {where_clause} "
+			f"GROUP BY {precision_expr} "
+			f"ORDER BY timestamp DESC "
+			f"LIMIT {limit_int}"
+		)
+
 	logger.debug("Built Athena query: %s | params=%s", query, execution_parameters)
 	return query, execution_parameters
 
@@ -310,14 +382,20 @@ def fetch_and_format_results(query_execution_id: str) -> List[Dict[str, Any]]:
 	# once and zip them in via index rather than re-reading metadata per row.
 	column_info = results_response["ResultSet"]["ResultSetMetadata"]["ColumnInfo"]
 	columns: List[str] = [col["Name"] for col in column_info]
+	column_types: List[str] = [col["Type"] for col in column_info]
 
 	# Athena prepends a header row containing the column names; only the
 	# subsequent rows carry actual data.
-	data_rows = results_response["ResultSet"]["Rows"][1:]
-	rows: List[Dict[str, Any]] = [
-		{col: row["Data"][idx].get("VarCharValue") for idx, col in enumerate(columns)}
-		for row in data_rows
-	]
+	rows: List[Dict[str, Any]] = []
+	for row in results_response["ResultSet"]["Rows"][1:]:  # skip header row
+		data = row["Data"]
+		parsed_row: Dict[str, Any] = {}
+		for idx, col in enumerate(columns):
+			value = data[idx].get("VarCharValue")
+			if column_types[idx] in ("timestamp", "timestamp with time zone"):  # <-- add
+				value = _athena_timestamp_to_iso(value)
+			parsed_row[col] = value
+		rows.append(parsed_row)
 
 	logger.info("Fetched %d rows for query %s", len(rows), query_execution_id)
 	return rows
@@ -326,26 +404,27 @@ def fetch_and_format_results(query_execution_id: str) -> List[Dict[str, Any]]:
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 	"""Lambda entry point: query historical IoT sensor data via Athena.
 
-	Wired behind an API Gateway proxy integration on ``GET /history``. Builds a
-	parameterised Athena query from the request's ``queryStringParameters``,
+	Wired behind an API Gateway proxy integration on ``POST /history``. Builds a
+	parameterised Athena query from the request's JSON ``body``,
 	executes it against the workgroup/database supplied via environment variables,
 	waits for completion, and returns the result rows as JSON.
 
 	Args:
 		event (Dict[str, Any]): API Gateway proxy event. Recognised
-			``queryStringParameters`` keys:
+			keys in the JSON ``body``:
 
 			* ``limit`` (str, optional): Maximum number of records to return
 			  (default ``100``, capped at :data:`MAX_RESULT_LIMIT`).
-			* ``startDate`` (str, optional): Inclusive start timestamp in ISO 8601
+			* ``start_date`` (str, optional): Inclusive start timestamp in ISO 8601
 			  format, e.g. ``"2026-05-25T00:00:00Z"``.
-			* ``endDate`` (str, optional): Inclusive end timestamp in ISO 8601 format.
+			* ``end_date`` (str, optional): Inclusive end timestamp in ISO 8601 format.
 		context (Any): AWS Lambda context object (unused).
 
 	Returns:
 		Dict[str, Any]: API Gateway proxy response.
 
 			* ``200``: ``body`` is JSON ``{"data": [...rows]}`` on success.
+			* ``400``: ``body`` is JSON ``{"error": "Invalid JSON body"}`` if the request body is not valid JSON.
 			* ``500``: ``body`` is JSON ``{"error": "..."}`` on any failure
 			  (query failed, cancelled, timed out, or an unexpected exception).
 	"""
@@ -353,7 +432,26 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 	athena_workgroup = os.environ.get("ATHENA_WORKGROUP", "")
 	database_name = os.environ.get("DATABASE_NAME", "")
 
-	query_params: Dict[str, str] = event.get("queryStringParameters") or {}
+	body_str = event.get("body")
+	query_params: Dict[str, Any] = {}
+	if body_str:
+		try:
+			query_params = json.loads(body_str)
+		except json.JSONDecodeError:
+			return {
+				"statusCode": 400,
+				"headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+				"body": json.dumps({"error": "Invalid JSON body"}),
+			}
+
+	device_id = query_params.get("device_id")
+	if not device_id:
+		return {
+			"statusCode": 400,
+			"headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
+			"body": json.dumps({"error": "Missing required parameter: device_id"}),
+		}
+
 	logger.info("Received request: query_params=%s", query_params)
 
 	try:
@@ -395,6 +493,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 		logger.exception("Unhandled error while processing request")
 		return {
 			"statusCode": 500,
-			"headers": {"Content-Type": "application/json"},
+			"headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
 			"body": json.dumps({"error": str(e)}),
 		}

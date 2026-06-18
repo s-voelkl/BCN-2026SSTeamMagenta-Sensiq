@@ -1,7 +1,0 @@
-# From: https://docs.docker.com/guides/reactjs/containerize/
-services:
-  server:
-    build:
-      context: .
-    ports:
-      - "8080:8080"
