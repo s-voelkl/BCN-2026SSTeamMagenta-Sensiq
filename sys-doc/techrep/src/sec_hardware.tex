@@ -96,9 +96,8 @@ demonstrating the assembled sensor node.
 	\centering
 	\includegraphics[width=0.8\textwidth]{../../kicad-hardware-schematic/circuit_diagram_pdf/circuit_diagram_export_light.pdf}
 	\caption{Circuit diagram of the sensor node, showing the
-		logical wiring between the ESP32-DevKitC, sensors, the two
-		auxiliary switches and the power supply, together with their
-		respective GPIO assignments.}
+		logical wiring between the ESP32 microcontroller, sensors, switches and power supply,
+		together with their respective pin assignments.}
 	\label{fig:hardware-circuit}
 \end{figure*}
 
@@ -116,7 +115,7 @@ demonstrating the assembled sensor node.
 	\centering
 	\includegraphics[width=0.95\linewidth]{hardware-picture.png}
 	\caption{Real physical sensor node with the assembled sensors,
-		the ESP32-DevKitC and the auxiliary switches.}
+		the ESP32 microcontroller and the prototyping breadboard. }
 	\label{fig:hardware-picture}
 \end{figure}
 
@@ -219,7 +218,8 @@ device certificate and device private key are used for mutual TLS authentication
 \begin{lstlisting}[
     language=json, 
     float, 
-    caption={Published JSON payload by the ESP32 sensor node via MQTT.}, 
+    caption={Published JSON payload by the ESP32 sensor node via the 
+	Message Queuing Telemetry Transport (MQTT) protocol.}, 
     label={lst:data_model_json}]
 {
     "running_time":131147,
