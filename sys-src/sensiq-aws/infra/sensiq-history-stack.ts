@@ -360,7 +360,7 @@ export class SensiqHistoryStack extends cdk.Stack {
             registryName: 'lambda-testevent-schemas',
             schemaName: `_${this.lambdaHandleHistoryData.functionName}-schema`,
             type: 'OpenApi3',
-            description: 'Shareable test event for HandleHistoryData lambda (API Gateway proxy GET /history).',
+            description: 'Shareable test event for HandleHistoryData lambda (API Gateway proxy POST /history).',
             content: JSON.stringify({
                 openapi: '3.0.0',
                 info: { version: '1.0.0', title: 'Event' },
@@ -371,12 +371,12 @@ export class SensiqHistoryStack extends cdk.Stack {
                             type: 'object',
                             properties: { eventName: { type: 'string' } },
                             example: testEventJson,
-                            'x-amazon-events-detail-type': 'apiGatewayHistoryGet',
+                            'x-amazon-events-detail-type': 'apiGatewayHistoryPost',
                             'x-amazon-events-source': 'aws.lambda',
                         },
                     },
                     examples: {
-                        apiGatewayHistoryGet: { value: testEventJson },
+                        apiGatewayHistoryPost: { value: testEventJson },
                     },
                 },
             }),

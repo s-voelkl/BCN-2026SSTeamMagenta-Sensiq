@@ -13,7 +13,7 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    
+
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-slate-950 text-slate-50">
         <div
@@ -25,7 +25,7 @@ function App() {
           }}
         />
 
-        <main className="relative z-10 mx-auto max-w-7xl px-6 py-10">
+        <main className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
           <BentoGrid />
         </main>
       </div>

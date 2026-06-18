@@ -161,9 +161,15 @@ The hardware units send JSON payloads to AWS with the following structure:
 
 ## Frontend
 
-We are using tailwind as our Design Plugin, in combination with recharts as central dependency to display our data.
+We are using tailwind as our Design Plugin, in combination with recharts as central dependency to display our data. Our desired test coverage is >60%.
 
-Our desired test coverage is >60%
+For effectively running the frontend, a connection to the AWS backend is needed.
+The CDK deployment step outputs a file ``cdk-outputs.json`` with the S3 bucket name and website url for the frontend deployment step. In ``sys-src/sensiq-frontend/.env`` the following *variables* need to be set:
+
+    ```text
+    VITE_API_KEY=<your-api-key>
+    VITE_API_URL=<your-api-url>
+    ```
 
 ### Dependency Installation
 
@@ -171,14 +177,14 @@ We are using yarnv1 (just like the aws cdk).
 
 ``yarn -v`` (1.22.22)
 
-``yarn install`` (in sensiq-frontend folder with ``cd ./sys-src/sensiq-frontend/``)
+``yarn install`` (in sensiq-frontend folder with ``cd ./sys-src/sensiq-frontend/``).
 
 ### Testing
 
-Run ``yarn test`` to run all vitest tests (specified in ``./src/test``)
-Or ``yarn test:coverage`` to also get your test coverage
+Run ``yarn test`` to run all vitest tests (specified in ``./src/test``).
+Or ``yarn test:coverage`` to also get your test coverage.
 
-For visual testing run ``yarn dev`` to open a socket on your machine
+For visual testing run ``yarn dev`` to open a socket on your machine.
 
 ### Linting
 
@@ -188,13 +194,4 @@ To automatically fix your linting issues (when possible) run ``yarn lint:fix``
 
 ### Docker Containerization
 
-The docker container is built using the following files: ``.dockerignore``, ``Dockerfile``, ``docker-compose.yaml`` and ``nginx.conf``. The container can be built and run using the following commands:
-
-- Build the Docker image: ``docker build --tag sensiq-frontend-001 .`` (the "001" can be replaced with any version number)
-- View Docker images: ``docker images`` (should show "sensiq-frontend-001" in the list)
-- Run the Docker container: ``docker compose up --build`` (runs on port 8080)
-- Optional background run: ``docker compose up --build -d`` (runs in the background)
-- Show running containers: ``docker ps``
-- Stopping container: ``docker compose down``
-
-Open the frontend in your browser at ``http://localhost:8080``.
+Docker is not needed anymore, as the frontend is deployed on an AWS S3 bucket.
