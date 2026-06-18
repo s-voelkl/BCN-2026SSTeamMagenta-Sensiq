@@ -34,12 +34,12 @@ function ValueDisplay({ kpi, data }: { kpi: KPI; data: SensorDataLive }) {
 
   return (
     <div className="mt-3 flex items-baseline justify-center gap-1.5">
-      <p className={kpi.measure === 'flame_digital' ? className : 'font-mono text-5xl font-bold tabular-nums text-slate-200'}
+      <p className={kpi.measure === 'flame_digital' ? className : 'font-mono text-4xl sm:text-5xl font-bold tabular-nums text-slate-200'}
          style={kpi.measure === 'flame_digital' ? { color: data.flame_digital == false ? '#2abe9bff' : '#EF4444' } : {}}>
         {kpi.measure === 'flame_digital' ? transformFlame(value) : `${value}`}
       </p>
       {kpi.unit && (
-        <p className="font-mono text-3xl font-semibold text-slate-400">
+        <p className="font-mono text-2xl sm:text-3xl font-semibold text-slate-400">
           {kpi.unit}
         </p>
       )}
