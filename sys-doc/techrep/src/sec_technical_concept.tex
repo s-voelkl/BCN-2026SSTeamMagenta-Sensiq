@@ -1,26 +1,57 @@
-% ----------------------------------------------------------------------
-% Section 3 — Technical Concept
-% ----------------------------------------------------------------------
-\section{Technical Concept}\label{sec:technical_concept}
-% TODO: remove section information
-High-level, technology-agnostic view of the system. This section
-introduces the conceptual building blocks and the end-to-end data
-flow. Detailed component-level descriptions follow in the Hardware,
-AWS Services, and User Interaction sections.
+\section{ Technical Concept}
 
-\subsection{Technical Building Blocks}\label{sec:building_blocks}
-% TODO: remove section information
-Enumerate the logical components of the system without binding them
-yet to concrete products: edge sensing node, secure transport channel,
-ingestion gateway, validation stage, hot-path store (live data),
-cold-path store (history), query API, notification channel, and user
-interface. Briefly justify the chosen programming languages
-(C++ firmware, Python lambdas, TypeScript infrastructure, React UI).
+\subsection{Technical Building Blocks}
 
-\subsection{System Architecture}\label{sec:architecture}
+The Sensiq system included several logical components. The edge sensor
+node measures environmental values. These values are aggregated and
+then transferred. The data is transmitted to the cloud via an encrypted
+transport channel. The subsequent gateway receives the data, which it
+then forwards to the processing logic. There are two separate paths for
+data handling. The live path provides the measured values in real time.
+The second path is the history path, which is used for long-term data
+storage.
+
+The implementation is carried out in three programming languages that
+were selected to meet the requirements. Arduino C++ was chosen for the
+sensor nodes due to its fast execution time. Python was used for AWS
+development because of its support for the AWS SDK. TypeScript is used
+to deploy the infrastructure via the AWS Cloud Development Kit. The
+front end is based on React.
+
+\subsection{ System Architecture}
+
 \begin{figure*}[!tb]
   \centering
   \includegraphics[width=\textwidth]{architecture.pdf}
   \caption{Cloud Processing Architecture}
   \label{fig:cloud-architecture}
 \end{figure*}
+
+Figure 1 provides an overview of the overall architecture. Initially,
+the ESP-32 sensor nodes collect measurement values and then send them
+as a JSON file via MQTT to AWS IoT Core. An IoT Topic rule splits the
+data stream into two parallel paths.
+
+In the live path, the message is forwarded to the
+handleTransformValidate Lambda function via an IoT rule. This Lambda
+function first checks whether any values exceed the critical threshold
+and, if necessary, sends an email via SNS. The function then validates
+the data and writes it to the DynamoDB table LiveDataDB, which stores
+the most recent device status. Incoming requests to the endpoint are
+forwarded via the API Gateway to the Lambda function handleLiveData.
+The Lambda function handleLiveData reads and checks the values from
+DynamoDB and returns them as JSON.
+
+In the history path, the data is forwarded to Amazon Kinesis Data
+Firehose. The data is then converted to a column-oriented Apache
+Parquet format and stored in an S3 bucket, sorted by date. Incoming
+requests to the endpoint are forwarded via API Gateway to the
+handleHistoryData Lambda function. The handleHistoryData Lambda
+function uses AWS Athena to execute SQL queries to filter the correct
+values from the bucket.
+
+The user interface is implemented as a React front end and is hosted in
+an S3 bucket. The user accesses the dashboard via a browser using
+HTTPS. Data requests are forwarded to the corresponding Lambda
+functions via the API Gateway, and the results are then visualised in
+the dashboard.
