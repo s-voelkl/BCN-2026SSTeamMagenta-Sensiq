@@ -52,17 +52,17 @@ based on an ESP-32 publishing one message every five seconds (roughly
 518\,000 messages per month). AWS IoT Core is the absolute dominant cost driver.
 Because each payload is evaluated against two IoT Core rules, AWS bills
 three units per publish, resulting in 1\,554\,000 billed message units.
-This accounts for over 75\% of the total monthly cost (\$1.62).
+This accounts for over 75\% of the total monthly cost (1.41\,\texteuro).
 
 Other minor expenses stem from Kinesis Data Firehose applying a 5\,KB minimum
-billing unit---inflating the logical data volume to 2.59\,GB (\$0.08 per month
+billing unit---inflating the logical data volume to 2.59\,GB (0.07\,\texteuro~per month
 with no free tier)---and Athena scanning costs for an estimated 660 history queries
 per month. Storage, routing, and alert notification costs remain trivial.
 
 The table contrasts the \emph{Free Tier} expenditure of a new AWS account
 against the ongoing \emph{Post Free Tier} cost once initial allowances expire.
 Overall, the architecture operates highly cost-efficiently, totalling approximately
-\$1.88 and \$2.13 per node per month, respectively.
+1.64\,\texteuro~and 1.87\,\texteuro~per node per month, respectively.
 
 \begin{table*}[tb]
 	\centering
@@ -70,22 +70,22 @@ Overall, the architecture operates highly cost-efficiently, totalling approximat
 	\label{tab:aws-costs}
 	\begin{tabularx}{0.77\textwidth}{>{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}r >{\raggedright\arraybackslash}r}
 		\toprule
-		\textbf{Service Details}                           & \textbf{Usage/Quantity}                      & \textbf{Free Tier}      & \textbf{Post Free Tier} \\
+		\textbf{Service Details}                           & \textbf{Usage/Quantity}                      & \textbf{Free Tier}               & \textbf{Post Free Tier}          \\
 		\midrule
-		IoT Core~\cite{awsIotCore}                         & 518k msgs, 1554k billed                      & \(\sim\)\$1.62          & \(\sim\)\$1.62          \\
-		Lambda – handleTransformValidate~\cite{aws-lambda} & 518k inv, 128 MB / 200 ms                    & \$0.00                  & \(\sim\)\$0.06          \\
-		Lambda – handleLiveData~\cite{aws-lambda}          & 228k inv, 128 MB / 200 ms                    & \$0.00                  & \(\sim\)\$0.04          \\
-		Lambda – handleHistoryData~\cite{aws-lambda}       & 660 inv, 128 MB / 200 ms                     & \$0.00                  & \(\sim\)\$0.00          \\
-		DynamoDB~\cite{aws-dynamodb}                       & 518k WCU, 228k RCU, storage                  & \(\sim\)\$0.01          & \(\sim\)\$0.08          \\
-		S3 (Parquet + Query Results)~\cite{aws-s3}         & \(\sim\)0.5 GB stored                        & \(\sim\)\$0.01          & \(\sim\)\$0.02          \\
-		S3 (React Frontend)~\cite{aws-s3}                  & Minimal storage used                         & \$0.00                  & \$0.00                  \\
-		Firehose~\cite{aws-firehose}                       & 518k msgs, 2.59GB billed                     & \(\sim\)\$0.08          & \(\sim\)\$0.08          \\
-		Athena~\cite{aws-athena}                           & 660 queries \(\times\) 50 MB = 33 GB scanned & \(\sim\)\$0.16          & \(\sim\)\$0.16          \\
-		API Gateway~\cite{aws-api-gateway}                 & 229k requests                                & \$0.00                  & \(\sim\)\$0.08          \\
-		SNS~\cite{aws-sns}                                 & Minimal alert volume                         & \$0.00                  & \(\sim\)\$0.01          \\
-		% Glue Crawler~\cite{aws-glue} & One-time run & \(\sim\)\$0.00 & \(\sim\)\$0.00 \\ 
+		IoT Core~\cite{awsIotCore}                         & 518k msgs, 1554k billed                      & \(\sim\)1.41\,\texteuro          & \(\sim\)1.41\,\texteuro          \\
+		Lambda – handleTransformValidate~\cite{aws-lambda} & 518k inv, 128 MB / 200 ms                    & 0.00\,\texteuro                  & \(\sim\)0.05\,\texteuro          \\
+		Lambda – handleLiveData~\cite{aws-lambda}          & 228k inv, 128 MB / 200 ms                    & 0.00\,\texteuro                  & \(\sim\)0.03\,\texteuro          \\
+		Lambda – handleHistoryData~\cite{aws-lambda}       & 660 inv, 128 MB / 200 ms                     & 0.00\,\texteuro                  & \(\sim\)0.00\,\texteuro          \\
+		DynamoDB~\cite{aws-dynamodb}                       & 518k WCU, 228k RCU, storage                  & \(\sim\)0.01\,\texteuro          & \(\sim\)0.07\,\texteuro          \\
+		S3 (Parquet + Query Results)~\cite{aws-s3}         & \(\sim\)0.5 GB stored                        & \(\sim\)0.01\,\texteuro          & \(\sim\)0.02\,\texteuro          \\
+		S3 (React Frontend)~\cite{aws-s3}                  & Minimal storage used                         & 0.00\,\texteuro                  & 0.00\,\texteuro                  \\
+		Firehose~\cite{aws-firehose}                       & 518k msgs, 2.59GB billed                     & \(\sim\)0.07\,\texteuro          & \(\sim\)0.07\,\texteuro          \\
+		Athena~\cite{aws-athena}                           & 660 queries \(\times\) 50 MB = 33 GB scanned & \(\sim\)0.14\,\texteuro          & \(\sim\)0.14\,\texteuro          \\
+		API Gateway~\cite{aws-api-gateway}                 & 229k requests                                & 0.00\,\texteuro                  & \(\sim\)0.07\,\texteuro          \\
+		SNS~\cite{aws-sns}                                 & Minimal alert volume                         & 0.00\,\texteuro                  & \(\sim\)0.01\,\texteuro          \\
+		% Glue Crawler~\cite{aws-glue} & One-time run & \(\sim\)0.00\,\texteuro & \(\sim\)0.00\,\texteuro \\ 
 		\midrule
-		\textbf{Total}                                     &                                              & \textbf{\(\sim\)\$1.88} & \textbf{\(\sim\)\$2.13} \\
+		\textbf{Total}                                     &                                              & \textbf{\(\sim\)1.64\,\texteuro} & \textbf{\(\sim\)1.87\,\texteuro} \\
 		\bottomrule
 	\end{tabularx}
 \end{table*}
@@ -101,17 +101,17 @@ A breakdown of the individual component costs is presented in \cref{tab:hw-costs
 	\small
 	\begin{tabularx}{0.7\linewidth}{>{\raggedright\arraybackslash}X r r}
 		\toprule
-		\textbf{Component}         & \textbf{Unit Cost}     \\
+		\textbf{Component}         & \textbf{Unit Cost}             \\
 		\midrule
-		ESP32-DevKitC              & 8\,€                   \\
-		Bosch BME680               & 18\,€                  \\
-		TSL2561 Light Sensor       & 5\,€                   \\
-		DHT11 Sensor               & 3\,€                   \\
-		Joy-it KY-026 Flame Sensor & 3\,€                   \\
-		Joy-it KY-028 Thermistor   & 3\,€                   \\
-		Prototyping equipment      & \(\sim\)3\,€           \\
+		ESP32-DevKitC              & 8\,\texteuro                   \\
+		Bosch BME680               & 18\,\texteuro                  \\
+		TSL2561 Light Sensor       & 5\,\texteuro                   \\
+		DHT11 Sensor               & 3\,\texteuro                   \\
+		Joy-it KY-026 Flame Sensor & 3\,\texteuro                   \\
+		Joy-it KY-028 Thermistor   & 3\,\texteuro                   \\
+		Prototyping equipment      & \(\sim\)3\,\texteuro           \\
 		\midrule
-		\textbf{Total}             & \textbf{\(\sim\)43\,€} \\
+		\textbf{Total}             & \textbf{\(\sim\)43\,\texteuro} \\
 		\bottomrule
 	\end{tabularx}
 \end{table}
