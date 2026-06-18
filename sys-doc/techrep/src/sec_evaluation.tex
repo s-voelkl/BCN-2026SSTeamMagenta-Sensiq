@@ -63,7 +63,7 @@ Overall, the architecture operates highly cost-efficiently, totalling approximat
 
 \begin{table*}[htb]
 	\centering
-	\caption{Cost Estimation for AWS Services}
+	\caption{Cost Estimation for Amazon Web Services (AWS)}
 	\label{tab:aws-costs}
 	\begin{tabularx}{0.77\textwidth}{>{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}l >{\raggedright\arraybackslash}r >{\raggedright\arraybackslash}r}
 		\toprule
@@ -115,38 +115,25 @@ A breakdown of the individual component costs is presented in \cref{tab:hw-costs
 
 \subsection{Discussion}\label{sec:discussion}
 
-Currently, the API Gateway Access Key is stored stored as an environment variable in the React frontend and
-sent in the header of API requests. This approach is not ideal for security, as it exposes
-the key in the client-side code and can lead to unauthorized access if the key is compromised.
-In future iterations, we plan to leverage AWS Cognito for user authentication and authorization.
+The evaluation reveals several architectural trade-offs regarding cost, latency, scalability, and security:
 
-Operating costs for AWS services could be further reduced by decreasing the publishing frequency from every 5 seconds
-to a more conservative interval, such as every 30 seconds. This would substantially lower recurring expenses; however,
-it would compromise real-time monitoring objectives, as critical events might not be detected promptly. Reduced publishing
-frequency is therefore only viable in scenarios with relaxed real-time requirements.
+First, storing the API Gateway Access Key in the React frontend simplifies prototyping but
+presents a client-side security vulnerability. Production deployments necessitate a robust
+identity layer (e.g., AWS Cognito) to securely broker API transactions.
 
-If the publishing frequency is decreased, implementing a Deep Sleep mode for the ESP32
-microcontroller would be a logical next step to significantly extend battery life.
-However, this is only viable with longer measurement intervals (e.g., every 30 seconds or more).
-During high-frequency measurements, Deep Sleep could disrupt MQTT connectivity and the sensor
-reading lifecycle, as the ESP32 is entirely unreachable while in this mode.
+Second, the 5-second publishing interval ensures instantaneous anomaly alerting but drives up AWS
+IoT costs and edge power consumption (\cref{tab:aws-costs}). While reducing this frequency
+(e.g., to 30 seconds) would lower costs and allow the ESP32 to utilize Deep Sleep,
+this power-saving mode severs network availability and requires costly TLS handshakes upon waking.
+Consequently, strict real-time latency is structurally incompatible with extreme low-power sleep modes.
 
-Configuring recipients for warning notifications requires manual intervention
-via the AWS Dashboard. Future iterations should integrate this functionality directly into
-the React frontend, though this enhancement would require an additional AWS Lambda function
-designed to update an Amazon DynamoDB table, allowing end-users to seamlessly add
-or remove notification recipients for specific devices.
+Third, hardcoding warning thresholds and notification recipients within Lambda functions minimizes
+complexity and prevents database read latencies during live execution. However, this static
+configuration lacks the flexibility needed for scalable, adjustable, multi-tenant laboratory deployments.
 
-Warning thresholds should ideally be configurable on a per-device basis to accommodate
-varying environmental conditions and requirements.
-Though, at this stage, thresholds are hardcoded in the Lambda function for simplicity.
-Using a DynamoDB table to store device-specific thresholds would allow for dynamic updates without code changes.
-
-As demonstrated in~\cite{mumtaz2021internet}, integrating machine learning models
-into Indoor Air Quality (IAQ) monitoring systems can significantly enhance their
-capabilities by enabling predictive analytics or advanced anomaly detection.
-A promising enhancement for this architecture involves deploying an outlier detection
-model on AWS. This could be achieved by utilizing an AWS Lambda function to process the
-live data stream in real time, identifying anomalies based on an Amazon SageMaker model
-pre-trained on historical data. This anomaly-detection could complement the existing
-threshold-based alerting mechanism, providing an additional layer of safety and data insight.
+Finally, relying on absolute static thresholds fails to detect degrading air quality trends before
+critical hazards are breached~\cite{mumtaz2021internet}.
+Preemptive anomaly detection requires contextual pattern evaluation beyond rigid limits,
+such as machine learning analysis over historical data. Implementing machine learning
+for detecting anomalies (outliers) in live data instead of relying solely on thresholds
+would significantly enhance the outlier detection capabilities of the system for laboratory environments.

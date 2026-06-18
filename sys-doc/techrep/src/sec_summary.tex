@@ -3,25 +3,20 @@
 % ----------------------------------------------------------------------
 \section{Summary and Future Work}
 
-\subsection*{Summary}
-This document describes Sensiq, an end-to-end IoT system for monitoring
-environmental parameters in laboratory settings. The project includes an
-ESP32-based sensor platform and a serverless AWS architecture with data
-processing capabilities for real-time and historical data.
-In addition, the project includes a React-based user interface and a
-notification service. The system monitors critical environmental data
-such as temperature, humidity, and light intensity at a monthly
-operating cost of less than three U.S. dollars per node.
+% \subsection*{Summary}
+Sensiq provides a scalable, end-to-end IoT solution for continuous laboratory environment monitoring.
+By combining a low-cost ESP32 sensor platform with a serverless AWS backend and a React dashboard,
+the system successfully delivers both low-latency alerting and robust historical analysis.
+It reliably monitors critical metrics including temperature, humidity, and air quality while
+maintaining a highly efficient operational footprint of under three U.S. dollars per node monthly.
 
-\subsection*{Future Work}
-For future expansion, it would be beneficial to integrate additional
-sensors, such as a particulate matter sensor. It would also be
-advantageous to integrate machine learning models to detect anomalies
-early on based on historical data. Furthermore, a useful enhancement
-would be to replace the current API key-based authentication method
-with AWS Cognito, which would significantly increase security. To
-simplify management, the administration of notification recipients and
-thresholds should be integrated directly into the front end to prevent
-the need for manual intervention via AWS. Logic for grouping end
-devices could also be added to enable deployment in larger laboratories
-or across multiple laboratory areas.
+% \subsection*{Future Work}
+As detailed in the evaluation (\cref{sec:discussion}), future development prioritizes security,
+analytical maturity, and deployment flexibility. Planned operational improvements include
+migrating to AWS Cognito for robust authentication and enabling dynamic, per-device configuration
+of warning thresholds and notification recipients directly within the frontend.
+On the hardware level, integrating optimizing power
+consumption via deep-sleep configurations will broaden deployment capabilities.
+Lastly, introducing machine learning models will enhance the system with real-time outlier
+detection in the live data stream, providing preemptive anomaly alerts that overcome the limitations
+of static, threshold-based evaluation.
