@@ -2,11 +2,9 @@
 % Section 5 — AWS Services
 % ----------------------------------------------------------------------
 \section{AWS Services}\label{sec:aws_services}
-% TODO: remove section information
-Detailed description of the cloud-side processing pipeline. Two
-functional routes are exposed by the backend: a low-latency live
-route and a long-term history route. Each is described in its own
-subsection together with the AWS services it relies on.
+
+All AWS resources are provisioned and managed using the AWS Cloud Development Kit
+(CDK)~\cite{aws-cdk}, which enables infrastructure as code with TypeScript.
 
 \subsection{Live Route}\label{sec:live_route}
 The live route provides a low-latency data delivery mechanism, exposing a
@@ -18,7 +16,7 @@ ingestion through serverless transformation to a managed NoSQL store.
 Sensor readings are assembled on the ESP-32 microcontroller and published
 via MQTT to AWS IoT Core~\cite{awsIotCore}. An IoT topic rule
 forwards each incoming message to the
-\texttt{handleTransformValidate} Lambda function. This function is
+\texttt{handleTransformValidate} Lambda function written in Python. This function is
 responsible for validating and transforming the payload to the internal data format,
 and classifies outlier readings against predefined thresholds, as described in
 \cref{sec:sns_notifications}. Regardless of classification,
@@ -58,6 +56,7 @@ AWS Glue Data Catalog maintains the structural metadata of the
 catalog and underlying S3 buckets~\cite{aws-athena-iam-policies}.
 
 \subsubsection{Query Execution and Processing}
+
 A dedicated AWS Lambda function coordinates the fulfillment of history
 requests. It parses the incoming query parameters, validates them, and
 constructs an Athena query using query execution

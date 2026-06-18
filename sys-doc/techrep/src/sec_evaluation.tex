@@ -1,8 +1,5 @@
 % ----------------------------------------------------------------------
 % Section 7 — Evaluation
-% Rationale: Testability and cost are assessment results rather than
-% design decisions; grouping them in a dedicated Evaluation section
-% separates "what was built" from "how it was assessed".
 % ----------------------------------------------------------------------
 \section{Evaluation}\label{sec:evaluation}
 
@@ -27,18 +24,15 @@ debugging in the deployed environment, Lambda function executions and errors
 are continually logged to dedicated AWS CloudWatch log groups.
 
 \subsubsection{Frontend}
-The React frontend is tested with Vitest~\cite{vitest},
-covering the helper functions and verifying that sample data is rendered
-correctly to the document.
+The React frontend is tested with Vitest~\cite{vitest}, covering the helper functions
+and verifying that sample data is rendered correctly to the document.
 
 \subsubsection{Sensor Node Firmware}
-Firmware unit testing utilizes the AUnit framework~\cite{aunit_testing_arduino}
-to cover modules like sensor readings, data aggregation, configurations, and Wi-Fi. Exhaustive
+Firmware unit testing utilizes the AUnit framework~\cite{aunit_testing_arduino} to cover
+modules like sensor readings, data aggregation, configurations, and Wi-Fi. Exhaustive
 MQTT mocking was omitted due to real-world deviations. Instead, the node
 subscribes to an MQTT test topic during operation to directly verify connection
 health and publish functionality.
-
-% TODO: Frontend Testability
 
 \subsection{Cost Estimation}\label{sec:cost_estimation}
 % TODO: remove section information
@@ -47,7 +41,9 @@ health and publish functionality.
 % and Post Free Tier costs across all involved AWS services.
 % Template available at end of document: tab:aws-costs.
 
-\subsubsection{AWS Service Costs}\label{sec:aws-costs}
+The total costs for operating the system are split into AWS service costs and hardware costs.
+
+\subsubsection{AWS Service Costs}
 The figures in \cref{tab:aws-costs} reflect a monthly cost estimate
 based on an ESP-32 publishing one message every five seconds (roughly
 518\,000 messages per month). AWS IoT Core is the absolute dominant cost driver.
