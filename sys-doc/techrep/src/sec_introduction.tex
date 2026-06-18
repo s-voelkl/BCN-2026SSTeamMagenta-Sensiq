@@ -11,7 +11,7 @@ Existing Internet of Things (IoT) monitoring platforms address parts of this pro
 but typically rely on on-premises servers, offer only coarse sampling,
 or restrict access through proprietary applications (\cref{sec:related_work}).
 
-This report describes Sensiq, a microcontroller unit (MCU)-based IoT architecture
+This report describes Sensiq, a microcontroller unit (MCU) based IoT architecture
 combining ESP32 (Espressif Systems) edge devices with a serverless Amazon Web Services (AWS)
 cloud backend. Sensor readings are transmitted securely over Message Queuing Telemetry
 Transport (MQTT) using Transport Layer Security (TLS), validated, and persisted for both live and
@@ -38,11 +38,9 @@ the MIT License~\cite{sensiq_github}.
 \subsection{Document Structure}\label{sec:document_structure}
 The remainder of this report is organised as follows.
 \Cref{sec:related_work} positions Sensiq against existing academic and
-commercial monitoring solutions and motivates the design decisions
-taken in this project.
+commercial monitoring solutions.
 \Cref{sec:technical_concept} introduces the conceptual building blocks
-of the system and presents the end-to-end architecture in a
-technology-agnostic manner.
+of the system.
 
 The subsequent three sections refine this concept along the data flow:
 \cref{sec:hardware} details the ESP32-based sensor node and its secure
@@ -54,6 +52,6 @@ and \cref{sec:user_interaction} explains how end users consume the
 data through the React-based web frontend and how they are notified of
 critical events via email.
 \Cref{sec:evaluation} assesses the resulting system with respect to
-testability, operating cost and a discussion.
+testability, operating cost, and architectural trade-offs.
 Finally, \cref{sec:summary} summarises the contribution of the report
 and outlines directions for future work.

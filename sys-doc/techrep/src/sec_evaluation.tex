@@ -3,6 +3,9 @@
 % ----------------------------------------------------------------------
 \section{Evaluation}\label{sec:evaluation}
 
+A comprehensive evaluation of the testability, cost estimation, and architectural trade-offs
+is presented in the following subsections.
+
 \subsection{Testability}\label{sec:testability}
 The cloud system's testability is ensured through rigorous automated checks for
 both infrastructure and application logic. Local \texttt{yarn} scripts automate
@@ -61,7 +64,7 @@ against the ongoing \emph{Post Free Tier} cost once initial allowances expire.
 Overall, the architecture operates highly cost-efficiently, totalling approximately
 \$1.88 and \$2.13 per node per month, respectively.
 
-\begin{table*}[htb]
+\begin{table*}[tb]
 	\centering
 	\caption{Cost Estimation for Amazon Web Services (AWS)}
 	\label{tab:aws-costs}
@@ -91,7 +94,7 @@ Overall, the architecture operates highly cost-efficiently, totalling approximat
 The one-time hardware cost per sensor node is based on the components used for prototyping.
 A breakdown of the individual component costs is presented in \cref{tab:hw-costs}.
 
-\begin{table}[!h]
+\begin{table}[!htb]
 	\centering
 	\caption{Hardware Cost per Sensor Node}
 	\label{tab:hw-costs}
