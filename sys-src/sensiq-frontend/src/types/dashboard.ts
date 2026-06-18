@@ -9,18 +9,18 @@ const zStringBool = z.preprocess(
 
 export type KPIs = KPI[]
 
-export type measuresExFlame = "dht_temperature" | "dht_humidity" | "bme_pressure" | "tsl_lux" | "bme_voc" // measurement that are selectable in the dropdown menue
+export type measuresExFlame = "bme_temperature" | "bme_humidity" | "bme_pressure" | "tsl_lux" | "bme_voc" // measurement that are selectable in the dropdown menue
 
-export type measures = measuresExFlame | "flame_analog"  // add more measures as needed, must match keys in SensorData
+export type measures = measuresExFlame | "flame_digital"  // add more measures as needed, must match keys in SensorData
 
 // Readable name and unit for each selectable measure. The chart's dropdown is
 // built straight from these entries.
 export const MEASURE_META: Record<measuresExFlame, { label: string; unit: string }> = {
-  dht_temperature: { label: 'Temperature', unit: '°C' },
-  dht_humidity: { label: 'Humidity', unit: '%' },
-  bme_pressure: { label: 'Pressure', unit: 'hPa' },
-  tsl_lux: { label: 'Light', unit: 'lux' },
-  bme_voc: { label: 'Gases (VOC)', unit: 'ppb' },
+  bme_temperature: { label: 'Temperature', unit: '°C' },
+  bme_humidity:    { label: 'Humidity',    unit: '%' },
+  bme_pressure:    { label: 'Pressure',    unit: 'hPa' },
+  tsl_lux:         { label: 'Light',       unit: 'lux' },
+  bme_voc:         { label: 'Gases (VOC)', unit: 'ppb' },
 }
 
 export type TimeRanges = '1H' | '6H' | '1D' | '1W' | '1M' | '1Y'
@@ -67,9 +67,7 @@ export const SensorSchemaLive = z.object({
   timestamp: z.coerce.string(),
   device_id: z.coerce.string(),
   location: z.coerce.string(),
-  dht_humidity: z.coerce.number(),
-  dht_temperature: z.coerce.number(),
-  dht_heat_index: z.coerce.number(),
+  flame_digital: zStringBool,
   flame_analog: z.coerce.number(),
   thermistor_temp: z.coerce.number(),
   bme_temperature: z.coerce.number(),
@@ -79,6 +77,8 @@ export const SensorSchemaLive = z.object({
   bme_voc: z.coerce.number(),
   tsl_lux: z.coerce.number(),
 })
+
+
 
 export const SensorSchemaHistory = z.object({
   running_time: z.coerce.number(),

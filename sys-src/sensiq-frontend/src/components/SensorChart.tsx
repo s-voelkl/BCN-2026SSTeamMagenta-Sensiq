@@ -65,7 +65,7 @@ function Spinner() {
  */
 export default function SensorChart({
   data,
-  measure = 'dht_temperature',
+  measure = 'bme_temperature',
   range = '1D',
   onRangeChange,
   className,
@@ -112,7 +112,7 @@ export default function SensorChart({
 
   return (
     <Card className={"h-full flex flex-col overflow-hidden " + (className || '')}>
-      <div className="mb-5 flex items-start justify-between gap-2">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
         <div className="flex items-center gap-2">
           <p className="text-xs font-semibold uppercase tracking-[0.15em]" >
             Historical
@@ -136,7 +136,7 @@ export default function SensorChart({
           </select>
         </div>
 
-        <div className="flex gap-1 rounded-xl border border-slate-800 bg-slate-950/60 p-1">
+        <div className="flex flex-wrap gap-1 rounded-xl border border-slate-800 bg-slate-950/60 p-1">
           {TIME_RANGES.map(r => (
             <button
               key={r.label}

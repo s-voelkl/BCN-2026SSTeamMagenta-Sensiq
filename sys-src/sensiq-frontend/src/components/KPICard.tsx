@@ -10,9 +10,9 @@ interface KPICardProps {
   error?: boolean   // any other failure -> generic error message
 }
 
-function transformFlame(value: number): string {
+function transformFlame(value: number | boolean): string {
   /** Transform the raw flame sensor value into a more user-friendly message. */
-  if (value == 0) return 'Negative'
+  if (value == false) return 'Negative'
   else return 'Positive'
 }
 
@@ -28,18 +28,18 @@ function transformInteger(value: number): number {
 /** The measured value + unit, shown once data is available. */
 function ValueDisplay({ kpi, data }: { kpi: KPI; data: SensorDataLive }) {
   let value = data[kpi.measure]
-  if (typeof value === 'number' && kpi.measure !== 'dht_temperature') value = transformInteger(value)
-  if (typeof value === 'number' && kpi.measure === 'dht_temperature') value = transformDecimal(value)
+  if (typeof value === 'number' && kpi.measure !== 'bme_temperature') value = transformInteger(value)
+  if (typeof value === 'number' && kpi.measure === 'bme_temperature') value = transformDecimal(value)
   const className = 'text-2xl font-semibold font-mono tracking-[0.15em] tabular-nums text-slate-50'
 
   return (
     <div className="mt-3 flex items-baseline justify-center gap-1.5">
-      <p className={kpi.measure === 'flame_analog' ? className : 'font-mono text-5xl font-bold tabular-nums text-slate-200'}
-        style={kpi.measure === 'flame_analog' ? { color: data.flame_analog === 0 ? '#2abe9bff' : '#EF4444' } : {}}>
-        {kpi.measure === 'flame_analog' ? transformFlame(value) : `${value}`}
+      <p className={kpi.measure === 'flame_digital' ? className : 'font-mono text-4xl sm:text-5xl font-bold tabular-nums text-slate-200'}
+         style={kpi.measure === 'flame_digital' ? { color: data.flame_digital == false ? '#2abe9bff' : '#EF4444' } : {}}>
+        {kpi.measure === 'flame_digital' ? transformFlame(value) : `${value}`}
       </p>
       {kpi.unit && (
-        <p className="font-mono text-3xl font-semibold text-slate-400">
+        <p className="font-mono text-2xl sm:text-3xl font-semibold text-slate-400">
           {kpi.unit}
         </p>
       )}
