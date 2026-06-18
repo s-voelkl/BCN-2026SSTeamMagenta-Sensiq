@@ -26,6 +26,11 @@ incoming requests during testing. Additionally, for runtime observance and
 debugging in the deployed environment, Lambda function executions and errors
 are continually logged to dedicated AWS CloudWatch log groups.
 
+\subsubsection{Frontend}
+The React frontend is tested with Vitest~\cite{vitest},
+covering the helper functions and verifying that sample data is rendered
+correctly to the document.
+
 \subsubsection{Sensor Node Firmware}
 Firmware unit testing utilizes the AUnit framework~\cite{aunit_testing_arduino}
 to cover modules like sensor readings, data aggregation, configurations, and Wi-Fi. Exhaustive

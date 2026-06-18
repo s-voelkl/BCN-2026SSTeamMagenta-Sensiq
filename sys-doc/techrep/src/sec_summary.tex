@@ -1,10 +1,27 @@
 % ----------------------------------------------------------------------
 % Section 8 — Summary and Future Work
 % ----------------------------------------------------------------------
-\section{Summary and Future Work}\label{sec:summary}
-% TODO: remove section information
-Recap the contribution of the report: a working, MCU-based IoT
-architecture for environmental monitoring with secure ingestion,
-dual-path persistence, and a user-facing dashboard. Outline next
-steps: extended sensor coverage, predictive analytics on historical
-data, multi-tenant support, and hardening for production deployment.
+\section{Summary and Future Work}
+
+\subsection*{Summary}
+This document describes Sensiq, an end-to-end IoT system for monitoring
+environmental parameters in laboratory settings. The project includes an
+ESP32-based sensor platform and a serverless AWS architecture with data
+processing capabilities for real-time and historical data.
+In addition, the project includes a React-based user interface and a
+notification service. The system monitors critical environmental data
+such as temperature, humidity, and light intensity at a monthly
+operating cost of less than three U.S. dollars per node.
+
+\subsection*{Future Work}
+For future expansion, it would be beneficial to integrate additional
+sensors, such as a particulate matter sensor. It would also be
+advantageous to integrate machine learning models to detect anomalies
+early on based on historical data. Furthermore, a useful enhancement
+would be to replace the current API key-based authentication method
+with AWS Cognito, which would significantly increase security. To
+simplify management, the administration of notification recipients and
+thresholds should be integrated directly into the front end to prevent
+the need for manual intervention via AWS. Logic for grouping end
+devices could also be added to enable deployment in larger laboratories
+or across multiple laboratory areas.
