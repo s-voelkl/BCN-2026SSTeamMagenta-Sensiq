@@ -1,57 +1,50 @@
-\section{ Technical Concept}
+\section{Technical Concept}\label{sec:technical_concept}
 
-\subsection{Technical Building Blocks}
+The Sensiq system comprises three core logical tiers:
+the physical edge tier for data acquisition,
+the cloud backend for processing and storage,
+and the presentation tier for user interaction.
+\Cref{fig:cloud-architecture} illustrates the overarching system architecture.
 
-The Sensiq system included several logical components. The edge sensor
-node measures environmental values. These values are aggregated and
-then transferred. The data is transmitted to the cloud via an encrypted
-transport channel. The subsequent gateway receives the data, which it
-then forwards to the processing logic. There are two separate paths for
-data handling. The live path provides the measured values in real time.
-The second path is the history path, which is used for long-term data
-storage.
+\subsection{System Architecture Overview}
 
-The implementation is carried out in three programming languages that
-were selected to meet the requirements. Arduino C++ was chosen for the
-sensor nodes due to its fast execution time. Python was used for AWS
-development because of its support for the AWS SDK. TypeScript is used
-to deploy the infrastructure via the AWS Cloud Development Kit. The
-front end is based on React.
+At the edge, microcontroller-based sensor nodes acquire environmental metrics.
+These measurements are aggregated and transmitted securely to the cloud infrastructure via MQTT.
+The data stream is subsequently split into two parallel processing branches:
 
-\subsection{ System Architecture}
+\begin{itemize}
+	\item \textbf{Live Route:} A low-latency path that validates, evaluates, and caches
+	      the most recent device state for real-time visualization and alerting.
+	\item \textbf{History Route:} A long-term storage path that buffers and transforms
+	      telemetry data into a column-oriented format, enabling optimized historical queries.
+\end{itemize}
+
+Clients interact with the system through a web-based dashboard, which fetches data from
+the backend via a REST API, and through automated email notifications triggered by critical
+environmental thresholds.
+% Detailed implementation steps of the hardware, cloud services, and
+% user interfaces are discussed in \cref{sec:hardware}, \cref{sec:aws_services}, and
+% \cref{sec:user_interaction}, respectively.
+
+% Not needed, as tech stack is already defined in the following sections.
+% \subsection{Technology Stack}
+
+% The technology stack utilizes three primary programming languages, each selected to satisfy
+% specific architectural requirements:
+
+% \begin{itemize}
+% 	\item \textbf{Arduino C++:} Employed for the sensor node firmware to ensure deterministic
+% 	      execution and low-overhead hardware interaction.
+% 	\item \textbf{Python:} Used for the serverless backend logic due to its native data processing
+% 	      capabilities and robust SDK integration.
+% 	\item \textbf{TypeScript:} Utilized for the front-end application (React) and for provisioning
+% 	      the infrastructure as code via the Cloud Development Kit (CDK).
+% \end{itemize}
 
 \begin{figure*}[!tb]
-  \centering
-  \includegraphics[width=\textwidth]{architecture.pdf}
-  \caption{Cloud Processing Architecture}
-  \label{fig:cloud-architecture}
+	\centering
+	\includegraphics[width=\textwidth]{architecture.pdf}
+	\caption{Cloud processing architecture depicting the sensor node, backend services,
+		and user interaction components.}
+	\label{fig:cloud-architecture}
 \end{figure*}
-
-Figure 1 provides an overview of the overall architecture. Initially,
-the ESP-32 sensor nodes collect measurement values and then send them
-as a JSON file via MQTT to AWS IoT Core. An IoT Topic rule splits the
-data stream into two parallel paths.
-
-In the live path, the message is forwarded to the
-handleTransformValidate Lambda function via an IoT rule. This Lambda
-function first checks whether any values exceed the critical threshold
-and, if necessary, sends an email via SNS. The function then validates
-the data and writes it to the DynamoDB table LiveDataDB, which stores
-the most recent device status. Incoming requests to the endpoint are
-forwarded via the API Gateway to the Lambda function handleLiveData.
-The Lambda function handleLiveData reads and checks the values from
-DynamoDB and returns them as JSON.
-
-In the history path, the data is forwarded to Amazon Kinesis Data
-Firehose. The data is then converted to a column-oriented Apache
-Parquet format and stored in an S3 bucket, sorted by date. Incoming
-requests to the endpoint are forwarded via API Gateway to the
-handleHistoryData Lambda function. The handleHistoryData Lambda
-function uses AWS Athena to execute SQL queries to filter the correct
-values from the bucket.
-
-The user interface is implemented as a React front end and is hosted in
-an S3 bucket. The user accesses the dashboard via a browser using
-HTTPS. Data requests are forwarded to the corresponding Lambda
-functions via the API Gateway, and the results are then visualised in
-the dashboard.
