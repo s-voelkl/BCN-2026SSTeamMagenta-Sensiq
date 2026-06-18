@@ -65,7 +65,7 @@ function Spinner() {
  */
 export default function SensorChart({
   data,
-  measure = 'dht_temperature',
+  measure = 'bme_temperature',
   range = '1D',
   onRangeChange,
   className,

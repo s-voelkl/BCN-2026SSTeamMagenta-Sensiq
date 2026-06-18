@@ -35,10 +35,8 @@ function makeLive(overrides: Partial<SensorDataLive> = {}): SensorDataLive {
     timestamp: '2026-06-13T10:00:00Z',
     device_id: 'esp32-lab-001',
     location: 'Lab A',
-    dht_humidity: 50,
-    dht_temperature: 25,
-    dht_heat_index: 24,
-    flame_analog: 0,
+    flame_digital: false,
+    flame_analog: 12,
     thermistor_temp: 24,
     bme_temperature: 22,
     bme_humidity: 44,
@@ -102,7 +100,7 @@ describe('useLiveData', () => {
   })
 
   it('fetches and schema-parses the live reading on success', async () => {
-    const fetched = makeLive({ device_id: 'esp32-fetched', dht_temperature: 30 })
+    const fetched = makeLive({ device_id: 'esp32-fetched', bme_temperature: 30 })
     fetchMock.mockResolvedValue(jsonResponse(fetched))
 
     const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })

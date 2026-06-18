@@ -17,9 +17,9 @@ const rowSpanClass = {
 } as const
 
 const KPI: KPIs = [
-  { id: '1', label: 'Temperature', unit: ' °C', measure: 'dht_temperature', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 1 },
-  { id: '2', label: 'Humidity', unit: '%', measure: 'dht_humidity', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 2 },
-  { id: '3', label: 'Flame', unit: '', measure: 'flame_analog', colSpan: 1, rowSpan: 2, rowStart: 5, colStart: 4 },
+  { id: '1', label: 'Temperature', unit: ' °C', measure: 'bme_temperature', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 1 },
+  { id: '2', label: 'Humidity', unit: '%', measure: 'bme_humidity', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 2 },
+  { id: '3', label: 'Flame', unit: '', measure: 'flame_digital', colSpan: 1, rowSpan: 2, rowStart: 5, colStart: 4 },
   { id: '4', label: 'Light Intensity', unit: ' lux', measure: 'tsl_lux', colSpan: 1, rowSpan: 2, rowStart: 3, colStart: 4 },
   { id: '5', label: 'Pressure', unit: ' hPa', measure: 'bme_pressure', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 3 },
   { id: '6', label: 'Gases', unit: ' ppb', measure: 'bme_voc', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 4 },
@@ -68,7 +68,7 @@ export default function BentoGrid() {
         <div className="col-span-3 row-span-4 col-start-1 row-start-3">
           <SensorChart
             data={historyData ?? []}
-            measure="dht_temperature"
+            measure="bme_temperature"
             range={range}
             onRangeChange={setRange}
             loading={historyLoading}
