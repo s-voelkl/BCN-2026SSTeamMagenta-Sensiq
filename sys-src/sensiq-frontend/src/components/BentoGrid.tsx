@@ -6,15 +6,26 @@ import { useState } from 'react'
 import SensorChart from './SensorChart'
 
 // Lookup tables => less writing effort
-const colSpanClass = {
+const colSpanClass: Record<number, string> = {
   1: 'col-span-1', 2: 'col-span-2',
   3: 'col-span-3', 4: 'col-span-4', 5: 'col-span-5',
 } as const
 
-const rowSpanClass = {
+const rowSpanClass: Record<number, string> = {
   1: 'row-span-1', 2: 'row-span-2',
   3: 'row-span-3', 4: 'row-span-4',
 } as const
+
+// only applied on tailwinds lg breakpoint!!
+const lgColStartClass: Record<number, string> = {
+  1: 'lg:col-start-1', 2: 'lg:col-start-2', 3: 'lg:col-start-3',
+  4: 'lg:col-start-4', 5: 'lg:col-start-5',
+}
+
+const lgRowStartClass: Record<number, string> = {
+  1: 'lg:row-start-1', 2: 'lg:row-start-2', 3: 'lg:row-start-3',
+  4: 'lg:row-start-4', 5: 'lg:row-start-5', 6: 'lg:row-start-6',
+}
 
 const KPI: KPIs = [
   { id: '1', label: 'Temperature', unit: ' °C', measure: 'bme_temperature', colSpan: 1, rowSpan: 2, rowStart: 1, colStart: 1 },
@@ -50,22 +61,20 @@ export default function BentoGrid() {
         <Greeting deviceId={deviceId} timestamp={data?.timestamp} />
       </div>
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:grid-cols-4" style={{ gridAutoRows: '80px' }}>
+      <div className="grid grid-cols-1 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" style={{ gridAutoRows: '80px' }}>
         {KPI.map(kpi => (
           <div key={kpi.id}
             className={[
               colSpanClass[kpi.colSpan ?? 1],
               rowSpanClass[kpi.rowSpan ?? 1],
-            ].join(' ')}
-            style={{
-              gridColumnStart: kpi.colStart,
-              gridRowStart: kpi.rowStart,
-            }}>
+              kpi.colStart ? lgColStartClass[kpi.colStart] : '',
+              kpi.rowStart ? lgRowStartClass[kpi.rowStart] : '',
+            ].join(' ')}>
             <KPICard key={kpi.id} kpi={kpi} data={data} loading={isLoading} offline={offline} error={failed} />
           </div>
         ))}
         {/* Chart */}
-        <div className="col-span-3 row-span-4 col-start-1 row-start-3">
+        <div className="col-span-1 row-span-4 col-span-2 sm:col-span-3 lg:col-start-1 lg:row-start-3">
           <SensorChart
             data={historyData ?? []}
             measure="bme_temperature"

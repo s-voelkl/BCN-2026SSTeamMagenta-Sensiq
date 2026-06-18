@@ -50,7 +50,7 @@ export default function Greeting({ deviceId, timestamp }: GreetingProps) {
   const isOnline = timestamp ? isWithinFiveMinutes(timestamp) : false
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-between sm:gap-2 sm:text-left">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-1.5" style={{ color: "#2abe9bff" }}>
           {emoji}&ensp;{label}
@@ -58,18 +58,18 @@ export default function Greeting({ deviceId, timestamp }: GreetingProps) {
         <p className="mt-1.5 text-sm text-slate-500">{dateStr}</p>
       </div>
       <div className='flex gap-2 horizontal-and-vertical-center text-center items-center'>
-        <div className='h-20'>
+        <div className='h-12 sm:h-16 lg:h-20'>
           <img src={logo} alt="sensiq" className='h-full' />
         </div>
-        <label className="font-display text-5xl font-bold tracking-tight text-slate-50">
+        <label className="font-display text-4xl lg:text-5xl font-bold tracking-tight text-slate-50">
           Sensiq
         </label>
       </div>
 
-      <div className="text-right">
+      <div className="text-center sm:text-right">
         <p
           aria-label="Current time"
-          className="font-mono text-4xl font-bold tabular-nums text-slate-200"
+          className="font-mono text-3xl sm:text-4xl font-bold tabular-nums text-slate-200"
         >
           {timeStr}
         </p>
