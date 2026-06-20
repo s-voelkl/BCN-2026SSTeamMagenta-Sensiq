@@ -25,17 +25,68 @@ function transformInteger(value: number): number {
   return Math.trunc(value)
 }
 
+function getValueColor(kpi: KPI, data: SensorDataLive): string {
+    const value = data[kpi.measure]
+
+    switch (kpi.measure) {
+
+        case 'bme_temperature':
+            if (typeof value !== 'number') return '#E2E8F0'
+
+            if (value >= 35.00) return '#EF4444'
+            if (value >= 30.00) return '#F59E0B'
+            return '#22C55E'
+
+        case 'bme_humidity':
+            if (typeof value !== 'number') return '#E2E8F0'
+
+            if (value < 20 || value > 80) return '#EF4444'
+            if (value < 40 || value > 60) return '#F59E0B'
+            return '#22C55E'
+
+        case 'bme_pressure':
+            if (typeof value !== 'number') return '#E2E8F0'
+
+            if (value < 900 || value > 1100) return '#EF4444'
+            if (value < 950 || value > 1050) return '#F59E0B'
+            return '#22C55E'
+
+        case 'bme_voc':
+            if (typeof value !== 'number') return '#E2E8F0'
+
+            if (value > 500) return '#EF4444'
+            if (value > 200) return '#F59E0B'
+            return '#22C55E'
+
+        case 'tsl_lux':
+            if (typeof value !== 'number') return '#E2E8F0'
+
+            if (value > 1000) return '#EF4444'
+            if (value > 500) return '#F59E0B'
+            return '#22C55E'
+
+        case 'flame_digital':
+            return data.flame_digital ? '#EF4444' : '#22C55E'
+
+        default:
+            return '#E2E8F0'
+    }
+}
+
 /** The measured value + unit, shown once data is available. */
 function ValueDisplay({ kpi, data }: { kpi: KPI; data: SensorDataLive }) {
   let value = data[kpi.measure]
   if (typeof value === 'number' && kpi.measure !== 'bme_temperature') value = transformInteger(value)
   if (typeof value === 'number' && kpi.measure === 'bme_temperature') value = transformDecimal(value)
   const className = 'text-2xl font-semibold font-mono tracking-[0.15em] tabular-nums text-slate-50'
+    const valueColor = getValueColor(kpi, data)
 
   return (
     <div className="mt-3 flex items-baseline justify-center gap-1.5">
       <p className={kpi.measure === 'flame_digital' ? className : 'font-mono text-4xl sm:text-5xl font-bold tabular-nums text-slate-200'}
-         style={kpi.measure === 'flame_digital' ? { color: data.flame_digital == false ? '#2abe9bff' : '#EF4444' } : {}}>
+         style={{
+             color: valueColor,
+         }}>
         {kpi.measure === 'flame_digital' ? transformFlame(value) : `${value}`}
       </p>
       {kpi.unit && (
