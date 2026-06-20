@@ -93,7 +93,7 @@ afterEach(() => {
 describe('useLiveData', () => {
   it('starts in a loading state before the request resolves', () => {
     fetchMock.mockReturnValue(new Promise<Response>(() => { })) // never resolves
-    const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useLiveData('esp32-lab-001'), { wrapper: createWrapper() })
 
     expect(result.current.isLoading).toBe(true)
     expect(result.current.data).toBeUndefined()
@@ -103,7 +103,7 @@ describe('useLiveData', () => {
     const fetched = makeLive({ device_id: 'esp32-fetched', bme_temperature: 30 })
     fetchMock.mockResolvedValue(jsonResponse(fetched))
 
-    const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useLiveData('esp32-lab-001'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(result.current.data).toEqual(fetched)
@@ -116,7 +116,7 @@ describe('useLiveData', () => {
   it('errors with the status when the response is not ok', async () => {
     fetchMock.mockResolvedValue(jsonResponse({}, { ok: false, status: 500 }))
 
-    const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useLiveData('esp32-lab-001'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isError).toBe(true))
 
     expect(result.current.error?.message).toContain('HTTP 500')
@@ -125,7 +125,7 @@ describe('useLiveData', () => {
   it('errors when the payload fails schema validation', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ not: 'a sensor reading' }))
 
-    const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useLiveData('esp32-lab-001'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isError).toBe(true))
   })
 
@@ -138,7 +138,7 @@ describe('useLiveData', () => {
       ),
     )
 
-    const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useLiveData('esp32-lab-001'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isError).toBe(true))
 
     expect(result.current.error).toBeInstanceOf(ApiError)
@@ -161,7 +161,7 @@ describe('isDeviceOffline', () => {
 describe('useHistoryData', () => {
   it('starts in a loading state before the request resolves', () => {
     fetchMock.mockReturnValue(new Promise<Response>(() => { })) // never resolves
-    const { result } = renderHook(() => useHistoryData('1D'), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useLiveData('esp32-lab-001'), { wrapper: createWrapper() })
 
     expect(result.current.isLoading).toBe(true)
     expect(result.current.data).toBeUndefined()
@@ -172,7 +172,7 @@ describe('useHistoryData', () => {
     const rows = [makeHistoryRow({ device_id: 'esp32-h1' }), makeHistoryRow({ device_id: 'esp32-h2' })]
     fetchMock.mockResolvedValue(jsonResponse({ data: rows }))
 
-    const { result } = renderHook(() => useHistoryData('1D'), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useHistoryData('esp32-lab-001', '1D'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(result.current.data).toEqual(rows)
@@ -186,7 +186,7 @@ describe('useHistoryData', () => {
   it('errors when the payload is not wrapped in { data }', async () => {
     fetchMock.mockResolvedValue(jsonResponse([makeHistoryRow()]))
 
-    const { result } = renderHook(() => useHistoryData('1D'), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useHistoryData('esp32-lab-001', '1D'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isError).toBe(true))
   })
 
@@ -194,7 +194,7 @@ describe('useHistoryData', () => {
   it('sends the aggregation interval that matches the selected range', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ data: [] }))
 
-    renderHook(() => useHistoryData('1W'), { wrapper: createWrapper() })
+    renderHook(() => useHistoryData('esp32-lab-001', '1W'), { wrapper: createWrapper() })
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
     const init = fetchMock.mock.calls[0][1] as RequestInit
@@ -205,7 +205,7 @@ describe('useHistoryData', () => {
   it('errors with the status when the response is not ok', async () => {
     fetchMock.mockResolvedValue(jsonResponse({}, { ok: false, status: 503 }))
 
-    const { result } = renderHook(() => useHistoryData('1D'), { wrapper: createWrapper() })
+    const { result } = renderHook(() => useHistoryData('esp32-lab-001', '1D'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isError).toBe(true))
 
     expect(result.current.error?.message).toContain('HTTP 503')
