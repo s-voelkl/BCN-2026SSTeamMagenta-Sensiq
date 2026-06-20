@@ -10,7 +10,7 @@ import { MEASURE_META, type SensorChartProps, type measuresExFlame } from '../ty
 const MEASURE_OPTIONS = Object.keys(MEASURE_META) as measuresExFlame[]
 
 // Threshold colours used by the historical chart.
-const NORMAL_COLOR = '#22C55E'
+const NORMAL_COLOR = '#2abe9b'
 const WARNING_COLOR = '#F59E0B'
 const CRITICAL_COLOR = '#EF4444'
 
@@ -38,8 +38,8 @@ type ChartPoint = {
 function getThresholdLevel(measure: measuresExFlame, value: number): ThresholdLevel {
   switch (measure) {
     case 'bme_temperature':
-      if (value >= 25.10) return 'critical'
-      if (value >= 25.00) return 'warning'
+      if (value >= 35.00) return 'critical'
+      if (value >= 30.00) return 'warning'
       return 'normal'
 
     case 'bme_humidity':
