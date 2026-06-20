@@ -27,14 +27,14 @@ export function isDeviceOffline(error: unknown): boolean {
 }
 
 /** Fetches the latest live reading from the API Gateway and validates it against the schema. */
-const fetchLiveData = async (): Promise<SensorDataLive> => {
+const fetchLiveData = async (deviceId: string): Promise<SensorDataLive> => {
   const res = await fetch(`${api_url}/live`, {
     method: "POST",
     headers: {
       'x-api-key': api_key,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ device_id: "esp32-lab-001" }),
+     body: JSON.stringify({ device_id: deviceId }),
   })
   if (!res.ok) {
     // Surface the JSON error body so the dashboard can detect the offline case.
@@ -45,12 +45,13 @@ const fetchLiveData = async (): Promise<SensorDataLive> => {
 }
 
 /** React Query hook that loads the live data and refetches it every 5 seconds. */
-export function useLiveData() {
+export function useLiveData(deviceId: string) {
   return useQuery<SensorDataLive>({
-    queryKey: ['liveData'],
-    queryFn: fetchLiveData,
+    queryKey: ['liveData', deviceId],
+    queryFn: () => fetchLiveData(deviceId),
     refetchInterval: 5000, // Refetch every 5 seconds for live updates
     staleTime: 0,
+    enabled: deviceId.trim().length > 0,
   })
 }
 
@@ -59,6 +60,7 @@ export function useLiveData() {
  * @param interval how much the backend aggregates the data (defaults to 10 minutes)
  */
 const fetchHistoryData = async (
+  deviceId: string,
   interval: AggregationInterval = '10_minutes',
 ): Promise<SensorDataHistory[]> => {
   const res = await fetch(`${api_url}/history`, {
@@ -67,7 +69,7 @@ const fetchHistoryData = async (
       'x-api-key': api_key,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ device_id: 'esp32-lab-001', precision: interval })
+        body: JSON.stringify({ device_id: deviceId, precision: interval })
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard data`)
 
@@ -85,14 +87,15 @@ const fetchHistoryData = async (
  * Picks the matching aggregation interval and keeps the previous data while refetching.
  * @param range the selected time window (e.g. '1D', '1W')
  */
-export function useHistoryData(range: TimeRanges) {
+export function useHistoryData(deviceId: string, range: TimeRanges) {
   const interval = IntervalMapper[range]
   return useQuery<SensorDataHistory[]>({
-    queryKey: ['historyData', range, interval],
-    queryFn: () => fetchHistoryData(interval),
+    queryKey: ['historyData', deviceId, range, interval],
+    queryFn: () => fetchHistoryData(deviceId, interval),
     staleTime: 0,
     // Keep the previous range's data on screen while the new range loads,
     // so switching ranges doesn't blank the chart (isLoading only fires on first load).
     placeholderData: keepPreviousData,
+    enabled: deviceId.trim().length > 0,
   })
 }

@@ -1,4 +1,5 @@
 import Greeting from './Greeting'
+import DeviceIdInput from './DeviceIdInput'
 import { useHistoryData, useLiveData, isDeviceOffline } from '../hooks/useDashboardData'
 import KPICard from './KPICard'
 import type { KPIs, TimeRanges } from '../types/dashboard'
@@ -39,9 +40,10 @@ const KPI: KPIs = [
 
 /** Main dashboard: loads the live and history data and lays out the KPI cards and chart in a grid. */
 export default function BentoGrid() {
-  const { data, isLoading, isError, error } = useLiveData()
+  const [deviceId, setDeviceId] = useState('esp32-lab-001')
+  const { data, isLoading, isError, error } = useLiveData(deviceId)
 
-  const deviceId = data?.device_id || "Device Offline"
+  const deviceLabel = data?.device_id || "Device Offline"
   // Translate the live query state into per-KPI flags.
   const offline = isError && isDeviceOffline(error)
   const failed = !isLoading && !offline && !data // generic error or unexpectedly missing data
@@ -52,13 +54,23 @@ export default function BentoGrid() {
     isLoading: historyLoading,
     isFetching: historyFetching,
     isError: historyError,
-  } = useHistoryData(range)
+  } = useHistoryData(deviceId, range)
 
   return (
     <div className="space-y-4">
-      {/* Header — always visible, even while loading or on error */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-6 py-5 backdrop-blur-sm">
-        <Greeting deviceId={deviceId} timestamp={data?.timestamp} />
+     {/* Header — always visible, even while loading or on error */}
+   <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-6 py-5 backdrop-blur-sm">
+        <Greeting deviceId={deviceLabel} timestamp={data?.timestamp} />
+        
+        <div className="mt-4 flex flex-col sm:flex-row items-end sm:items-center justify-end gap-3">
+          {offline && (
+            <span className="inline-flex items-center rounded-full bg-red-950/50 px-2.5 py-1.5 text-xs font-medium text-red-400 border border-red-800/60">
+              <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+              Device Offline
+            </span>
+          )}
+          <DeviceIdInput currentDeviceId={deviceId} onSubmit={setDeviceId} />
+        </div>
       </div>
       {/* KPIs */}
       <div className="grid grid-cols-1 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" style={{ gridAutoRows: '80px' }}>
