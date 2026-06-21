@@ -33,36 +33,31 @@ function getValueColor(kpi: KPI, data: SensorDataLive): string {
         case 'bme_temperature':
             if (typeof value !== 'number') return '#E2E8F0'
 
-            if (value >= 35.00) return '#EF4444'
-            if (value >= 30.00) return '#F59E0B'
+            if (value < 10.00 || value >= 35.00) return '#EF4444'
             return '#2abe9b'
 
         case 'bme_humidity':
             if (typeof value !== 'number') return '#E2E8F0'
 
             if (value < 20 || value > 80) return '#EF4444'
-            if (value < 40 || value > 60) return '#F59E0B'
             return '#2abe9b'
 
         case 'bme_pressure':
             if (typeof value !== 'number') return '#E2E8F0'
 
             if (value < 900 || value > 1100) return '#EF4444'
-            if (value < 950 || value > 1050) return '#F59E0B'
             return '#2abe9b'
 
         case 'bme_voc':
             if (typeof value !== 'number') return '#E2E8F0'
 
-            if (value > 500) return '#EF4444'
-            if (value > 200) return '#F59E0B'
+            if (value > 250) return '#EF4444'
             return '#2abe9b'
 
         case 'tsl_lux':
             if (typeof value !== 'number') return '#E2E8F0'
 
             if (value > 1000) return '#EF4444'
-            if (value > 500) return '#F59E0B'
             return '#2abe9b'
 
         case 'flame_digital':

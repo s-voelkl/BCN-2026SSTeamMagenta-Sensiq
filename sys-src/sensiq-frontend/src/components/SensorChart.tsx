@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
-  AreaChart, Area, XAxis, YAxis,
+  AreaChart, Area, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import Card from './Card'
@@ -11,7 +11,6 @@ const MEASURE_OPTIONS = Object.keys(MEASURE_META) as measuresExFlame[]
 
 // Threshold colours used by the historical chart.
 const NORMAL_COLOR = '#2abe9b'
-const WARNING_COLOR = '#F59E0B'
 const CRITICAL_COLOR = '#EF4444'
 
 // time range lookup table
@@ -24,42 +23,36 @@ const TIME_RANGES = [
   { label: '1Y', ms: 1000 * 60 * 60 * 24 * 365 }
 ] as const
 
-type ThresholdLevel = 'normal' | 'warning' | 'critical'
+type ThresholdLevel = 'normal' | 'critical'
 
 type ChartPoint = {
   time: number
   value: number
   level: ThresholdLevel
   normalValue: number | null
-  warningValue: number | null
   criticalValue: number | null
 }
 
 function getThresholdLevel(measure: measuresExFlame, value: number): ThresholdLevel {
   switch (measure) {
     case 'bme_temperature':
-      if (value >= 35.00) return 'critical'
-      if (value >= 30.00) return 'warning'
+      if (value < 10.00 || value >= 35.00) return 'critical'
       return 'normal'
 
     case 'bme_humidity':
       if (value < 20 || value > 80) return 'critical'
-      if (value < 40 || value > 60) return 'warning'
       return 'normal'
 
     case 'bme_pressure':
       if (value < 900 || value > 1100) return 'critical'
-      if (value < 950 || value > 1050) return 'warning'
       return 'normal'
 
     case 'bme_voc':
-      if (value > 500) return 'critical'
-      if (value > 200) return 'warning'
+      if (value > 250) return 'critical'
       return 'normal'
 
     case 'tsl_lux':
       if (value > 1000) return 'critical'
-      if (value > 500) return 'warning'
       return 'normal'
 
     default:
@@ -73,7 +66,6 @@ function createChartPoint(time: number, value: number, level: ThresholdLevel): C
     value,
     level,
     normalValue: level === 'normal' ? value : null,
-    warningValue: level === 'warning' ? value : null,
     criticalValue: level === 'critical' ? value : null,
   }
 }
@@ -82,7 +74,6 @@ function addValueToLevel(point: ChartPoint, level: ThresholdLevel): ChartPoint {
   return {
     ...point,
     normalValue: level === 'normal' ? point.value : point.normalValue,
-    warningValue: level === 'warning' ? point.value : point.warningValue,
     criticalValue: level === 'critical' ? point.value : point.criticalValue,
   }
 }
@@ -172,15 +163,10 @@ export default function SensorChart({
 
     return points.map((point, index) => {
       const previous = points[index - 1]
-      const next = points[index + 1]
       let connectedPoint = point
 
       if (previous && previous.level !== point.level) {
         connectedPoint = addValueToLevel(connectedPoint, previous.level)
-      }
-
-      if (next && next.level !== point.level) {
-        connectedPoint = addValueToLevel(connectedPoint, next.level)
       }
 
       return connectedPoint
@@ -196,7 +182,6 @@ export default function SensorChart({
       : { hour: '2-digit', minute: '2-digit' })
 
   const normalGradientId = `grad-${selected}-normal`
-  const warningGradientId = `grad-${selected}-warning`
   const criticalGradientId = `grad-${selected}-critical`
 
   return (
@@ -272,10 +257,6 @@ export default function SensorChart({
                 <stop offset="5%" stopColor={NORMAL_COLOR} stopOpacity={0.25} />
                 <stop offset="95%" stopColor={NORMAL_COLOR} stopOpacity={0} />
               </linearGradient>
-              <linearGradient id={warningGradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={WARNING_COLOR} stopOpacity={0.25} />
-                <stop offset="95%" stopColor={WARNING_COLOR} stopOpacity={0} />
-              </linearGradient>
               <linearGradient id={criticalGradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={CRITICAL_COLOR} stopOpacity={0.25} />
                 <stop offset="95%" stopColor={CRITICAL_COLOR} stopOpacity={0} />
@@ -307,32 +288,42 @@ export default function SensorChart({
             <Area
               type="linear"
               dataKey="normalValue"
-              stroke={NORMAL_COLOR}
-              strokeWidth={2}
+              stroke="none"
               fill={`url(#${normalGradientId})`}
               dot={false}
-              activeDot={{ r: 4, fill: NORMAL_COLOR, strokeWidth: 0 }}
+              activeDot={false}
               connectNulls={false}
-            />
-            <Area
-              type="linear"
-              dataKey="warningValue"
-              stroke={WARNING_COLOR}
-              strokeWidth={2}
-              fill={`url(#${warningGradientId})`}
-              dot={false}
-              activeDot={{ r: 4, fill: WARNING_COLOR, strokeWidth: 0 }}
-              connectNulls={false}
+              isAnimationActive={false}
             />
             <Area
               type="linear"
               dataKey="criticalValue"
+              stroke="none"
+              fill={`url(#${criticalGradientId})`}
+              dot={false}
+              activeDot={false}
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+            <Line
+              type="linear"
+              dataKey="normalValue"
+              stroke={NORMAL_COLOR}
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4, fill: NORMAL_COLOR, strokeWidth: 0 }}
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+            <Line
+              type="linear"
+              dataKey="criticalValue"
               stroke={CRITICAL_COLOR}
               strokeWidth={2}
-              fill={`url(#${criticalGradientId})`}
               dot={false}
               activeDot={{ r: 4, fill: CRITICAL_COLOR, strokeWidth: 0 }}
               connectNulls={false}
+              isAnimationActive={false}
             />
           </AreaChart>
         </ResponsiveContainer>
