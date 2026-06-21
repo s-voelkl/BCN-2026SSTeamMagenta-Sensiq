@@ -2,18 +2,38 @@
 % Section 6 — User Interaction
 % ----------------------------------------------------------------------
 \section{User Interaction}\label{sec:user_interaction}
-% TODO: remove section information
-Describes how end users consume the data and receive alerts.
+
+Passive, push-based email notifications (\cref{sec:sns_notifications}) and an interactive web frontend (\cref{sec:frontend})
+offer users comprehensive capabilities for monitoring the laboratory's environmental conditions.
 
 \subsection{Email Notifications via SNS}\label{sec:sns_notifications}
-% TODO: remove section information
-Explain the alert pipeline: threshold evaluation in the validation
-Lambda, publication to an SNS topic, and email delivery to subscribed
-recipients. Cover debounce behaviour and message content.
+
+Users are alerted to critical environmental conditions via automated email notifications.
+Threshold evaluations are executed within the \texttt{handleTransformValidate} Lambda function,
+which compares incoming telemetry data against predefined operational limits. To prevent alert fatigue,
+the system implements a rate-limiting mechanism using a DynamoDB~\cite{aws-dynamodb} table named \texttt{EmailDB}.
+This table records the timestamp and trigger condition of the most recently dispatched alert.
+Subsequent emails are only transmitted if the previous alert occurred at least 300 seconds prior.
+AWS SNS~\cite{aws-sns} manages the delivery of these notifications to a curated list of subscriber addresses.
+Each email provides a detailed summary of the device's current state and identifies the specific
+metric that triggered the alarm.
 
 \subsection{Web Frontend}\label{sec:frontend}
-% TODO: remove section information
-Describe the React-based dashboard hosted on AWS Amplify: live tiles,
-historical charts, sensor status indicators, and authentication via
-AWS Cognito. Include a screenshot or mock-up
-(see template: figure*).
+
+The frontend consists of a single-page React application hosted on AWS S3. It
+integrates with the backend infrastructure exclusively via the REST API endpoints detailed in
+\cref{sec:aws_services}. Specifically, the \texttt{POST /live} route supplies data to real-time
+status tiles and individual sensor indicators, reflecting the most recent device telemetry.
+Conversely, the \texttt{POST /history} route populates historical data charts, allowing users to
+interactively adjust the displayed time ranges and metrics. Currently, access to the
+dashboard is unrestricted, rendering it publicly accessible. A representative illustration
+of the user interface is provided in
+\cref{fig:frontend}.
+
+\begin{figure*}[!tb]
+	\centering
+	\includegraphics[width=0.9\textwidth]{frontend.pdf}
+	\caption{React Frontend with real-time status tiles and a historical data chart.}
+	\label{fig:frontend}
+\end{figure*}
+

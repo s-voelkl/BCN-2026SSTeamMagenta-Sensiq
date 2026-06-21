@@ -27,6 +27,7 @@ The hardware code coverage results can be obtained from ``sys-src/sensiq-hardwar
 
 The AWS code coverage can be splitted into Python lambda handlers and the AWS infrastructure code.
 The Python code coverage results can be obtained from ``sys-src/sensiq-aws/coverage/pytest-lambda-coverage.md``; the Typescript code coverage results using Jest can be found in the ``sys-src/sensiq-aws/coverage/jest-aws-coverage`` directory.
+
 Frontend code coverage results can be found in the ``sys-src/sensiq-frontend/coverage`` directory.
 
 ## Hardware Unit
@@ -34,29 +35,19 @@ Frontend code coverage results can be found in the ``sys-src/sensiq-frontend/cov
 Assembled hardware unit with all sensors and components:
 ![Assembled hardware unit with all sensors and components](sys-doc/techrep/src/hardware-picture.png)
 
-Logical architecture of the hardware unit, see [circuit diagram](sys-doc\kicad-hardware-schematic\circuit_diagram_pdf\kicad-project.pdf).
+Logical architecture of the hardware unit, see [circuit diagram](sys-doc\kicad-hardware-schematic\circuit_diagram_pdf\circuit_diagram_export_light.pdf).
 
-## AWS Architecture
+## AWS Cloud Backend
 
-AWS architecture diagram:
-
-![Architecture diagram](sys-doc/techrep/src/BCN_Archictecture.png)
-<!-- TODO: Check if this really exists -->
+AWS [architecture diagram](sys-doc/techrep/src/architecture_diagram.pdf).
 
 ## React Frontend
 
-Example of the React frontend dashboard:
-
-![Example of the React frontend dashboard](sys-doc/techrep/src/frontend-dashboard.png)
-<!-- TODO: Check if this really exists -->
+Example of the React [frontend dashboard](sys-doc/techrep/src/frontend.pdf).
 
 ## Alerting System
 
-An example of an email alert triggered by the alerting system:
-
-![An example of an email alert triggered by the alerting system](sys-doc/techrep/src/email-alert.png)
-
-<!-- TODO: Update with alerting system details -->
+An example of an email alert triggered by the [alerting system](sys-doc/techrep/src/email-alert.txt).
 
 ## Authors and acknowledgment
 

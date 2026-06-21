@@ -31,11 +31,10 @@
 % \addbibresource{xampl.bib} % (xampl file provided by the BibTEX base files)
 % ======================================================================
 % EDIT THESE:
-\cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0000-0002-1175-2668}}
+\cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0009-0005-5334-9673}}
 \cstechrepAuthorListBib{Simon Völkl and Johannes Schieder and Sebastian Rosner and Andre Tien Vu}
 % Capitalization: https://capitalizemytitle.com/style/Chicago/
-\cstechrepTitleTex{Sensiq} 
-% TODO: New title with Hardware, IoT, AWS, Environmental Monitoring, ...
+\cstechrepTitleTex{Sensiq: A Serverless IoT Architecture for Cost-Effective Laboratory Monitoring} 
  % IF you need manual linebreaks in the title, then clone the title without linebreaks for BibTeX:
 \cstechrepTitleBib{{\cstechrepTitleTex}}
 \cstechrepDepartment{Department of Electrical Engineering, Media, and Computer Science}
@@ -67,10 +66,36 @@
 \maketitle
 
 \begin{abstract}
-	% TODO: Abstract
+	\textbf{Background:} Reliable indoor environment quality (IEQ) monitoring is critical for
+	safety and experimental validity in laboratories. Existing IoT solutions often
+	rely on costly on-premises servers, coarse sampling intervals, or proprietary interfaces.
+
+	\textbf{Objective:} This paper introduces Sensiq, a low-latency, cost-efficient,
+	and fully serverless end-to-end IoT architecture designed to continuously track
+	environmental parameters such as temperature, humidity, gas concentration, and flame exposure.
+
+	\textbf{Methods:} The system leverages low-cost ESP32 edge nodes equipped with
+	multiple sensors to acquire and aggregate data. Measurements are securely transmitted
+	via Message Queuing Telemetry Transport (MQTT) to an Amazon Web Services (AWS) serverless backend.
+	The cloud architecture dynamically splits data into two optimized paths:
+	a live route for sub-second real-time state retrieval, and a history route for scalable long-term analytics.
+	A platform-independent React dashboard provides interactive visualization, supplemented
+	by email notifications for critical threshold breaches.
+
+	\textbf{Results:} The Sensiq system confirms that a reliable, low-cost monitoring system
+	is entirely feasible. Ultimately, this
+	implementation serves as a practical example that continuous, high-frequency data acquisition
+	can be achieved extremely cost-efficiently, requiring roughly 43\,\texteuro~for hardware
+	prototyping and approximately 1.87\,\texteuro~in monthly operational overhead per node.
+
+	\textbf{Conclusion:} Sensiq provides a highly scalable, maintenance-free solution
+	for continuous laboratory supervision. Future enhancements will prioritize
+	security, analytics, deployment flexibility, threshold configurability and advanced
+	predictive capabilities using machine learning models.
 \end{abstract}
 \begin{IEEEkeywords}
-	% TODO: Keywords
+	Internet of Things (IoT), Environmental Monitoring, Serverless Architecture, Amazon Web Services (AWS),
+	ESP32, Indoor Air Quality (IAQ), Cloud Computing
 \end{IEEEkeywords}
 
 % ======================================================================

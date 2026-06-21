@@ -2,14 +2,21 @@
 % Section 8 — Summary and Future Work
 % ----------------------------------------------------------------------
 \section{Summary and Future Work}\label{sec:summary}
-% TODO: remove section information
-Recap the contribution of the report: a working, MCU-based IoT
-architecture for environmental monitoring with secure ingestion,
-dual-path persistence, and a user-facing dashboard. Outline next
-steps: extended sensor coverage, predictive analytics on historical
-data, multi-tenant support, and hardening for production deployment.
 
-Future work notes:
-- Deep Sleep for ESP32 on Hardware for longer battery life
-- AI Outlier detection on AWS
-- Predictions on future sensor readings
+% \subsection*{Summary}
+Sensiq provides a scalable, end-to-end IoT solution for continuous laboratory environment monitoring.
+By combining a low-cost ESP32 sensor platform with a serverless AWS backend and a React dashboard,
+the system successfully delivers both low-latency alerting and robust historical analysis.
+It reliably monitors critical metrics including temperature, humidity, and air quality while
+maintaining a highly efficient operational footprint of under three U.S. dollars per node monthly.
+
+% \subsection*{Future Work}
+As detailed in the evaluation (\cref{sec:discussion}), future development prioritizes security,
+analytical maturity, and deployment flexibility. Planned operational improvements include
+migrating to AWS Cognito for robust authentication and enabling dynamic, per-device configuration
+of warning thresholds and notification recipients directly within the frontend.
+On the hardware level, integrating optimizing power
+consumption via deep-sleep configurations will broaden deployment capabilities.
+Lastly, introducing machine learning models will enhance the system with real-time outlier
+detection in the live data stream, providing preemptive anomaly alerts that overcome the limitations
+of static, threshold-based evaluation.

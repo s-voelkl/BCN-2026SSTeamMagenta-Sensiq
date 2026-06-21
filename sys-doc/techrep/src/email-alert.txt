@@ -1,0 +1,27 @@
+The local Sensiq measuring station noticed a problem:
+Humidity too high
+
+Location:    Lab A, OTH Amberg-Weiden, 92224 Amberg, Germany
+Device ID:   esp32-lab-001
+Detected at: 2026-06-16 20:32:00 UTC
+
+Currently measured values:
+      DHT temperature: 20.6 °C
+  [!] DHT humidity: 85%
+      Flame sensor: False
+      Flame analog: 82
+      Thermistor temperature: 28.97828 °C
+      BME temperature: 22.451 °C
+      BME humidity: 53.94069%
+      BME pressure: 966.7679 hPa
+      BME altitude: 394.4043 m
+      BME VOC: 140.232 ppb
+      TSL Light Intensity: 77 lux
+
+Threshold breaches:
+  - Humidity too high (measured 85%, expected between 20% and 80%)
+
+
+Suggestion: Please investigate and resolve this issue as fast as possible.
+
+This message was generated and sent automatically by Sensiq. Do not reply to this email.

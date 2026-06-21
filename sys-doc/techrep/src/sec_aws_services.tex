@@ -2,21 +2,75 @@
 % Section 5 — AWS Services
 % ----------------------------------------------------------------------
 \section{AWS Services}\label{sec:aws_services}
-% TODO: remove section information
-Detailed description of the cloud-side processing pipeline. Two
-functional routes are exposed by the backend: a low-latency live
-route and a long-term history route. Each is described in its own
-subsection together with the AWS services it relies on.
+
+All AWS resources are provisioned and managed using the AWS Cloud Development Kit
+(CDK)~\cite{aws-cdk}, which enables infrastructure as code with TypeScript.
 
 \subsection{Live Route}\label{sec:live_route}
-% TODO: remove section information
-Path from IoT Core rule -> validation Lambda -> DynamoDB (latest
-reading per device) -> API Gateway -> GET /live. Discuss latency
-targets, payload shape, and error handling.
+The live route provides a low-latency data delivery mechanism, exposing a
+\texttt{POST /live} endpoint via API Gateway. It returns the most recent
+sensor reading as a structured JSON payload. The pipeline spans from hardware
+ingestion through serverless transformation to a managed NoSQL store.
+
+\subsubsection{Data Ingestion and Transformation}
+Sensor readings are assembled on the ESP-32 microcontroller and published
+via MQTT to AWS IoT Core~\cite{awsIotCore}. An IoT topic rule
+forwards each incoming message to the
+\texttt{handleTransformValidate} Lambda function written in Python. This function is
+responsible for validating and transforming the payload to the internal data format,
+and classifies outlier readings against predefined thresholds, as described in
+\cref{sec:sns_notifications}. Regardless of classification,
+the validated record is written to a DynamoDB
+table~\cite{aws-dynamodb} (\texttt{LiveDataDB}) via a \texttt{PutItem}
+operation, which always reflects the latest device state.
+
+\subsubsection{Live Data Retrieval}
+Incoming \texttt{POST /live} requests are routed through the API Gateway to the
+\texttt{handleLiveData} Lambda function. This function performs a read
+against \texttt{LiveDataDB} and returns the latest sensor record as a
+JSON response. Because the data is served directly from DynamoDB with
+single-digit millisecond read latency, the live route consistently
+responds well within the 29-second API Gateway timeout, typically in
+under one second. The handler returns an error response when the entry in
+\texttt{LiveDataDB} is older than 60 seconds.
 
 \subsection{History Route}\label{sec:history_route}
-% TODO: remove section information
-Path from IoT Core / validation Lambda -> S3 (Parquet, partitioned by
-date) -> Glue catalogue -> Athena -> history Lambda -> API Gateway ->
-GET /history. Discuss partitioning strategy, query patterns, and
-expected query latency.
+The history route provides a long-term data retrieval mechanism, exposing a
+\texttt{POST /history} endpoint via API Gateway. It accepts query parameters
+such as time ranges, limits, aggregation precision and a device ID, and returns
+precision-adjusted aggregated historical sensor data as a structured JSON payload.
+The pipeline bridges data ingestion from AWS IoT Core to a highly optimized query backend.
+
+\subsubsection{Data Ingestion and Storage}
+Incoming JSON messages from AWS IoT Core are captured by an IoT rule and
+forwarded to Amazon Kinesis Data Firehose~\cite{aws-firehose}. To mitigate
+the small-files problem, Firehose buffers the data for up to 15 minutes or
+until a size of 128\,MB is reached before converting it to Apache Parquet
+format. The Parquet files are written to a S3 Standard data
+bucket~\cite{aws-s3-storage-classes},
+partitioned by year, month, and day to ensure efficient storage and rapid
+retrieval. S3 lifecycle management policies~\cite{aws-s3-lifecycle-management}
+are configured to retain the data securely for an extended period, while an
+AWS Glue Data Catalog maintains the structural metadata of the
+\texttt{sensor\_data} table. IAM policies tightly control access to the Glue
+catalog and underlying S3 buckets~\cite{aws-athena-iam-policies}.
+
+\subsubsection{Query Execution and Processing}
+
+A dedicated AWS Lambda function coordinates the fulfillment of history
+requests. It parses the incoming query parameters, validates them, and
+constructs an Athena query using query execution
+parameters~\cite{aws-athena-execution-parameters} to defend against SQL attacks.
+Athena utilizes Glue's partition projection
+mapping~\cite{aws-athena-partition-projection} to prune directories rapidly
+without needing to load external metadata. A dedicated Athena
+workgroup~\cite{aws-athena-workgroups} manages the query execution, saving the
+result datasets to a secondary S3 query results bucket.
+
+During execution, the Lambda function continually polls the query execution
+status~\cite{aws-athena-query-execution-status}. Once the query yields a
+terminal state, the Lambda handler retrieves the generated results from the
+S3 bucket, formats them into a JSON response, and returns them to the API
+Gateway. Although Athena queries induce higher latency compared to the live
+route, processing is typically completed well within the 29-second timeout limit,
+mostly in under 5 seconds.

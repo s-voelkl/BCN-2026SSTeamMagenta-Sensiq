@@ -1,26 +1,50 @@
-% ----------------------------------------------------------------------
-% Section 3 — Technical Concept
-% ----------------------------------------------------------------------
 \section{Technical Concept}\label{sec:technical_concept}
-% TODO: remove section information
-High-level, technology-agnostic view of the system. This section
-introduces the conceptual building blocks and the end-to-end data
-flow. Detailed component-level descriptions follow in the Hardware,
-AWS Services, and User Interaction sections.
 
-\subsection{Technical Building Blocks}\label{sec:building_blocks}
-% TODO: remove section information
-Enumerate the logical components of the system without binding them
-yet to concrete products: edge sensing node, secure transport channel,
-ingestion gateway, validation stage, hot-path store (live data),
-cold-path store (history), query API, notification channel, and user
-interface. Briefly justify the chosen programming languages
-(C++ firmware, Python lambdas, TypeScript infrastructure, React UI).
+The Sensiq system comprises three core logical tiers:
+the physical edge tier for data acquisition,
+the cloud backend for processing and storage,
+and the presentation tier for user interaction.
+\Cref{fig:cloud-architecture} illustrates the overarching system architecture.
 
-\subsection{System Architecture}\label{sec:architecture}
-% TODO: remove section information
-Present the architecture diagram (see template: fig:cloud-architecture)
-and walk the reader through the data flow: ESP32 -> MQTT/TLS ->
-AWS IoT Core -> validation Lambda -> dual persistence (DynamoDB for
-live, S3 + Athena for history) -> REST endpoints -> frontend / SNS.
-% Reference the diagram with \cref{fig:cloud-architecture}.
+% \subsection{System Architecture Overview}
+
+At the edge, microcontroller-based sensor nodes acquire environmental metrics.
+These measurements are aggregated and transmitted securely to the cloud infrastructure via MQTT.
+The data stream is subsequently split into two parallel processing branches:
+
+\begin{itemize}
+	\item \textbf{Live Route:} A low-latency path that validates, evaluates, and caches
+	      the most recent device state for real-time visualization and alerting.
+	\item \textbf{History Route:} A long-term storage path that buffers and transforms
+	      telemetry data into a column-oriented format, enabling optimized historical queries.
+\end{itemize}
+
+Clients interact with the system through a web-based dashboard, which fetches data from
+the backend via a REST API, and through automated email notifications triggered by critical
+environmental thresholds.
+% Detailed implementation steps of the hardware, cloud services, and
+% user interfaces are discussed in \cref{sec:hardware}, \cref{sec:aws_services}, and
+% \cref{sec:user_interaction}, respectively.
+
+% Not needed, as tech stack is already defined in the following sections.
+% \subsection{Technology Stack}
+
+% The technology stack utilizes three primary programming languages, each selected to satisfy
+% specific architectural requirements:
+
+% \begin{itemize}
+% 	\item \textbf{Arduino C++:} Employed for the sensor node firmware to ensure deterministic
+% 	      execution and low-overhead hardware interaction.
+% 	\item \textbf{Python:} Used for the serverless backend logic due to its native data processing
+% 	      capabilities and robust SDK integration.
+% 	\item \textbf{TypeScript:} Utilized for the front-end application (React) and for provisioning
+% 	      the infrastructure as code via the Cloud Development Kit (CDK).
+% \end{itemize}
+
+\begin{figure*}[!tb]
+	\centering
+	\includegraphics[width=0.8\textwidth]{architecture_diagram.pdf}
+	\caption{Cloud processing architecture depicting the sensor node, backend services,
+		and user interaction components.}
+	\label{fig:cloud-architecture}
+\end{figure*}
