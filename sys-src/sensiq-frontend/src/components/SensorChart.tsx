@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
-  AreaChart, Area, Line, XAxis, YAxis,
+  AreaChart, Area, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import Card from './Card'
@@ -36,7 +36,7 @@ type ChartPoint = {
 function getThresholdLevel(measure: measuresExFlame, value: number): ThresholdLevel {
   switch (measure) {
     case 'bme_temperature':
-      if (value < 10.00 || value >= 35.00) return 'critical'
+      if (value < 10.00 || value >= 25.00) return 'critical'
       return 'normal'
 
     case 'bme_humidity':
@@ -288,42 +288,22 @@ export default function SensorChart({
             <Area
               type="linear"
               dataKey="normalValue"
-              stroke="none"
+              stroke={NORMAL_COLOR}
+              strokeWidth={2}
               fill={`url(#${normalGradientId})`}
               dot={false}
-              activeDot={false}
+              activeDot={{ r: 4, fill: NORMAL_COLOR, strokeWidth: 0 }}
               connectNulls={false}
-              isAnimationActive={false}
             />
             <Area
               type="linear"
               dataKey="criticalValue"
-              stroke="none"
-              fill={`url(#${criticalGradientId})`}
-              dot={false}
-              activeDot={false}
-              connectNulls={false}
-              isAnimationActive={false}
-            />
-            <Line
-              type="linear"
-              dataKey="normalValue"
-              stroke={NORMAL_COLOR}
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4, fill: NORMAL_COLOR, strokeWidth: 0 }}
-              connectNulls={false}
-              isAnimationActive={false}
-            />
-            <Line
-              type="linear"
-              dataKey="criticalValue"
               stroke={CRITICAL_COLOR}
               strokeWidth={2}
+              fill={`url(#${criticalGradientId})`}
               dot={false}
               activeDot={{ r: 4, fill: CRITICAL_COLOR, strokeWidth: 0 }}
               connectNulls={false}
-              isAnimationActive={false}
             />
           </AreaChart>
         </ResponsiveContainer>
