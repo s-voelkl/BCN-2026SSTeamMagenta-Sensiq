@@ -36,7 +36,7 @@ type ChartPoint = {
 function getThresholdLevel(measure: measuresExFlame, value: number): ThresholdLevel {
   switch (measure) {
     case 'bme_temperature':
-      if (value < 10.00 || value >= 25.00) return 'critical'
+      if (value < 10.00 || value > 35.00) return 'critical'
       return 'normal'
 
     case 'bme_humidity':

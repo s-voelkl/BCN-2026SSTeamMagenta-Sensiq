@@ -33,7 +33,7 @@ function getValueColor(kpi: KPI, data: SensorDataLive): string {
         case 'bme_temperature':
             if (typeof value !== 'number') return '#E2E8F0'
 
-            if (value < 10.00 || value >= 35.00) return '#EF4444'
+            if (value < 10.00 || value > 35.00) return '#EF4444'
             return '#2abe9b'
 
         case 'bme_humidity':

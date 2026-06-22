@@ -13,7 +13,9 @@ vi.mock('recharts', () => ({
       {children}
     </div>
   ),
-  Area: () => <div data-testid="area" />,
+  Area: ({ dataKey, stroke, fill }: { dataKey: string; stroke?: string; fill?: string }) => (
+    <div data-testid="area" data-key={dataKey} data-stroke={stroke} data-fill={fill} />
+  ),
   XAxis: () => <div />,
   YAxis: () => <div />,
   CartesianGrid: () => <div />,
@@ -60,6 +62,18 @@ function readChartValues(): number[] {
   return (JSON.parse(raw) as { time: number; value: number }[]).map((d) => d.value)
 }
 
+function readChartPoints(): {
+    time: number
+    value: number
+    level: 'normal' | 'critical'
+    normalValue: number | null
+    criticalValue: number | null
+    warningValue?: number | null
+}[] {
+    const raw = screen.getByTestId('area-chart').getAttribute('data-points') ?? '[]'
+    return JSON.parse(raw)
+}
+
 describe('SensorChart', () => {
   it('renders the historical heading and defaults the dropdown to the given measure', () => {
     render(<SensorChart data={history} measure="bme_temperature" range="1D" />)
@@ -100,7 +114,217 @@ describe('SensorChart', () => {
     expect(readChartValues()).toEqual([10, 20, 30])
   })
 
-  // The API returns rows newest-first, so the chart must sort ascending — otherwise
+  it('splits temperature points into normal and critical threshold values', () => {
+    const thresholdHistory = [
+      makePoint('2026-01-01T10:00:00Z', 24),
+      makePoint('2026-01-01T11:00:00Z', 9),
+      makePoint('2026-01-01T11:00:00Z', 35),
+      makePoint('2026-01-01T12:00:00Z', 36),
+    ]
+
+    render(<SensorChart data={thresholdHistory} measure="bme_temperature" range="1D" />)
+
+    const points = readChartPoints()
+
+    expect(points[0]).toMatchObject({
+      value: 24,
+      level: 'normal',
+      normalValue: 24,
+      criticalValue: null,
+    })
+
+    expect(points[1]).toMatchObject({
+      value: 9,
+      level: 'critical',
+      normalValue: 9,
+      criticalValue: 9,
+    })
+
+    expect(points[2]).toMatchObject({
+      value: 35,
+      level: 'normal',
+      normalValue: 35,
+      criticalValue: 35,
+    })
+
+    expect(points[3]).toMatchObject({
+      value: 36,
+      level: 'critical',
+      normalValue: 36,
+      criticalValue: 36,
+    })
+  })
+
+  it('splits humidity points into normal and critical threshold values', () => {
+    const thresholdHistory = [
+      {
+        ...makePoint('2026-01-01T10:00:00Z', 24),
+        bme_humidity: 50,
+      },
+      {
+        ...makePoint('2026-01-01T11:00:00Z', 24),
+        bme_humidity: 19,
+      },
+      {
+        ...makePoint('2026-01-01T11:00:00Z', 24),
+        bme_humidity: 81,
+      },
+    ]
+
+    render(<SensorChart data={thresholdHistory} measure="bme_humidity" range="1D" />)
+
+    const points = readChartPoints()
+
+    expect(points[0]).toMatchObject({
+      value: 50,
+      level: 'normal',
+      normalValue: 50,
+      criticalValue: null,
+    })
+
+    expect(points[1]).toMatchObject({
+      value: 19,
+      level: 'critical',
+      normalValue: 19,
+      criticalValue: 19,
+    })
+
+    expect(points[2]).toMatchObject({
+      value: 81,
+      level: 'critical',
+      normalValue: null,
+      criticalValue: 81,
+    })
+  })
+
+  it('splits pressure points into normal and critical threshold values', () => {
+    const thresholdHistory = [
+      {
+        ...makePoint('2026-01-01T10:00:00Z', 24),
+        bme_pressure: 1000,
+      },
+      {
+        ...makePoint('2026-01-01T11:00:00Z', 24),
+        bme_pressure: 899,
+      },
+      {
+        ...makePoint('2026-01-01T11:00:00Z', 24),
+        bme_pressure: 1101,
+      },
+    ]
+
+    render(<SensorChart data={thresholdHistory} measure="bme_pressure" range="1D" />)
+
+    const points = readChartPoints()
+
+    expect(points[0]).toMatchObject({
+      value: 1000,
+      level: 'normal',
+      normalValue: 1000,
+      criticalValue: null,
+    })
+
+    expect(points[1]).toMatchObject({
+      value: 899,
+      level: 'critical',
+      normalValue: 899,
+      criticalValue: 899,
+    })
+
+    expect(points[2]).toMatchObject({
+      value: 1101,
+      level: 'critical',
+      normalValue: null,
+      criticalValue: 1101,
+    })
+  })
+
+  it('splits VOC points into normal and critical threshold values', () => {
+    const thresholdHistory = [
+      {
+        ...makePoint('2026-01-01T10:00:00Z', 24),
+        bme_voc: 250,
+      },
+      {
+        ...makePoint('2026-01-01T11:00:00Z', 24),
+        bme_voc: 251,
+      },
+    ]
+
+    render(<SensorChart data={thresholdHistory} measure="bme_voc" range="1D" />)
+
+    const points = readChartPoints()
+
+    expect(points[0]).toMatchObject({
+      value: 250,
+      level: 'normal',
+      normalValue: 250,
+      criticalValue: null,
+    })
+
+    expect(points[1]).toMatchObject({
+      value: 251,
+      level: 'critical',
+      normalValue: 251,
+      criticalValue: 251,
+    })
+  })
+
+  it('splits light intensity points into normal and critical threshold values', () => {
+    const thresholdHistory = [
+      {
+        ...makePoint('2026-01-01T10:00:00Z', 24),
+        tsl_lux: 1000,
+      },
+      {
+        ...makePoint('2026-01-01T11:00:00Z', 24),
+        tsl_lux: 1001,
+      },
+    ]
+
+    render(<SensorChart data={thresholdHistory} measure="tsl_lux" range="1D" />)
+
+    const points = readChartPoints()
+
+    expect(points[0]).toMatchObject({
+      value: 1000,
+      level: 'normal',
+      normalValue: 1000,
+      criticalValue: null,
+    })
+
+    expect(points[1]).toMatchObject({
+      value: 1001,
+      level: 'critical',
+      normalValue: 1001,
+      criticalValue: 1001,
+    })
+  })
+
+  it('renders separate areas for normal and critical threshold segments', () => {
+    render(<SensorChart data={history} measure="bme_temperature" range="1D" />)
+
+    const areas = screen.getAllByTestId('area')
+
+    expect(areas).toHaveLength(2)
+
+    expect(areas[0]).toHaveAttribute('data-key', 'normalValue')
+    expect(areas[0]).toHaveAttribute('data-stroke', '#2abe9b')
+
+    expect(areas[1]).toHaveAttribute('data-key', 'criticalValue')
+    expect(areas[1]).toHaveAttribute('data-stroke', '#EF4444')
+    })
+
+  it('does not create a warning threshold series', () => {
+    render(<SensorChart data={history} measure="bme_temperature" range="1D" />)
+
+    const points = readChartPoints()
+    const areas = screen.getAllByTestId('area')
+
+    expect(points.some(point => 'warningValue' in point)).toBe(false)
+    expect(areas.some(area => area.getAttribute('data-key') === 'warningValue')).toBe(false)
+    })
+
   // the line is drawn backwards and the "latest sample" used for filtering is wrong.
   it('sorts points chronologically regardless of input order', () => {
     const unsorted = [
