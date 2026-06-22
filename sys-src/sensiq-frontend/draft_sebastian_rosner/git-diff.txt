@@ -1,0 +1,465 @@
+diff --git a/sys-src/sensiq-frontend/src/components/BentoGrid.tsx b/sys-src/sensiq-frontend/src/components/BentoGrid.tsx
+index 63da86e..c854608 100644
+--- a/sys-src/sensiq-frontend/src/components/BentoGrid.tsx
++++ b/sys-src/sensiq-frontend/src/components/BentoGrid.tsx
+@@ -1,4 +1,5 @@
+ import Greeting from './Greeting'
++import DeviceIdInput from './DeviceIdInput'
+ import { useHistoryData, useLiveData, isDeviceOffline } from '../hooks/useDashboardData'
+ import KPICard from './KPICard'
+ import type { KPIs, TimeRanges } from '../types/dashboard'
+@@ -39,9 +40,10 @@ const KPI: KPIs = [
+ 
+ /** Main dashboard: loads the live and history data and lays out the KPI cards and chart in a grid. */
+ export default function BentoGrid() {
+-  const { data, isLoading, isError, error } = useLiveData()
++  const [deviceId, setDeviceId] = useState('esp32-lab-001')
++  const { data, isLoading, isError, error } = useLiveData(deviceId)
+ 
+-  const deviceId = data?.device_id || "Device Offline"
++  const deviceLabel = data?.device_id || "Device Offline"
+   // Translate the live query state into per-KPI flags.
+   const offline = isError && isDeviceOffline(error)
+   const failed = !isLoading && !offline && !data // generic error or unexpectedly missing data
+@@ -52,14 +54,17 @@ export default function BentoGrid() {
+     isLoading: historyLoading,
+     isFetching: historyFetching,
+     isError: historyError,
+-  } = useHistoryData(range)
++  } = useHistoryData(deviceId, range)
+ 
+   return (
+     <div className="space-y-4">
+-      {/* Header — always visible, even while loading or on error */}
+-      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-6 py-5 backdrop-blur-sm">
+-        <Greeting deviceId={deviceId} timestamp={data?.timestamp} />
+-      </div>
++<div className="rounded-2xl border border-slate-800 bg-slate-900/60 px-6 py-5 backdrop-blur-sm">
++<Greeting deviceId={deviceLabel} timestamp={data?.timestamp} />
++  
++  <div className="mt-4 flex flex-col sm:flex-row items-end sm:items-center justify-end gap-3">
++    <DeviceIdInput currentDeviceId={deviceId} onSubmit={setDeviceId} />
++  </div>
++</div>
+       {/* KPIs */}
+       <div className="grid grid-cols-1 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" style={{ gridAutoRows: '80px' }}>
+         {KPI.map(kpi => (
+diff --git a/sys-src/sensiq-frontend/src/components/DeviceIdInput.tsx b/sys-src/sensiq-frontend/src/components/DeviceIdInput.tsx
+new file mode 100644
+index 0000000..589e0a2
+--- /dev/null
++++ b/sys-src/sensiq-frontend/src/components/DeviceIdInput.tsx
+@@ -0,0 +1,45 @@
++import { useState, type FormEvent } from 'react'
++
++interface DeviceIdInputProps {
++  currentDeviceId: string
++  onSubmit: (deviceId: string) => void
++}
++
++/**
++ * Input form for switching the active device at runtime.
++ * Typing only updates local state — the parent is notified only on explicit confirmation,
++ * so no API request is fired mid-keystroke.
++ */
++
++export default function DeviceIdInput({ currentDeviceId, onSubmit }: DeviceIdInputProps) {
++  const [pending, setPending] = useState(currentDeviceId)
++
++  const handleSubmit = (e: FormEvent) => {
++    e.preventDefault()
++    const trimmed = pending.trim()
++    if (trimmed.length > 0) {
++      onSubmit(trimmed)
++    }
++  }
++
++  return (
++    <form onSubmit={handleSubmit} className="flex items-center gap-2">
++      <input
++        type="text"
++        value={pending}
++        onChange={(e) => setPending(e.target.value)}
++        placeholder="Device ID"
++        aria-label="Device ID"
++        className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-1.5 font-mono text-sm text-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-700"
++      />
++      <button
++        type="submit"
++        className="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-950 disabled:opacity-40 disabled:cursor-not-allowed"
++        style={{ backgroundColor: '#2abe9bff' }}
++        disabled={pending.trim().length === 0}
++      >
++        Connect
++      </button>
++    </form>
++  )
++}
+\ No newline at end of file
+diff --git a/sys-src/sensiq-frontend/src/components/test/BentoGrid.test.tsx b/sys-src/sensiq-frontend/src/components/test/BentoGrid.test.tsx
+index 0019aba..a920875 100644
+--- a/sys-src/sensiq-frontend/src/components/test/BentoGrid.test.tsx
++++ b/sys-src/sensiq-frontend/src/components/test/BentoGrid.test.tsx
+@@ -1,7 +1,8 @@
+ import { describe, it, expect, beforeEach, vi } from 'vitest'
+-import { render, screen } from '@testing-library/react'
++import { render, screen, fireEvent  } from '@testing-library/react'
+ import type { SensorDataLive, SensorDataHistory } from '../../types/dashboard'
+ 
++
+ // Mock only the two query hooks; keep ApiError / isDeviceOffline real so BentoGrid's
+ // offline detection works as in production.
+ vi.mock('../../hooks/useDashboardData', async (importActual) => {
+@@ -113,4 +114,41 @@ describe('BentoGrid', () => {
+ 
+     expect(screen.getByText(/failed to load data/i)).toBeInTheDocument()
+   })
++  
++  it('calls useLiveData with the default device id on first render', () => {
++    liveMock.mockReturnValue(asResult({ data: makeSensor(), isLoading: false, isError: false }))
++    render(<BentoGrid />)
++
++    expect(liveMock).toHaveBeenCalledWith('esp32-lab-001')
++  })
++
++  it('re-renders KPIs with data from the new device after confirming a device id change', () => {
++    liveMock.mockReturnValue(asResult({ data: makeSensor(), isLoading: false, isError: false }))
++    render(<BentoGrid />)
++
++    const input = screen.getByLabelText('Device ID')
++    fireEvent.change(input, { target: { value: 'esp32-roof-002' } })
++    fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
++
++    expect(liveMock).toHaveBeenLastCalledWith('esp32-roof-002')
++  })
++
++  it('does not change the active device id while typing, only after confirming', () => {
++    liveMock.mockReturnValue(asResult({ data: makeSensor(), isLoading: false, isError: false }))
++    render(<BentoGrid />)
++
++    const input = screen.getByLabelText('Device ID')
++    fireEvent.change(input, { target: { value: 'esp32-roof-002' } })
++
++    expect(liveMock).toHaveBeenLastCalledWith('esp32-lab-001')
++  })
++
++  it('renders the device id input alongside the greeting header', () => {
++    liveMock.mockReturnValue(asResult({ data: makeSensor(), isLoading: false, isError: false }))
++    render(<BentoGrid />)
++
++    expect(screen.getByLabelText('Device ID')).toBeInTheDocument()
++    expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument()
++  })
++  
+ })
+diff --git a/sys-src/sensiq-frontend/src/components/test/Deviceidinput.test.tsx b/sys-src/sensiq-frontend/src/components/test/Deviceidinput.test.tsx
+new file mode 100644
+index 0000000..2f9ec24
+--- /dev/null
++++ b/sys-src/sensiq-frontend/src/components/test/Deviceidinput.test.tsx
+@@ -0,0 +1,135 @@
++import { describe, it, expect, vi } from 'vitest'
++import { render, screen, fireEvent } from '@testing-library/react'
++import DeviceIdInput from '../DeviceIdInput'
++
++describe('DeviceIdInput', () => {
++  // The input field should be pre-filled with the currently active device ID on first render.
++  it('renders the input pre-filled with the current device id', () => {
++    render(<DeviceIdInput currentDeviceId="esp32-lab-001" onSubmit={vi.fn()} />)
++    const input = screen.getByLabelText('Device ID') as HTMLInputElement
++    expect(input.value).toBe('esp32-lab-001')
++  })
++
++  // A "Connect" button must always be present to allow the user to confirm their input.
++  it('renders a "Connect" button', () => {
++    render(<DeviceIdInput currentDeviceId="esp32-lab-001" onSubmit={vi.fn()} />)
++    expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument()
++  })
++
++   // Typing updates only local state — the parent must not be notified until the user confirms.
++  it('updates the input value as the user types, without calling onSubmit', () => {
++    const onSubmit = vi.fn()
++    render(<DeviceIdInput currentDeviceId="esp32-lab-001" onSubmit={onSubmit} />)
++    const input = screen.getByLabelText('Device ID') as HTMLInputElement
++
++    fireEvent.change(input, { target: { value: 'esp32-lab-002' } })
++
++    expect(input.value).toBe('esp32-lab-002')
++    expect(onSubmit).not.toHaveBeenCalled()
++  })
++
++  // On submission the value is trimmed before being passed to the parent to avoid accidental whitespace.
++  it('calls onSubmit with the trimmed new id when the form is submitted', () => {
++    const onSubmit = vi.fn()
++    render(<DeviceIdInput currentDeviceId="esp32-lab-001" onSubmit={onSubmit} />)
++    const input = screen.getByLabelText('Device ID') as HTMLInputElement
++
++    fireEvent.change(input, { target: { value: '  esp32-lab-002  ' } })
++    fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
++
++    expect(onSubmit).toHaveBeenCalledTimes(1)
++    expect(onSubmit).toHaveBeenCalledWith('esp32-lab-002')
++  })
++
++  // Submitting a whitespace-only value must be a no-op to prevent empty device ID requests.
++  it('does not call onSubmit when the trimmed input is empty', () => {
++    const onSubmit = vi.fn()
++    render(<DeviceIdInput currentDeviceId="esp32-lab-001" onSubmit={onSubmit} />)
++    const input = screen.getByLabelText('Device ID') as HTMLInputElement
++
++    fireEvent.change(input, { target: { value: '   ' } })
++    fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
++
++    expect(onSubmit).not.toHaveBeenCalled()
++  })
++
++  // The Connect button is disabled when the field is empty so the user cannot submit an invalid ID.
++  it('disables the Connect button while the input is empty', () => {
++    render(<DeviceIdInput currentDeviceId="esp32-lab-001" onSubmit={vi.fn()} />)
++    const input = screen.getByLabelText('Device ID') as HTMLInputElement
++    fireEvent.change(input, { target: { value: '' } })
++
++    expect(screen.getByRole('button', { name: 'Connect' })).toBeDisabled()
++  })
++
++    // The button becomes clickable again as soon as the user types a non-empty value.
++  it('re-enables the Connect button once a non-empty value is typed', () => {
++    render(<DeviceIdInput currentDeviceId="esp32-lab-001" onSubmit={vi.fn()} />)
++    const input = screen.getByLabelText('Device ID') as HTMLInputElement
++
++    fireEvent.change(input, { target: { value: '' } })
++    expect(screen.getByRole('button', { name: 'Connect' })).toBeDisabled()
++
++    fireEvent.change(input, { target: { value: 'esp32-lab-003' } })
++    expect(screen.getByRole('button', { name: 'Connect' })).not.toBeDisabled()
++  })
++
++   // Pressing Enter with only whitespace in the field must not trigger a submission.
++  it('does not submit when pressing Enter with an empty (whitespace-only) value', () => {
++    const onSubmit = vi.fn()
++    render(<DeviceIdInput currentDeviceId="esp32-lab-001" onSubmit={onSubmit} />)
++    const input = screen.getByLabelText('Device ID') as HTMLInputElement
++
++    fireEvent.change(input, { target: { value: '   ' } })
++    fireEvent.submit(input.closest('form')!)
++
++    expect(onSubmit).not.toHaveBeenCalled()
++  })
++
++  // The form can also be submitted via Enter, not only by clicking the button.
++  it('submits via pressing Enter inside the form, not just clicking the button', () => {
++    const onSubmit = vi.fn()
++    render(<DeviceIdInput currentDeviceId="esp32-lab-001" onSubmit={onSubmit} />)
++    const input = screen.getByLabelText('Device ID') as HTMLInputElement
++
++    fireEvent.change(input, { target: { value: 'esp32-roof-099' } })
++    fireEvent.submit(input.closest('form')!)
++
++    expect(onSubmit).toHaveBeenCalledWith('esp32-roof-099')
++  })
++
++   // After a successful submit the field retains the new value so the user can see what is active.
++  it('keeps showing the typed value even after a successful submit (no auto-clear)', () => {
++    const onSubmit = vi.fn()
++    render(<DeviceIdInput currentDeviceId="esp32-lab-001" onSubmit={onSubmit} />)
++    const input = screen.getByLabelText('Device ID') as HTMLInputElement
++
++    fireEvent.change(input, { target: { value: 'esp32-lab-002' } })
++    fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
++
++    expect(input.value).toBe('esp32-lab-002')
++  })
++
++  // Re-rendering with the same prop must not overwrite what the user has already typed.
++  it('does not reset the typed value if currentDeviceId prop stays the same across rerenders', () => {
++    const { rerender } = render(<DeviceIdInput currentDeviceId="esp32-lab-001" onSubmit={vi.fn()} />)
++    const input = screen.getByLabelText('Device ID') as HTMLInputElement
++
++    fireEvent.change(input, { target: { value: 'esp32-lab-999' } })
++    rerender(<DeviceIdInput currentDeviceId="esp32-lab-001" onSubmit={vi.fn()} />)
++
++    expect(input.value).toBe('esp32-lab-999')
++  })
++
++   // Device IDs containing hyphens and numbers must be passed through unchanged.
++  it('submits a device id containing hyphens and numbers unchanged (aside from trimming)', () => {
++    const onSubmit = vi.fn()
++    render(<DeviceIdInput currentDeviceId="" onSubmit={onSubmit} />)
++    const input = screen.getByLabelText('Device ID') as HTMLInputElement
++
++    fireEvent.change(input, { target: { value: 'esp32-roof-007' } })
++    fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
++
++    expect(onSubmit).toHaveBeenCalledWith('esp32-roof-007')
++  })
++})
+\ No newline at end of file
+diff --git a/sys-src/sensiq-frontend/src/hooks/test/useDashboardData.test.tsx b/sys-src/sensiq-frontend/src/hooks/test/useDashboardData.test.tsx
+index d1f21a8..e053f04 100644
+--- a/sys-src/sensiq-frontend/src/hooks/test/useDashboardData.test.tsx
++++ b/sys-src/sensiq-frontend/src/hooks/test/useDashboardData.test.tsx
+@@ -93,7 +93,7 @@ afterEach(() => {
+ describe('useLiveData', () => {
+   it('starts in a loading state before the request resolves', () => {
+     fetchMock.mockReturnValue(new Promise<Response>(() => { })) // never resolves
+-    const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
++    const { result } = renderHook(() => useLiveData('esp32-lab-001'), { wrapper: createWrapper() })
+ 
+     expect(result.current.isLoading).toBe(true)
+     expect(result.current.data).toBeUndefined()
+@@ -103,7 +103,7 @@ describe('useLiveData', () => {
+     const fetched = makeLive({ device_id: 'esp32-fetched', bme_temperature: 30 })
+     fetchMock.mockResolvedValue(jsonResponse(fetched))
+ 
+-    const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
++    const { result } = renderHook(() => useLiveData('esp32-lab-001'), { wrapper: createWrapper() })
+     await waitFor(() => expect(result.current.isSuccess).toBe(true))
+ 
+     expect(result.current.data).toEqual(fetched)
+@@ -116,7 +116,7 @@ describe('useLiveData', () => {
+   it('errors with the status when the response is not ok', async () => {
+     fetchMock.mockResolvedValue(jsonResponse({}, { ok: false, status: 500 }))
+ 
+-    const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
++    const { result } = renderHook(() => useLiveData('esp32-lab-001'), { wrapper: createWrapper() })
+     await waitFor(() => expect(result.current.isError).toBe(true))
+ 
+     expect(result.current.error?.message).toContain('HTTP 500')
+@@ -125,7 +125,7 @@ describe('useLiveData', () => {
+   it('errors when the payload fails schema validation', async () => {
+     fetchMock.mockResolvedValue(jsonResponse({ not: 'a sensor reading' }))
+ 
+-    const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
++    const { result } = renderHook(() => useLiveData('esp32-lab-001'), { wrapper: createWrapper() })
+     await waitFor(() => expect(result.current.isError).toBe(true))
+   })
+ 
+@@ -138,7 +138,7 @@ describe('useLiveData', () => {
+       ),
+     )
+ 
+-    const { result } = renderHook(() => useLiveData(), { wrapper: createWrapper() })
++    const { result } = renderHook(() => useLiveData('esp32-lab-001'), { wrapper: createWrapper() })
+     await waitFor(() => expect(result.current.isError).toBe(true))
+ 
+     expect(result.current.error).toBeInstanceOf(ApiError)
+@@ -161,7 +161,7 @@ describe('isDeviceOffline', () => {
+ describe('useHistoryData', () => {
+   it('starts in a loading state before the request resolves', () => {
+     fetchMock.mockReturnValue(new Promise<Response>(() => { })) // never resolves
+-    const { result } = renderHook(() => useHistoryData('1D'), { wrapper: createWrapper() })
++    const { result } = renderHook(() => useLiveData('esp32-lab-001'), { wrapper: createWrapper() })
+ 
+     expect(result.current.isLoading).toBe(true)
+     expect(result.current.data).toBeUndefined()
+@@ -172,7 +172,7 @@ describe('useHistoryData', () => {
+     const rows = [makeHistoryRow({ device_id: 'esp32-h1' }), makeHistoryRow({ device_id: 'esp32-h2' })]
+     fetchMock.mockResolvedValue(jsonResponse({ data: rows }))
+ 
+-    const { result } = renderHook(() => useHistoryData('1D'), { wrapper: createWrapper() })
++    const { result } = renderHook(() => useHistoryData('esp32-lab-001', '1D'), { wrapper: createWrapper() })
+     await waitFor(() => expect(result.current.isSuccess).toBe(true))
+ 
+     expect(result.current.data).toEqual(rows)
+@@ -186,7 +186,7 @@ describe('useHistoryData', () => {
+   it('errors when the payload is not wrapped in { data }', async () => {
+     fetchMock.mockResolvedValue(jsonResponse([makeHistoryRow()]))
+ 
+-    const { result } = renderHook(() => useHistoryData('1D'), { wrapper: createWrapper() })
++    const { result } = renderHook(() => useHistoryData('esp32-lab-001', '1D'), { wrapper: createWrapper() })
+     await waitFor(() => expect(result.current.isError).toBe(true))
+   })
+ 
+@@ -194,7 +194,7 @@ describe('useHistoryData', () => {
+   it('sends the aggregation interval that matches the selected range', async () => {
+     fetchMock.mockResolvedValue(jsonResponse({ data: [] }))
+ 
+-    renderHook(() => useHistoryData('1W'), { wrapper: createWrapper() })
++    renderHook(() => useHistoryData('esp32-lab-001', '1W'), { wrapper: createWrapper() })
+     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+ 
+     const init = fetchMock.mock.calls[0][1] as RequestInit
+@@ -205,7 +205,7 @@ describe('useHistoryData', () => {
+   it('errors with the status when the response is not ok', async () => {
+     fetchMock.mockResolvedValue(jsonResponse({}, { ok: false, status: 503 }))
+ 
+-    const { result } = renderHook(() => useHistoryData('1D'), { wrapper: createWrapper() })
++    const { result } = renderHook(() => useHistoryData('esp32-lab-001', '1D'), { wrapper: createWrapper() })
+     await waitFor(() => expect(result.current.isError).toBe(true))
+ 
+     expect(result.current.error?.message).toContain('HTTP 503')
+diff --git a/sys-src/sensiq-frontend/src/hooks/useDashboardData.ts b/sys-src/sensiq-frontend/src/hooks/useDashboardData.ts
+index 714146b..6815072 100644
+--- a/sys-src/sensiq-frontend/src/hooks/useDashboardData.ts
++++ b/sys-src/sensiq-frontend/src/hooks/useDashboardData.ts
+@@ -27,14 +27,14 @@ export function isDeviceOffline(error: unknown): boolean {
+ }
+ 
+ /** Fetches the latest live reading from the API Gateway and validates it against the schema. */
+-const fetchLiveData = async (): Promise<SensorDataLive> => {
++const fetchLiveData = async (deviceId: string): Promise<SensorDataLive> => {
+   const res = await fetch(`${api_url}/live`, {
+     method: "POST",
+     headers: {
+       'x-api-key': api_key,
+       'Content-Type': 'application/json',
+     },
+-    body: JSON.stringify({ device_id: "esp32-lab-001" }),
++     body: JSON.stringify({ device_id: deviceId }),
+   })
+   if (!res.ok) {
+     // Surface the JSON error body so the dashboard can detect the offline case.
+@@ -45,12 +45,14 @@ const fetchLiveData = async (): Promise<SensorDataLive> => {
+ }
+ 
+ /** React Query hook that loads the live data and refetches it every 5 seconds. */
+-export function useLiveData() {
++export function useLiveData(deviceId: string) {
+   return useQuery<SensorDataLive>({
+-    queryKey: ['liveData'],
+-    queryFn: fetchLiveData,
++    queryKey: ['liveData', deviceId],
++    queryFn: () => fetchLiveData(deviceId),
+     refetchInterval: 5000, // Refetch every 5 seconds for live updates
+     staleTime: 0,
++    // Disabled while deviceId is empty to prevent requests with no target device.
++    enabled: deviceId.trim().length > 0,
+   })
+ }
+ 
+@@ -59,6 +61,7 @@ export function useLiveData() {
+  * @param interval how much the backend aggregates the data (defaults to 10 minutes)
+  */
+ const fetchHistoryData = async (
++  deviceId: string,
+   interval: AggregationInterval = '10_minutes',
+ ): Promise<SensorDataHistory[]> => {
+   const res = await fetch(`${api_url}/history`, {
+@@ -67,7 +70,7 @@ const fetchHistoryData = async (
+       'x-api-key': api_key,
+       'Content-Type': 'application/json',
+     },
+-    body: JSON.stringify({ device_id: 'esp32-lab-001', precision: interval })
++        body: JSON.stringify({ device_id: deviceId, precision: interval })
+   })
+   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard data`)
+ 
+@@ -85,14 +88,15 @@ const fetchHistoryData = async (
+  * Picks the matching aggregation interval and keeps the previous data while refetching.
+  * @param range the selected time window (e.g. '1D', '1W')
+  */
+-export function useHistoryData(range: TimeRanges) {
++export function useHistoryData(deviceId: string, range: TimeRanges) {
+   const interval = IntervalMapper[range]
+   return useQuery<SensorDataHistory[]>({
+-    queryKey: ['historyData', range, interval],
+-    queryFn: () => fetchHistoryData(interval),
++    queryKey: ['historyData', deviceId, range, interval],
++    queryFn: () => fetchHistoryData(deviceId, interval),
+     staleTime: 0,
+     // Keep the previous range's data on screen while the new range loads,
+     // so switching ranges doesn't blank the chart (isLoading only fires on first load).
+     placeholderData: keepPreviousData,
++    enabled: deviceId.trim().length > 0,
+   })
+ }
