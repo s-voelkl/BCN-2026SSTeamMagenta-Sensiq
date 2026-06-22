@@ -5,6 +5,12 @@ interface DeviceIdInputProps {
   onSubmit: (deviceId: string) => void
 }
 
+/**
+ * Input form for switching the active device at runtime.
+ * Typing only updates local state — the parent is notified only on explicit confirmation,
+ * so no API request is fired mid-keystroke.
+ */
+
 export default function DeviceIdInput({ currentDeviceId, onSubmit }: DeviceIdInputProps) {
   const [pending, setPending] = useState(currentDeviceId)
 

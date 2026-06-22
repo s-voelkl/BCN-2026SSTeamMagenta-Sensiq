@@ -51,6 +51,7 @@ export function useLiveData(deviceId: string) {
     queryFn: () => fetchLiveData(deviceId),
     refetchInterval: 5000, // Refetch every 5 seconds for live updates
     staleTime: 0,
+    // Disabled while deviceId is empty to prevent requests with no target device.
     enabled: deviceId.trim().length > 0,
   })
 }
