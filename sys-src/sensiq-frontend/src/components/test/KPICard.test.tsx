@@ -101,11 +101,7 @@ describe('KPICard', () => {
       render(
         <KPICard
           kpi={{ id: '1', label: 'Temperature', unit: ' °C', measure: 'bme_temperature' }}
-          data={{
-            device_id: 'esp32-lab-001',
-            timestamp: '2026-06-20T12:00:00Z',
-            bme_temperature: 24,
-          } as any}
+          data={makeSensor({ bme_temperature: 24 })}
         />
       )
 
@@ -118,11 +114,7 @@ describe('KPICard', () => {
       render(
         <KPICard
           kpi={{ id: '1', label: 'Temperature', unit: ' °C', measure: 'bme_temperature' }}
-          data={{
-            device_id: 'esp32-lab-001',
-            timestamp: '2026-06-20T12:00:00Z',
-            bme_temperature: 36,
-          } as any}
+          data={makeSensor({ bme_temperature: 36 })}
         />
       )
 
@@ -135,11 +127,7 @@ describe('KPICard', () => {
       render(
         <KPICard
           kpi={{ id: '1', label: 'Temperature', unit: ' °C', measure: 'bme_temperature' }}
-          data={{
-            device_id: 'esp32-lab-001',
-            timestamp: '2026-06-20T12:00:00Z',
-            bme_temperature: 9,
-          } as any}
+          data={makeSensor({ bme_temperature: 9 })}
         />
       )
 
@@ -152,11 +140,7 @@ describe('KPICard', () => {
       render(
         <KPICard
           kpi={{ id: '2', label: 'Humidity', unit: '%', measure: 'bme_humidity' }}
-          data={{
-            device_id: 'esp32-lab-001',
-            timestamp: '2026-06-20T12:00:00Z',
-            bme_humidity: 50,
-          } as any}
+          data={makeSensor({ bme_humidity: 50 })}
         />
       )
 
@@ -169,11 +153,7 @@ describe('KPICard', () => {
       render(
         <KPICard
           kpi={{ id: '2', label: 'Humidity', unit: '%', measure: 'bme_humidity' }}
-          data={{
-            device_id: 'esp32-lab-001',
-            timestamp: '2026-06-20T12:00:00Z',
-            bme_humidity: 81,
-          } as any}
+          data={makeSensor({ bme_humidity: 81 })}
         />
       )
 
@@ -184,14 +164,10 @@ describe('KPICard', () => {
 
     it('shows critical color for humidity below the threshold range', () => {
       render(
-          <KPICard
-              kpi={{ id: '2', label: 'Humidity', unit: '%', measure: 'bme_humidity' }}
-              data={{
-                  device_id: 'esp32-lab-001',
-                  timestamp: '2026-06-20T12:00:00Z',
-                  bme_humidity: 19,
-              } as any}
-          />
+        <KPICard
+          kpi={{ id: '2', label: 'Humidity', unit: '%', measure: 'bme_humidity' }}
+          data={makeSensor({ bme_humidity: 19 })}
+        />
       )
 
       const value = screen.getByText('19')
@@ -201,14 +177,10 @@ describe('KPICard', () => {
 
     it('shows normal color for pressure inside the threshold range', () => {
       render(
-          <KPICard
-              kpi={{ id: '5', label: 'Pressure', unit: ' hPa', measure: 'bme_pressure' }}
-              data={{
-                  device_id: 'esp32-lab-001',
-                  timestamp: '2026-06-20T12:00:00Z',
-                  bme_pressure: 1000,
-              } as any}
-          />
+        <KPICard
+          kpi={{ id: '5', label: 'Pressure', unit: ' hPa', measure: 'bme_pressure' }}
+          data={makeSensor({ bme_pressure: 1000 })}
+        />
       )
 
       const value = screen.getByText('1000')
@@ -218,14 +190,10 @@ describe('KPICard', () => {
 
     it('shows critical color for pressure above the threshold range', () => {
       render(
-          <KPICard
-              kpi={{ id: '5', label: 'Pressure', unit: ' hPa', measure: 'bme_pressure' }}
-              data={{
-                  device_id: 'esp32-lab-001',
-                  timestamp: '2026-06-20T12:00:00Z',
-                  bme_pressure: 1101,
-              } as any}
-          />
+        <KPICard
+          kpi={{ id: '5', label: 'Pressure', unit: ' hPa', measure: 'bme_pressure' }}
+          data={makeSensor({ bme_pressure: 1101 })}
+        />
       )
 
       const value = screen.getByText('1101')
@@ -235,14 +203,10 @@ describe('KPICard', () => {
 
     it('shows critical color for pressure below the threshold range', () => {
       render(
-          <KPICard
-              kpi={{ id: '5', label: 'Pressure', unit: ' hPa', measure: 'bme_pressure' }}
-              data={{
-                  device_id: 'esp32-lab-001',
-                  timestamp: '2026-06-20T12:00:00Z',
-                  bme_pressure: 899,
-              } as any}
-          />
+        <KPICard
+          kpi={{ id: '5', label: 'Pressure', unit: ' hPa', measure: 'bme_pressure' }}
+          data={makeSensor({ bme_pressure: 899 })}
+        />
       )
 
       const value = screen.getByText('899')
@@ -252,14 +216,10 @@ describe('KPICard', () => {
 
     it('shows normal color for VOC inside the threshold range', () => {
       render(
-          <KPICard
-              kpi={{ id: '6', label: 'Gases', unit: ' ppb', measure: 'bme_voc' }}
-              data={{
-                  device_id: 'esp32-lab-001',
-                  timestamp: '2026-06-20T12:00:00Z',
-                  bme_voc: 250,
-              } as any}
-          />
+        <KPICard
+          kpi={{ id: '6', label: 'Gases', unit: ' ppb', measure: 'bme_voc' }}
+          data={makeSensor({ bme_voc: 250 })}
+        />
       )
 
       const value = screen.getByText('250')
@@ -269,14 +229,10 @@ describe('KPICard', () => {
 
     it('shows critical color for VOC above the threshold range', () => {
       render(
-          <KPICard
-              kpi={{ id: '6', label: 'Gases', unit: ' ppb', measure: 'bme_voc' }}
-              data={{
-                  device_id: 'esp32-lab-001',
-                  timestamp: '2026-06-20T12:00:00Z',
-                  bme_voc: 251,
-              } as any}
-          />
+        <KPICard
+          kpi={{ id: '6', label: 'Gases', unit: ' ppb', measure: 'bme_voc' }}
+          data={makeSensor({ bme_voc: 251 })}
+        />
       )
 
       const value = screen.getByText('251')
@@ -286,14 +242,10 @@ describe('KPICard', () => {
 
     it('shows normal color for light intensity inside the threshold range', () => {
       render(
-          <KPICard
-              kpi={{ id: '4', label: 'Light Intensity', unit: ' lux', measure: 'tsl_lux' }}
-              data={{
-                  device_id: 'esp32-lab-001',
-                  timestamp: '2026-06-20T12:00:00Z',
-                  tsl_lux: 1000,
-              } as any}
-          />
+        <KPICard
+          kpi={{ id: '4', label: 'Light Intensity', unit: ' lux', measure: 'tsl_lux' }}
+          data={makeSensor({ tsl_lux: 1000 })}
+        />
       )
 
       const value = screen.getByText('1000')
@@ -303,14 +255,10 @@ describe('KPICard', () => {
 
     it('shows critical color for light intensity above the threshold range', () => {
       render(
-          <KPICard
-              kpi={{ id: '4', label: 'Light Intensity', unit: ' lux', measure: 'tsl_lux' }}
-              data={{
-                  device_id: 'esp32-lab-001',
-                  timestamp: '2026-06-20T12:00:00Z',
-                  tsl_lux: 1001,
-              } as any}
-          />
+        <KPICard
+          kpi={{ id: '4', label: 'Light Intensity', unit: ' lux', measure: 'tsl_lux' }}
+          data={makeSensor({ tsl_lux: 1001 })}
+        />
       )
 
       const value = screen.getByText('1001')
@@ -322,11 +270,7 @@ describe('KPICard', () => {
       render(
         <KPICard
           kpi={{ id: '3', label: 'Flame', unit: '', measure: 'flame_digital' }}
-          data={{
-            device_id: 'esp32-lab-001',
-            timestamp: '2026-06-20T12:00:00Z',
-            flame_digital: false,
-          } as any}
+          data={makeSensor({ flame_digital: false })}
         />
       )
 
@@ -339,11 +283,7 @@ describe('KPICard', () => {
       render(
         <KPICard
           kpi={{ id: '3', label: 'Flame', unit: '', measure: 'flame_digital' }}
-          data={{
-            device_id: 'esp32-lab-001',
-            timestamp: '2026-06-20T12:00:00Z',
-            flame_digital: true,
-          } as any}
+          data={makeSensor({ flame_digital: true })}
         />
       )
 
