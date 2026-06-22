@@ -117,6 +117,13 @@ test(SensorHelper_getMeanSensorData_returnsCorrectMean)
     dataList[0].dhtHumidity = 40.0f;
     dataList[0].dhtTemperature = 20.0f;
     dataList[0].dhtHeatIndex = 20.0f;
+    dataList[0].flameAnalog = 1000;
+    dataList[0].flameDigital = true;
+    dataList[0].thermistorAnalog = 2000;
+    dataList[0].thermistorDigital = false;
+    dataList[0].thermistorTemp = 20.0f;
+    dataList[0].isOutlier = false;
+    dataList[0].collectTraining = true;
     dataList[0].bmeHeatedUp = true;
     dataList[0].bmeTemperature = 20.0f;
     dataList[0].bmeHumidity = 30.0f;
