@@ -31,8 +31,8 @@
 % \addbibresource{xampl.bib} % (xampl file provided by the BibTEX base files)
 % ======================================================================
 % EDIT THESE:
-\cstechrepAuthorListTex{Simon Völkl, Johannes Schieder, Sebastian Rosner and Andre Tien Vu\,\orcidlink{0009-0005-5334-9673}}
-\cstechrepAuthorListBib{Simon Völkl and Johannes Schieder and Sebastian Rosner and Andre Tien Vu}
+\cstechrepAuthorListTex{Simon Völkl\,\orcidlink{0009-0005-5334-9673}, Johannes Schieder, Sebastian Rosner, Andre Tien Vu and Christoph P.\ Neumann\,\orcidlink{0000-0002-5936-631X}}
+\cstechrepAuthorListBib{Simon Völkl and Johannes Schieder and Sebastian Rosner and Andre Tien Vu and Christoph P. Neumann}
 % Capitalization: https://capitalizemytitle.com/style/Chicago/
 \cstechrepTitleTex{Sensiq: A Serverless IoT Architecture for Cost-Effective Laboratory Monitoring} 
  % IF you need manual linebreaks in the title, then clone the title without linebreaks for BibTeX:
@@ -67,14 +67,14 @@
 
 \begin{abstract}
 	\textbf{Background:} Reliable indoor environment quality (IEQ) monitoring is critical for
-	safety and experimental validity in laboratories. Existing IoT solutions often
+	safety and experimental validity in laboratories. Existing Internet of Things (IoT) solutions often
 	rely on costly on-premises servers, coarse sampling intervals, or proprietary interfaces.
 
 	\textbf{Objective:} This paper introduces Sensiq, a low-latency, cost-efficient,
 	and fully serverless end-to-end IoT architecture designed to continuously track
 	environmental parameters such as temperature, humidity, gas concentration, and flame exposure.
 
-	\textbf{Methods:} The system leverages low-cost ESP32 edge nodes equipped with
+	\textbf{Methods:} The system leverages low-cost ESP32 microcontroller edge nodes equipped with
 	multiple sensors to acquire and aggregate data. Measurements are securely transmitted
 	via Message Queuing Telemetry Transport (MQTT) to an Amazon Web Services (AWS) serverless backend.
 	The cloud architecture dynamically splits data into two optimized paths:
