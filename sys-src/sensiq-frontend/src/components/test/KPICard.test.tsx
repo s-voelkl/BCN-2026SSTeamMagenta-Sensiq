@@ -96,5 +96,201 @@ describe('KPICard', () => {
       render(<KPICard kpi={tempKpi} />)
       expect(screen.getByText('Unavailable')).toBeInTheDocument()
     })
+
+    it('shows normal color for a temperature inside the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '1', label: 'Temperature', unit: ' °C', measure: 'bme_temperature' }}
+          data={makeSensor({ bme_temperature: 24 })}
+        />
+      )
+
+      const value = screen.getByText('24')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(42, 190, 155)' })
+    })
+
+    it('shows critical color for a temperature above the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '1', label: 'Temperature', unit: ' °C', measure: 'bme_temperature' }}
+          data={makeSensor({ bme_temperature: 36 })}
+        />
+      )
+
+      const value = screen.getByText('36')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(239, 68, 68)' })
+    })
+
+    it('shows critical color for a temperature below the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '1', label: 'Temperature', unit: ' °C', measure: 'bme_temperature' }}
+          data={makeSensor({ bme_temperature: 9 })}
+        />
+      )
+
+      const value = screen.getByText('9')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(239, 68, 68)' })
+    })
+
+    it('shows normal color for humidity inside the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '2', label: 'Humidity', unit: '%', measure: 'bme_humidity' }}
+          data={makeSensor({ bme_humidity: 50 })}
+        />
+      )
+
+      const value = screen.getByText('50')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(42, 190, 155)' })
+    })
+
+    it('shows critical color for humidity outside the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '2', label: 'Humidity', unit: '%', measure: 'bme_humidity' }}
+          data={makeSensor({ bme_humidity: 81 })}
+        />
+      )
+
+      const value = screen.getByText('81')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(239, 68, 68)' })
+    })
+
+    it('shows critical color for humidity below the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '2', label: 'Humidity', unit: '%', measure: 'bme_humidity' }}
+          data={makeSensor({ bme_humidity: 19 })}
+        />
+      )
+
+      const value = screen.getByText('19')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(239, 68, 68)' })
+    })
+
+    it('shows normal color for pressure inside the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '5', label: 'Pressure', unit: ' hPa', measure: 'bme_pressure' }}
+          data={makeSensor({ bme_pressure: 1000 })}
+        />
+      )
+
+      const value = screen.getByText('1000')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(42, 190, 155)' })
+    })
+
+    it('shows critical color for pressure above the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '5', label: 'Pressure', unit: ' hPa', measure: 'bme_pressure' }}
+          data={makeSensor({ bme_pressure: 1101 })}
+        />
+      )
+
+      const value = screen.getByText('1101')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(239, 68, 68)' })
+    })
+
+    it('shows critical color for pressure below the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '5', label: 'Pressure', unit: ' hPa', measure: 'bme_pressure' }}
+          data={makeSensor({ bme_pressure: 899 })}
+        />
+      )
+
+      const value = screen.getByText('899')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(239, 68, 68)' })
+    })
+
+    it('shows normal color for VOC inside the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '6', label: 'Gases', unit: ' ppb', measure: 'bme_voc' }}
+          data={makeSensor({ bme_voc: 250 })}
+        />
+      )
+
+      const value = screen.getByText('250')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(42, 190, 155)' })
+    })
+
+    it('shows critical color for VOC above the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '6', label: 'Gases', unit: ' ppb', measure: 'bme_voc' }}
+          data={makeSensor({ bme_voc: 251 })}
+        />
+      )
+
+      const value = screen.getByText('251')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(239, 68, 68)' })
+    })
+
+    it('shows normal color for light intensity inside the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '4', label: 'Light Intensity', unit: ' lux', measure: 'tsl_lux' }}
+          data={makeSensor({ tsl_lux: 1000 })}
+        />
+      )
+
+      const value = screen.getByText('1000')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(42, 190, 155)' })
+    })
+
+    it('shows critical color for light intensity above the threshold range', () => {
+      render(
+        <KPICard
+          kpi={{ id: '4', label: 'Light Intensity', unit: ' lux', measure: 'tsl_lux' }}
+          data={makeSensor({ tsl_lux: 1001 })}
+        />
+      )
+
+      const value = screen.getByText('1001')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(239, 68, 68)' })
+    })
+
+    it('shows normal color for a flame value of false', () => {
+      render(
+        <KPICard
+          kpi={{ id: '3', label: 'Flame', unit: '', measure: 'flame_digital' }}
+          data={makeSensor({ flame_digital: false })}
+        />
+      )
+
+      const value = screen.getByText('Negative')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(42, 190, 155)' })
+    })
+
+    it('shows critical color for a flame value of true', () => {
+      render(
+        <KPICard
+          kpi={{ id: '3', label: 'Flame', unit: '', measure: 'flame_digital' }}
+          data={makeSensor({ flame_digital: true })}
+        />
+      )
+
+      const value = screen.getByText('Positive')
+      expect(value).toBeInTheDocument()
+      expect(value).toHaveStyle({ color: 'rgb(239, 68, 68)' })
+    })
+
   })
 })

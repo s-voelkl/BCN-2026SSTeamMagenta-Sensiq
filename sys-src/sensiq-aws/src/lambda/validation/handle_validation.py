@@ -127,7 +127,7 @@ SENSOR_RULES: list[dict] = [
         "unit": "ppb",
         "type": "range",
         "min": 0,
-        "max": 5000,
+        "max": 250,
         "too_high_reason": "VOC too high",
         "too_low_reason": "VOC too low",
     },

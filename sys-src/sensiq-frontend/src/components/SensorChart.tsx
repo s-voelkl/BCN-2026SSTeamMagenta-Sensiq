@@ -9,8 +9,9 @@ import { MEASURE_META, type SensorChartProps, type measuresExFlame } from '../ty
 // The measures the dropdown offers, in display order (keys of MEASURE_META).
 const MEASURE_OPTIONS = Object.keys(MEASURE_META) as measuresExFlame[]
 
-// One line colour for every measure (the temperature green).
-const LINE_COLOR = '#2abe9b'
+// Threshold colours used by the historical chart.
+const NORMAL_COLOR = '#2abe9b'
+const CRITICAL_COLOR = '#EF4444'
 
 // time range lookup table
 const TIME_RANGES = [
@@ -21,6 +22,61 @@ const TIME_RANGES = [
   { label: '1M', ms: 1000 * 60 * 60 * 24 * 30 },
   { label: '1Y', ms: 1000 * 60 * 60 * 24 * 365 }
 ] as const
+
+type ThresholdLevel = 'normal' | 'critical'
+
+type ChartPoint = {
+  time: number
+  value: number
+  level: ThresholdLevel
+  normalValue: number | null
+  criticalValue: number | null
+}
+
+function getThresholdLevel(measure: measuresExFlame, value: number): ThresholdLevel {
+  switch (measure) {
+    case 'bme_temperature':
+      if (value < 10.00 || value > 35.00) return 'critical'
+      return 'normal'
+
+    case 'bme_humidity':
+      if (value < 20 || value > 80) return 'critical'
+      return 'normal'
+
+    case 'bme_pressure':
+      if (value < 900 || value > 1100) return 'critical'
+      return 'normal'
+
+    case 'bme_voc':
+      if (value > 250) return 'critical'
+      return 'normal'
+
+    case 'tsl_lux':
+      if (value > 1000) return 'critical'
+      return 'normal'
+
+    default:
+      return 'normal'
+  }
+}
+
+function createChartPoint(time: number, value: number, level: ThresholdLevel): ChartPoint {
+  return {
+    time,
+    value,
+    level,
+    normalValue: level === 'normal' ? value : null,
+    criticalValue: level === 'critical' ? value : null,
+  }
+}
+
+function addValueToLevel(point: ChartPoint, level: ThresholdLevel): ChartPoint {
+  return {
+    ...point,
+    normalValue: level === 'normal' ? point.value : point.normalValue,
+    criticalValue: level === 'critical' ? point.value : point.criticalValue,
+  }
+}
 
 type TooltipProps = {
   active?: boolean
@@ -93,12 +149,29 @@ export default function SensorChart({
     return sorted.filter(d => new Date(d.timestamp).getTime() >= cutoff)
   }, [data, range])
 
-  const chartData = useMemo(() =>
-    filtered.map(d => ({
-      time: new Date(d.timestamp).getTime(), // epoch ms — unique per sample
-      value: d[selected] as number,
-    })),
-    [filtered, selected])
+  const chartData = useMemo(() => {
+    const points = filtered
+      .map(d => {
+        const value = Number(d[selected])
+        const time = new Date(d.timestamp).getTime()
+
+        if (Number.isNaN(value) || Number.isNaN(time)) return null
+
+        return createChartPoint(time, value, getThresholdLevel(selected, value))
+      })
+      .filter((point): point is ChartPoint => point !== null)
+
+    return points.map((point, index) => {
+      const previous = points[index - 1]
+      let connectedPoint = point
+
+      if (previous && previous.level !== point.level) {
+        connectedPoint = addValueToLevel(connectedPoint, previous.level)
+      }
+
+      return connectedPoint
+    })
+  }, [filtered, selected])
 
   // For ranges wider than a day, label the X-axis (and tooltip) by date instead of time.
   const showDate = TIME_RANGES.find(r => r.label === range)!.ms > 1000 * 60 * 60 * 24
@@ -108,7 +181,8 @@ export default function SensorChart({
       ? { month: 'short', day: 'numeric' }
       : { hour: '2-digit', minute: '2-digit' })
 
-  const gradientId = `grad-${selected}`
+  const normalGradientId = `grad-${selected}-normal`
+  const criticalGradientId = `grad-${selected}-critical`
 
   return (
     <Card className={"h-full flex flex-col overflow-hidden " + (className || '')}>
@@ -179,9 +253,13 @@ export default function SensorChart({
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
             <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={LINE_COLOR} stopOpacity={0.25} />
-                <stop offset="95%" stopColor={LINE_COLOR} stopOpacity={0} />
+              <linearGradient id={normalGradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={NORMAL_COLOR} stopOpacity={0.25} />
+                <stop offset="95%" stopColor={NORMAL_COLOR} stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id={criticalGradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={CRITICAL_COLOR} stopOpacity={0.25} />
+                <stop offset="95%" stopColor={CRITICAL_COLOR} stopOpacity={0} />
               </linearGradient>
             </defs>
 
@@ -208,13 +286,24 @@ export default function SensorChart({
             <Tooltip content={<CustomTooltip unit={unit} showDate={showDate} />} cursor={{ stroke: '#334155', strokeWidth: 1 }} />
 
             <Area
-              type="monotone"
-              dataKey="value"
-              stroke={LINE_COLOR}
+              type="linear"
+              dataKey="normalValue"
+              stroke={NORMAL_COLOR}
               strokeWidth={2}
-              fill={`url(#${gradientId})`}
+              fill={`url(#${normalGradientId})`}
               dot={false}
-              activeDot={{ r: 4, fill: LINE_COLOR, strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: NORMAL_COLOR, strokeWidth: 0 }}
+              connectNulls={false}
+            />
+            <Area
+              type="linear"
+              dataKey="criticalValue"
+              stroke={CRITICAL_COLOR}
+              strokeWidth={2}
+              fill={`url(#${criticalGradientId})`}
+              dot={false}
+              activeDot={{ r: 4, fill: CRITICAL_COLOR, strokeWidth: 0 }}
+              connectNulls={false}
             />
           </AreaChart>
         </ResponsiveContainer>
