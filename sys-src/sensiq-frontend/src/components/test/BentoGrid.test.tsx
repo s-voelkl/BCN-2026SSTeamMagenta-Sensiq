@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent  } from '@testing-library/react'
 import type { SensorDataLive, SensorDataHistory } from '../../types/dashboard'
+
 
 // Mock only the two query hooks; keep ApiError / isDeviceOffline real so BentoGrid's
 // offline detection works as in production.
@@ -113,4 +114,41 @@ describe('BentoGrid', () => {
 
     expect(screen.getByText(/failed to load data/i)).toBeInTheDocument()
   })
+  
+  it('calls useLiveData with the default device id on first render', () => {
+    liveMock.mockReturnValue(asResult({ data: makeSensor(), isLoading: false, isError: false }))
+    render(<BentoGrid />)
+
+    expect(liveMock).toHaveBeenCalledWith('esp32-lab-001')
+  })
+
+  it('re-renders KPIs with data from the new device after confirming a device id change', () => {
+    liveMock.mockReturnValue(asResult({ data: makeSensor(), isLoading: false, isError: false }))
+    render(<BentoGrid />)
+
+    const input = screen.getByLabelText('Device ID')
+    fireEvent.change(input, { target: { value: 'esp32-roof-002' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
+
+    expect(liveMock).toHaveBeenLastCalledWith('esp32-roof-002')
+  })
+
+  it('does not change the active device id while typing, only after confirming', () => {
+    liveMock.mockReturnValue(asResult({ data: makeSensor(), isLoading: false, isError: false }))
+    render(<BentoGrid />)
+
+    const input = screen.getByLabelText('Device ID')
+    fireEvent.change(input, { target: { value: 'esp32-roof-002' } })
+
+    expect(liveMock).toHaveBeenLastCalledWith('esp32-lab-001')
+  })
+
+  it('renders the device id input alongside the greeting header', () => {
+    liveMock.mockReturnValue(asResult({ data: makeSensor(), isLoading: false, isError: false }))
+    render(<BentoGrid />)
+
+    expect(screen.getByLabelText('Device ID')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument()
+  })
+  
 })
